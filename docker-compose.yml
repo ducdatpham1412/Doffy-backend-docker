@@ -1,0 +1,86 @@
+version: "3"
+
+services:  
+  db_mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: '__'
+      MYSQL_DATABASE: 'doffy'
+    container_name: db_mysql
+    restart: always
+    networks:
+      - doffy-app
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+
+  db_mongo:
+    image: mongo:3.6.19-xenial
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: 'root'
+      MONGO_INITDB_ROOT_PASSWORD: '__'
+      MONGO_INITDB_DATABASE: 'doffy'
+    container_name: db_mongo
+    restart: always
+    networks:
+      - doffy-app
+    volumes:
+      - ./data/mongo:/data/db
+    ports:
+      - 27017:27017
+
+  app:
+    build:
+      context: .
+      target: app
+    command: python app/manage.py runserver 0.0.0.0:8000
+    image: app:latest
+    environment:
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 0
+      ENVIRONMENT_TYPE: development
+    container_name: app
+    volumes:
+      - ./app:/usr/src/app
+    ports:
+      - 8000:8000
+    networks:
+      - doffy-app
+    depends_on:
+      - db_mysql
+      - db_mongo
+      # - redis
+    # links:
+    #   - redis
+
+  chat:
+    build:
+      context: .
+      target: chat
+    command: yarn start
+    image: chat:latest
+    environment:
+      ENVIRONMENT_TYPE: development
+    container_name: chat
+    volumes:
+      - ./chat:/usr/src/chat
+    ports:
+      - 3000:3000
+    networks:
+      - doffy-app
+    depends_on:
+      - app
+
+  # redis:
+  #   image: redis:5
+  #   container_name: redis
+  #   restart: always
+  #   networks:
+  #     - doffy-app
+  #   ports:
+  #     - 6379:6379
+    
+networks:
+  doffy-app:
+    driver: bridge

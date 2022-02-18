@@ -1,0 +1,22 @@
+{
+  "name": "chat-socket",
+  "version": "0.0.1",
+  "description": "chat socket for app",
+  "type": "module",
+  "scripts": {
+    "start": "node chat/index.js",
+    "rlc": "docker stop chat && docker start chat && docker logs -f chat"
+  },
+  "dependencies": {
+    "axios": "^0.25.0",
+    "dotenv": "^16.0.0",
+    "http": "^0.0.1-security",
+    "https": "^1.0.0",
+    "mongodb": "^4.3.1",
+    "socket.io": "^4.4.1"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.6",
+    "utf-8-validate": "^5.0.8"
+  }
+}

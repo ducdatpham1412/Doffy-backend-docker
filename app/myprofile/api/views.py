@@ -1,0 +1,484 @@
+from authentication.models import User
+from bson.objectid import ObjectId
+from findme.mongo import mongoDb
+from myprofile import models
+from myprofile.api import serializers
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from setting.models import Block
+from utilities import enums, services
+from utilities.exception import error_key, error_message
+from utilities.exception.exception_handler import CustomError
+import pymongo
+from utilities.disableObject import DisableObject
+
+
+class GetProfile(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, id):
+        try:
+            return models.Profile.objects.get(user=id)
+        except models.Profile.DoesNotExist:
+            raise CustomError(error_message.username_not_exist,
+                              error_key.username_not_exist)
+
+    def check_had_been_blocked(self, my_id, your_id):
+        try:
+            Block.objects.get(block=your_id, blocked=my_id)
+            return True
+        except Block.DoesNotExist:
+            try:
+                Block.objects.get(block=my_id, blocked=your_id)
+                return True
+            except Block.DoesNotExist:
+                return False
+
+    def check_is_locking_account(self, your_id):
+        try:
+            list_user_temporary_lock: list = DisableObject.get_disable_object(enums.disable_user)[
+                enums.disable_user]
+            list_user_temporary_lock.index(your_id)
+            return True
+        except ValueError:
+            list_user_request_delete: list = DisableObject.get_disable_object(
+                enums.disable_request_delete_account)[enums.disable_request_delete_account]
+            for request in list_user_request_delete:
+                if request['userId'] == your_id and request['isActive'] == True:
+                    return True
+
+            return False
+
+    def get_relationship(self, my_id, your_id):
+        if (my_id == your_id):
+            return enums.relationship_self
+        try:
+            models.Follow.objects.get(follower=my_id, followed=your_id)
+            return enums.relationship_following
+        except models.Follow.DoesNotExist:
+            return enums.relationship_not_following
+
+    def get(self, request, id):
+        my_id = services.get_user_id_from_request(request)
+
+        # check had been block or you block them
+        if self.check_had_been_blocked(my_id, id) or self.check_is_locking_account(id):
+            res = {
+                'id': id,
+                'relationship': enums.relationship_block
+            }
+            return Response(res, status=status.HTTP_200_OK)
+
+        # if not, go to get profile
+        query = self.get_object(id)
+        data_profile = serializers.ProfileSerializer(query).data
+
+        relationship = self.get_relationship(my_id, id)
+        res = {
+            'id': data_profile['id'],
+            'name': data_profile['name'],
+            'avatar': data_profile['avatar'],
+            'cover': data_profile['cover'],
+            'description': data_profile['description'],
+            'followers': data_profile['followers'],
+            'followings': data_profile['followings'],
+            'relationship': relationship,
+        }
+
+        return Response(res, status=status.HTTP_200_OK)
+
+
+class EditProfile(GenericAPIView):
+    permissions = [IsAuthenticated, ]
+
+    def get_object(self, id):
+        try:
+            profile = models.Profile.objects.get(user=id)
+            return profile
+        except models.Profile.DoesNotExist:
+            raise CustomError()
+
+    def put(self, request):
+        id = services.get_user_id_from_request(request)
+        newProfile = request.data
+
+        myProfile = self.get_object(id)
+
+        serializer = serializers.EditProfileSerializer(
+            myProfile, data=newProfile)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(None, status=status.HTTP_200_OK)
+
+
+class FollowUser(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, id):
+        try:
+            user = User.objects.get(id=id)
+            return user
+        except User.DoesNotExist:
+            raise CustomError(error_message.username_not_exist,
+                              error_key.username_not_exist)
+
+    def check_had_follow(self, my_id, your_id):
+        try:
+            models.Follow.objects.get(follower=my_id, followed=your_id)
+            return True
+        except models.Follow.DoesNotExist:
+            return False
+
+    def check_had_blocked(self, my_id, your_id):
+        try:
+            Block.objects.get(block=my_id, blocked=your_id)
+            return True
+        except Block.DoesNotExist:
+            try:
+                Block.objects.get(block=your_id, blocked=my_id)
+                return True
+            except Block.DoesNotExist:
+                return False
+
+    def put(self, request, id):
+        my_id = services.get_user_id_from_request(request)
+
+        if self.check_had_blocked(my_id, id):
+            raise CustomError()
+
+        if not self.check_had_follow(my_id, id):
+            my_profile = self.get_object(my_id)
+            your_profile = self.get_object(id)
+
+            follow = models.Follow(follower=my_profile,
+                                   followed=your_profile)
+            follow.save()
+            return Response(None, status=status.HTTP_200_OK)
+
+        else:
+            raise CustomError(error_message.your_have_follow_this_person,
+                              error_key.your_have_follow_this_person)
+
+
+class UnFollowUser(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, my_id, your_id):
+        try:
+            follow = models.Follow.objects.get(
+                follower=my_id, followed=your_id)
+            return follow
+        except models.Follow.DoesNotExist:
+            raise CustomError()
+
+    def check_had_blocked(self, my_id, your_id):
+        try:
+            Block.objects.get(block=my_id, blocked=your_id)
+            return True
+        except Block.DoesNotExist:
+            try:
+                Block.objects.get(block=your_id, blocked=my_id)
+                return True
+            except Block.DoesNotExist:
+                return False
+
+    def un_follow_user(self, my_id, your_id):
+        if not self.check_had_blocked(my_id, your_id):
+            follow = self.get_object(my_id, your_id)
+            follow.delete()
+            return Response(None, status=status.HTTP_200_OK)
+        else:
+            raise CustomError()
+
+    def put(self, request, id):
+        my_id = services.get_user_id_from_request(request)
+
+        return self.un_follow_user(my_id, id)
+
+
+class CreatePost(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_user_name_avatar(self, user_id):
+        query = models.Profile.objects.get(user=user_id)
+        data_profile = serializers.ProfileSerializer(query).data
+        return {
+            'name': data_profile['name'],
+            'avatar': data_profile['avatar']
+        }
+
+    def post(self, request):
+        my_id = services.get_user_id_from_request(request)
+
+        insert_post = {
+            'content': request.data['content'],
+            'images': request.data['images'],
+            'peopleLike': [],
+            'creatorId': my_id,
+            'createdTime': services.get_datetime_now(),
+            'isActive': True,
+        }
+        mongoDb.profilePost.insert_one(insert_post)
+
+        res_images = []
+        for img in insert_post['images']:
+            res_images.append(services.create_link_image(img))
+
+        info = self.get_user_name_avatar(my_id)
+
+        res = {
+            'id': str(insert_post['_id']),
+            'content': insert_post['content'],
+            'images': res_images,
+            'peopleLike': [],
+            'creatorId': my_id,
+            'creatorName': info['name'],
+            'creatorAvatar': info['avatar'],
+            'createdTime': str(insert_post['createdTime']),
+            'relationship': enums.relationship_self
+        }
+
+        return Response(res, status=status.HTTP_200_OK)
+
+
+class EditPost(GenericAPIView):
+    permission_classed = [IsAuthenticated, ]
+
+    def put(self, request, post_id):
+        id = services.get_user_id_from_request(request)
+
+        post = mongoDb.profilePost.find_one_and_update(
+            {
+                '_id': ObjectId(post_id),
+                'creatorId': id,
+            },
+            {
+                '$set': {
+                    'content': request.data['content']
+                }
+            }
+        )
+
+        if not post:
+            raise CustomError(error_message.post_not_existed,
+                              error_key.post_not_existed)
+
+        return Response(None, status=status.HTTP_200_OK)
+
+
+class DeletePost(GenericAPIView):
+    permission_classed = [IsAuthenticated, ]
+
+    def put(self, request, post_id):
+        id = services.get_user_id_from_request(request)
+
+        post = mongoDb.profilePost.find_one_and_update(
+            {
+                '_id': ObjectId(post_id),
+                'creatorId': id,
+                'isActive': True,
+            },
+            {
+                '$set': {
+                    'isActive': False,
+                }
+            }
+        )
+
+        if not post:
+            raise CustomError(error_message.post_not_existed,
+                              error_key.post_not_existed)
+
+        return Response(None, status=status.HTTP_200_OK)
+
+
+class GetListPost(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_creator_name_avatar(self, user_id):
+        query = models.Profile.objects.get(user=user_id)
+        data_profile = serializers.ProfileSerializer(query).data
+        return {
+            'name': data_profile['name'],
+            'avatar': data_profile['avatar']
+        }
+
+    def get(self, request, user_id):
+        id = services.get_user_id_from_request(request)
+        take = int(request.query_params['take'])
+        page_index = int(request.query_params['pageIndex'])
+
+        list_posts = mongoDb.profilePost.find({
+            'creatorId': user_id,
+            'isActive': True
+        }).sort([('createdTime', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
+
+        res = []
+        for post in list_posts:
+            link_images = []
+            for image in post['images']:
+                link_images.append(services.create_link_image(image))
+            relationship = enums.relationship_self if post[
+                'creatorId'] == id else enums.relationship_not_know
+
+            people_like = []
+            is_liked = False
+            for people in post['peopleLike']:
+                people_like.append({
+                    'id': people['id'],
+                    'createdTime': str(people['createdTime'])
+                })
+                if not is_liked and people['id'] == id:
+                    is_liked = True
+
+            info_creator = self.get_creator_name_avatar(user_id)
+
+            temp = {
+                'id': str(post['_id']),
+                'content': post['content'],
+                'images': link_images,
+                'peopleLike': people_like,
+                'creatorId': post['creatorId'],
+                'creatorName': info_creator['name'],
+                'creatorAvatar': info_creator['avatar'],
+                'createdTime': str(post['createdTime']),
+                'isLiked': is_liked,
+                'relationship': relationship
+            }
+
+            res.append(temp)
+
+        return Response(res, status=status.HTTP_200_OK)
+
+
+class LikePost(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def get_object(self, post_id, user_id):
+        check = mongoDb.profilePost.find_one_and_update(
+            {
+                '_id': ObjectId(post_id),
+                'peopleLike.id': {
+                    '$ne': user_id
+                }
+            },
+            {
+                '$push': {
+                    'peopleLike': {
+                        'id': user_id,
+                        'createdTime': services.get_datetime_now()
+                    }
+                }
+            }
+        )
+
+        if not check:
+            raise CustomError(error_message.you_have_liked_this_post,
+                              error_key.you_have_liked_this_post)
+
+    def put(self, request, post_id):
+        my_id = services.get_user_id_from_request(request)
+        self.get_object(post_id, my_id)
+        return Response(None, status=status.HTTP_200_OK)
+
+
+class UnLikePost(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def get_object(self, post_id, user_id):
+        check = mongoDb.profilePost.find_one_and_update(
+            {
+                '_id': ObjectId(post_id),
+                'peopleLike.id': user_id
+            },
+            {
+                '$pull': {
+                    'peopleLike': {
+                        'id': user_id
+                    }
+                }
+            }
+        )
+
+        if not check:
+            raise CustomError(error_message.you_not_liked_this_post,
+                              error_key.you_not_liked_this_post)
+
+    def put(self, request, post_id):
+        my_id = services.get_user_id_from_request(request)
+        self.get_object(post_id, my_id)
+        return Response(None, status=status.HTTP_200_OK)
+
+
+class GetListFollow(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+    my_id = None
+    is_get_follower = False
+
+    def get_relationship_follower(self, your_id):
+        # your self
+        if (your_id == self.my_id):
+            return enums.relationship_self
+
+        # get list following not need to check
+        if not self.is_get_follower:
+            return enums.relationship_not_know
+
+        # only check when get list follower
+        try:
+            models.Follow.objects.get(followed=your_id, follower=self.my_id)
+            return enums.relationship_following
+        except models.Follow.DoesNotExist:
+            return enums.relationship_not_following
+
+    def get_info_user(self, list_id):
+        res = []
+        for id in list_id:
+            query = models.Profile.objects.get(user=id)
+            data_profile = serializers.ProfileSerializer(query).data
+            temp = {
+                'id': data_profile['id'],
+                'name': data_profile['name'],
+                'avatar': data_profile['avatar'],
+                'description': data_profile['description'],
+                'relationship': self.get_relationship_follower(id)
+            }
+            res.append(temp)
+
+        return res
+
+    def get(self, request, user_id):
+        self.my_id = services.get_user_id_from_request(request)
+
+        type_follow = int(request.query_params['typeFollow'][0])
+        page_index = int(request.query_params['pageIndex'])
+        take = int(request.query_params['take'])
+
+        start = int((page_index-1) * take)
+        end = int(page_index * take)
+
+        # get list my followers
+        if type_follow == enums.follow_follower:
+            self.is_get_follower = True
+            query = models.Follow.objects.filter(followed=user_id)[start:end]
+            data_follower = serializers.FollowSerializer(query, many=True).data
+            list_id = []
+            for follower in data_follower:
+                list_id.append(follower['follower'])
+            return Response(self.get_info_user(list_id), status=status.HTTP_200_OK)
+
+        # get list my followings
+        elif type_follow == enums.follow_following:
+            query = models.Follow.objects.filter(follower=user_id)[start:end]
+            data_following = serializers.FollowSerializer(
+                query, many=True).data
+            list_id = []
+            for following in data_following:
+                list_id.append(following['followed'])
+            return Response(self.get_info_user(list_id), status=status.HTTP_200_OK)
+
+        else:
+            raise CustomError()
