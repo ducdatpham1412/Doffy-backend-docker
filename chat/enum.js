@@ -3,6 +3,8 @@ export const SOCKET_EVENT = {
   authenticate: "1",
   authenticateEnjoy: "1.0",
   unauthorized: "2",
+  appActive: "1.3",
+  appBackground: "1.4",
   // bubble
   createBubble: "3.0",
   deleteBubble: "3.5",

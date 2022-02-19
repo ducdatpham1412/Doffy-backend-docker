@@ -20,8 +20,8 @@ import Static from "./static.js";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
-  pingTimeout: 2000,
-  pingInterval: 500,
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 const enjoyModeRoom = "enjoy-mode-room";
@@ -74,6 +74,13 @@ io.on("connection", (socket) => {
       // join room for only enjoy user
       socket.join(enjoyModeRoom);
     }
+  });
+
+  socket.on(SOCKET_EVENT.appActive, () => {
+    Static.putBackActive(socket.id);
+  });
+  socket.on(SOCKET_EVENT.appBackground, () => {
+    Static.putInBackground(socket.id);
   });
 
   /**
