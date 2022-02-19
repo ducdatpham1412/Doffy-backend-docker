@@ -1,6 +1,10 @@
 export default class Static {
   static listUserActives = [];
 
+  static getListUserActives = () => {
+    return this.listUserActives;
+  };
+
   static addUserActive = (params) => {
     this.listUserActives.push(params);
   };

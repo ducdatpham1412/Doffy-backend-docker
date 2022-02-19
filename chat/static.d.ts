@@ -6,6 +6,8 @@ interface TypeUserActive {
 export default class Static {
   private static listUserActives: Array<TypeUserActive>;
 
+  static getListUserActives(): Array<TypeUserActive>;
+
   static addUserActive(params: TypeUserActive): void;
 
   static checkIncludeUserId(userId: string | number): boolean;

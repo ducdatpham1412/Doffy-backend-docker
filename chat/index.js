@@ -19,7 +19,10 @@ import {
 import Static from "./static.js";
 
 const httpServer = createServer();
-const io = new Server(httpServer, {});
+const io = new Server(httpServer, {
+  pingTimeout: 2000,
+  pingInterval: 500,
+});
 
 const enjoyModeRoom = "enjoy-mode-room";
 
