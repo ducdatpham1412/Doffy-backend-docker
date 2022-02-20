@@ -156,6 +156,26 @@ class FollowUser(GenericAPIView):
             follow = models.Follow(follower=my_profile,
                                    followed=your_profile)
             follow.save()
+
+            # Get my name
+            profile = models.Profile.objects.get(user=my_id)
+            services.send_notification({
+                'contents': {
+                    'en': '{} bắt đầu theo dõi bạn'.format(profile.name)
+                },
+                'filters': [
+                    {
+                        'field': 'tag',
+                        'key': 'userId',
+                        'relation': '=',
+                        'value': id
+                    }
+                ],
+                'data': {
+                    'type': 2
+                }
+            })
+
             return Response(None, status=status.HTTP_200_OK)
 
         else:

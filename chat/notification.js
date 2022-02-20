@@ -47,7 +47,7 @@ export default class Notification {
   };
 
   static startNewChatTag = async (params) => {
-    const { message, receiver } = params;
+    const { message, receiver, chatTagId } = params;
     try {
       await sendNotification({
         contents: { en: message },
@@ -62,32 +62,11 @@ export default class Notification {
         ],
         data: {
           type: TYPE_NOTIFICATION.newChatTag,
+          chatTagId,
         },
       });
     } catch (err) {
       console.log("err when notification start chat tag: ", err);
-    }
-  };
-
-  static follow = async (params) => {
-    const { followerName, receiver } = params;
-    try {
-      await sendNotification({
-        contents: `${followerName} bắt đầu theo dõi bạn`,
-        filters: [
-          {
-            field: "tag",
-            key: "userId",
-            relation: "=",
-            value: String(receiver),
-          },
-        ],
-        data: {
-          type: TYPE_NOTIFICATION.follow,
-        },
-      });
-    } catch (err) {
-      console.log("err when notification follow: ", err);
     }
   };
 }

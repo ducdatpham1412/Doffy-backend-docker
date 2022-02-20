@@ -1,8 +1,6 @@
 import pymongo
-from asgiref.sync import async_to_sync
 from authentication.models import User
 from bson.objectid import ObjectId
-from channels.layers import get_channel_layer
 from common.api.serializers import GetPassportSerializer
 from findme.mongo import mongoDb
 from rest_framework import status
@@ -321,40 +319,6 @@ class GetListUserInfo(GenericAPIView):
         return Response(result, status=status.HTTP_200_OK)
 
 
-class HandleBubblePlaceForEnjoy(GenericAPIView):
-    def send_bubble_to_palace(self, new_bubble):
-        layer = get_channel_layer()
-        user_active = mongoDb.userActive.find({
-            'userId': {
-                '$regex': '__'
-            }
-        })
-
-        for user in user_active:
-            async_to_sync(layer.group_send)(services.create_socket_bubble_chattag(user['userId']), {
-                'type': 'send.bubble',
-                'data': new_bubble
-            })
-
-    def post(self, request):
-        id = request.data['myId']
-        bubble = request.data['bubble']
-
-        res = {
-            'id': HandleBubblePalace.save_amount_bubbles_to_mongo(),
-            'name': bubble['name'],
-            'icon': bubble['icon'],
-            'color': bubble['idHobby'],
-            'description': bubble['description'],
-            'creatorId': id,
-            'creatorAvatar': bubble['privateAvatar']
-        }
-
-        self.send_bubble_to_palace(res)
-
-        return Response(None, status=status.HTTP_200_OK)
-
-
 class DeleteMessage(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -370,6 +334,40 @@ class DeleteMessage(GenericAPIView):
 
         mongoDb.message.delete_one({'_id': ObjectId(id_message)})
         return Response(id_message, status=status.HTTP_200_OK)
+
+
+# class HandleBubblePlaceForEnjoy(GenericAPIView):
+#     def send_bubble_to_palace(self, new_bubble):
+#         layer = get_channel_layer()
+#         user_active = mongoDb.userActive.find({
+#             'userId': {
+#                 '$regex': '__'
+#             }
+#         })
+
+#         for user in user_active:
+#             async_to_sync(layer.group_send)(services.create_socket_bubble_chattag(user['userId']), {
+#                 'type': 'send.bubble',
+#                 'data': new_bubble
+#             })
+
+#     def post(self, request):
+#         id = request.data['myId']
+#         bubble = request.data['bubble']
+
+#         res = {
+#             'id': HandleBubblePalace.save_amount_bubbles_to_mongo(),
+#             'name': bubble['name'],
+#             'icon': bubble['icon'],
+#             'color': bubble['idHobby'],
+#             'description': bubble['description'],
+#             'creatorId': id,
+#             'creatorAvatar': bubble['privateAvatar']
+#         }
+
+#         self.send_bubble_to_palace(res)
+
+#         return Response(None, status=status.HTTP_200_OK)
 
 
 # class RequestPublic(GenericAPIView):

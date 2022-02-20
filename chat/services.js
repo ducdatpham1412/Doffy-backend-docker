@@ -104,8 +104,6 @@ export const handleStartNewChatTag = async (params) => {
       listUser: listUserId,
       groupName,
       isPrivate,
-      // isStop: null,
-      // isBlock: null,
       userSeenMessage,
       updateTime,
       type,
@@ -130,6 +128,7 @@ export const handleStartNewChatTag = async (params) => {
     await Notification.startNewChatTag({
       message: newChatTag.content,
       receiver,
+      chatTagId: String(insertChatTag._id),
     });
 
     // Response

@@ -118,18 +118,17 @@ io.on("connection", (socket) => {
     // user have account
     if (params?.token) {
       const res = await handleStartNewChatTag(params);
-      // send socket message to existed chat tag
+      // If chat tag existed, only send message to user
       if (res.isChatTagExisted) {
         io.to(res.response.chatTag).emit(SOCKET_EVENT.message, res.response);
         return;
       }
 
-      // send socket delete bubble
+      // If not, first send socket delete bubble to all
+      // then send socket new chat tag to member is this chat tag
       if (params.newChatTag?.idBubble) {
         io.emit(SOCKET_EVENT.deleteBubble, params.newChatTag?.idBubble);
       }
-
-      // send new chat tag to all member in chat
       const listSocketId = await getSocketIdOfListUserActive(
         res.response.listUser.map((item) => item.id)
       );
@@ -237,6 +236,10 @@ io.on("connection", (socket) => {
   socket.on(SOCKET_EVENT.messageEnjoy, (params) => {
     const res = handleSendMessageEnjoy(params);
     io.to(res.chatTag).emit(SOCKET_EVENT.messageEnjoy, res);
+  });
+  socket.on(SOCKET_EVENT.deleteBubble, (params) => {
+    const { chatTagId, messageId } = params;
+    socket.to(chatTagId).emit(SOCKET_EVENT.deleteMessage, params);
   });
 
   /**

@@ -18,6 +18,7 @@ export const SOCKET_EVENT = {
   message: "5",
   messageEnjoy: "5.1",
   seenMessage: "6",
+  deleteMessage: "6.1",
   // block or stop conversation
   isBlocked: "9",
   unBlocked: "10",

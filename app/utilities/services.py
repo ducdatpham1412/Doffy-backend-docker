@@ -11,6 +11,9 @@ import sys
 from datetime import datetime, timedelta
 import pytz
 from django.conf import settings
+import requests
+import json
+from django.conf import settings
 
 
 def send_to_mail(mail, verify_code):
@@ -137,3 +140,17 @@ def get_local_string_date_time(utc_time: datetime):
     # print('time zone info: ', datetime.now().astimezone().tzinfo)
     hanoi_time = utc_time + timedelta(hours=7)
     return str(hanoi_time)
+
+
+# Notification follow user
+headers = {
+    "Content-Type": "application/json; charset=utf-8",
+    "Authorization": "Basic {}".format(settings.ONESIGNAL_API_KEY)
+}
+
+
+def send_notification(body: object):
+    requests.post("https://onesignal.com/api/v1/notifications", headers=headers, data=json.dumps({
+        "app_id": settings.ONESIGNAL_APP_ID,
+        **body
+    }))
