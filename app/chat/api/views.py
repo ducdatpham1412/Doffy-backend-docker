@@ -12,6 +12,7 @@ from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
 from utilities.renderers import PagingRenderer
 from setting.models import Block
+from utilities.disableObject import DisableObject
 
 
 class GetListChatTags(GenericAPIView):
@@ -325,15 +326,18 @@ class DeleteMessage(GenericAPIView):
     def put(self, request, id_message):
         my_id = services.get_user_id_from_request(request)
 
-        message = mongoDb.message.find_one({'_id': ObjectId(id_message)})
+        message = mongoDb.message.find_one_and_delete({
+            '_id': ObjectId(id_message),
+            'senderId': my_id
+        })
+
         if not message:
-            raise CustomError()
-        if message['senderId'] != my_id:
             raise CustomError(error_message.not_have_permission_delete_message,
                               error_key.not_have_permission_delete_message)
+        DisableObject.add_disable_post_or_message(
+            enums.disable_message, message)
 
-        mongoDb.message.delete_one({'_id': ObjectId(id_message)})
-        return Response(id_message, status=status.HTTP_200_OK)
+        return Response(None, status=status.HTTP_200_OK)
 
 
 # class HandleBubblePlaceForEnjoy(GenericAPIView):
