@@ -18,7 +18,7 @@ export default class Static {
     const check = this.listUserActives.findIndex(
       (item) => item.userId === userId
     );
-    return check > 0;
+    return check >= 0;
   };
 
   // active user
