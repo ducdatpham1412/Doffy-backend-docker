@@ -4,6 +4,7 @@ import mongoDb from "./mongoDb.js";
 import Notification from "./notification.js";
 import { request } from "./request.js";
 import Static from "./static.js";
+import env from "./env.js";
 
 /**
  * Authenticate
@@ -536,5 +537,5 @@ const getDateTimeNow = () => {
 };
 
 const createLinkImage = (imageName) => {
-  return `https://doffy.s3.ap-southeast-1.amazonaws.com/image/${imageName}`;
+  return `${env.AWS_IMAGE_URL}/${imageName}`;
 };
