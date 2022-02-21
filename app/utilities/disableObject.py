@@ -11,12 +11,6 @@ class TypeRequestDeleteAccount:
 
 
 class DisableObject:
-    # user = __all[0][enums.disable_user]
-    # follow = __all[1][enums.disable_follow]
-    # profilePost = __all[2][enums.disable_profile_post]
-    # message = __all[3][enums.disable_message]
-    # requestDeleteAccount = __all[4][enums.disable_request_delete_account]
-
     @staticmethod
     def get_disable_object(type: str):
         result = mongoDb.disableObject.find_one({
@@ -25,10 +19,10 @@ class DisableObject:
         return result
 
     @staticmethod
-    def add_disable_object(type: str, value: int or str):
+    def add_disable_user(type: str, value: any):
         try:
             check = DisableObject.get_disable_object(type)
-            check[type].index(value)
+            check['list'].index(value)
             raise CustomError(error_message.you_have_lock_your_account,
                               error_key.you_have_lock_your_account)
         except ValueError:
@@ -40,26 +34,29 @@ class DisableObject:
             },
             {
                 '$push': {
-                    type: value
+                    'list': value
                 }
             }
         )
 
-        # check[type].append(value)
-        # if type == enums.disable_user:
-        #     DisableObject.user = check[type]
-        # elif type == enums.disable_follow:
-        #     DisableObject.follow = check[type]
-        # elif type == enums.disable_profile_post:
-        #     DisableObject.profilePost = check[type]
-        # elif type == enums.disable_message:
-        #     DisableObject.message = check[type]
+    @staticmethod
+    def add_disable_post_or_message(type: str, value: object):
+        mongoDb.disableObject.find_one_and_update(
+            {
+                'type': type
+            },
+            {
+                '$push': {
+                    'list': value
+                }
+            }
+        )
 
     @staticmethod
     def add_request_delete_account(value: TypeRequestDeleteAccount):
         check = DisableObject.get_disable_object(
             enums.disable_request_delete_account)
-        for request in check[enums.disable_request_delete_account]:
+        for request in check['list']:
             if (request['userId'] == value['userId'] and request['isActive'] == True):
                 raise CustomError(
                     error_message.you_have_lock_your_account, error_key.you_have_lock_your_account)
@@ -70,7 +67,7 @@ class DisableObject:
             },
             {
                 '$push': {
-                    enums.disable_request_delete_account: value
+                    'list': value
                 }
             }
         )
@@ -78,7 +75,7 @@ class DisableObject:
     @staticmethod
     def disable_request_delete_account(user_id):
         list_request = DisableObject.get_disable_object(
-            enums.disable_request_delete_account)[enums.disable_request_delete_account]
+            enums.disable_request_delete_account)['list']
 
         for index, value in enumerate(list_request):
             if (value['userId'] == user_id and value['isActive'] == True):
@@ -94,29 +91,20 @@ class DisableObject:
             },
             {
                 '$set': {
-                    enums.disable_request_delete_account: list_request
+                    'list': list_request
                 }
             }
         )
 
     @staticmethod
-    def remove_disable_object(type: str, value: any):
+    def remove_disable_user(type: str, value: any):
         mongoDb.disableObject.find_one_and_update(
             {
                 'type': type
             },
             {
                 '$pull': {
-                    type: value
+                    'list': value
                 }
             }
         )
-        # result = list(filter(lambda val: val != value, check[type]))
-        # if type == enums.disable_user:
-        #     DisableObject.user = result
-        # elif type == enums.disable_follow:
-        #     DisableObject.follow = result
-        # elif type == enums.disable_profile_post:
-        #     DisableObject.profilePost = result
-        # elif type == enums.disable_message:
-        #     DisableObject.message = result

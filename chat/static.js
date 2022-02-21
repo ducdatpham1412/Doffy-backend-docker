@@ -18,7 +18,7 @@ export default class Static {
     const check = this.listUserActives.findIndex(
       (item) => item.userId === userId
     );
-    return check > 0;
+    return check >= 0;
   };
 
   // active user
@@ -49,5 +49,11 @@ export default class Static {
       this.listUserActives.push(this.listUserInBackground[index]);
       this.listUserInBackground.splice(index, 1);
     }
+  };
+
+  // get user id from their socket id
+  static getUserIdFromSocketId = (socketId) => {
+    return this.listUserActives.find((item) => item.socketId === socketId)
+      ?.userId;
   };
 }

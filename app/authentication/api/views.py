@@ -268,7 +268,7 @@ class Login(GenericAPIView):
         try:
             # user temporary locking
             list_user_temporary_lock: list = DisableObject.get_disable_object(
-                enums.disable_user)[enums.disable_user]
+                enums.disable_user)['list']
             list_user_temporary_lock.index(user.id)
             res = {
                 'username': username,
@@ -278,7 +278,7 @@ class Login(GenericAPIView):
         except ValueError:
             # user is requesting delete account
             list_user_requesting_delete: list = DisableObject.get_disable_object(
-                enums.disable_request_delete_account)[enums.disable_request_delete_account]
+                enums.disable_request_delete_account)['list']
             for request in list_user_requesting_delete:
                 if request['userId'] == user.id and request['isActive'] == True:
                     res = {
@@ -373,7 +373,7 @@ class LockAccount(GenericAPIView):
 
     def put(self, request):
         id = services.get_user_id_from_request(request)
-        DisableObject.add_disable_object(enums.disable_user, id)
+        DisableObject.add_disable_user(enums.disable_user, id)
         return Response(None, status=status.HTTP_200_OK)
 
 
@@ -396,7 +396,7 @@ class OpenAccount(GenericAPIView):
         except models.VerifyCode.DoesNotExist:
             raise CustomError(error_message.otp_invalid, error_key.otp_invalid)
 
-        DisableObject.remove_disable_object(enums.disable_user, user.id)
+        DisableObject.remove_disable_user(enums.disable_user, user.id)
         DisableObject.disable_request_delete_account(user.id)
 
         return Response(None, status=status.HTTP_200_OK)

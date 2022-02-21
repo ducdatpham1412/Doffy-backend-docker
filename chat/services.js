@@ -4,6 +4,7 @@ import mongoDb from "./mongoDb.js";
 import Notification from "./notification.js";
 import { request } from "./request.js";
 import Static from "./static.js";
+import env from "./env.js";
 
 /**
  * Authenticate
@@ -407,9 +408,38 @@ export const changeGroupName = async (params) => {
         },
       }
     );
+    return true;
   } catch (err) {
     // user enjoy mode - token not valid
     console.log("change group name for enjoy mode: ", chatTagId);
+    return false;
+  }
+};
+
+export const handleChangeChatColor = async (params) => {
+  const { token, newColor, chatTagId, socketId } = params;
+  const userId = Static.getUserIdFromSocketId(socketId);
+  if (!userId) return false;
+  // user enjoy mode
+  if (String(userId).includes("__")) {
+    return true;
+  }
+  // user have account
+  try {
+    await request.put(
+      `chat/change-chat-color/${chatTagId}`,
+      {
+        color: newColor,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+  } catch (err) {
+    console.log("change chat fail: ", chatTagId);
+    return false;
   }
 };
 
@@ -536,5 +566,5 @@ const getDateTimeNow = () => {
 };
 
 const createLinkImage = (imageName) => {
-  return `https://doffy.s3.ap-southeast-1.amazonaws.com/image/${imageName}`;
+  return `${env.AWS_IMAGE_URL}/${imageName}`;
 };

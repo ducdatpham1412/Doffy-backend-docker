@@ -38,13 +38,13 @@ class GetProfile(GenericAPIView):
 
     def check_is_locking_account(self, your_id):
         try:
-            list_user_temporary_lock: list = DisableObject.get_disable_object(enums.disable_user)[
-                enums.disable_user]
+            list_user_temporary_lock: list = DisableObject.get_disable_object(
+                enums.disable_user)['list']
             list_user_temporary_lock.index(your_id)
             return True
         except ValueError:
             list_user_request_delete: list = DisableObject.get_disable_object(
-                enums.disable_request_delete_account)[enums.disable_request_delete_account]
+                enums.disable_request_delete_account)['list']
             for request in list_user_request_delete:
                 if request['userId'] == your_id and request['isActive'] == True:
                     return True
@@ -295,22 +295,16 @@ class DeletePost(GenericAPIView):
     def put(self, request, post_id):
         id = services.get_user_id_from_request(request)
 
-        post = mongoDb.profilePost.find_one_and_update(
-            {
-                '_id': ObjectId(post_id),
-                'creatorId': id,
-                'isActive': True,
-            },
-            {
-                '$set': {
-                    'isActive': False,
-                }
-            }
-        )
+        post = mongoDb.profilePost.find_one_and_delete({
+            '_id': ObjectId(post_id),
+            'creatorId': id,
+        })
 
         if not post:
             raise CustomError(error_message.post_not_existed,
                               error_key.post_not_existed)
+        DisableObject.add_disable_post_or_message(
+            enums.disable_profile_post, post)
 
         return Response(None, status=status.HTTP_200_OK)
 
