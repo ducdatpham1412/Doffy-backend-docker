@@ -239,7 +239,15 @@ io.on("connection", (socket) => {
   });
   socket.on(SOCKET_EVENT.deleteBubble, (params) => {
     const { chatTagId, messageId } = params;
-    socket.to(chatTagId).emit(SOCKET_EVENT.deleteMessage, params);
+    io.to(chatTagId).emit(SOCKET_EVENT.deleteMessage, params);
+  });
+  socket.on(SOCKET_EVENT.typing, (params) => {
+    const { chatTagId, userId } = params;
+    io.to(chatTagId).emit(SOCKET_EVENT.typing, params);
+  });
+  socket.on(SOCKET_EVENT.unTyping, (params) => {
+    const { chatTagId, userId } = params;
+    io.to(chatTagId).emit(SOCKET_EVENT.unTyping, params);
   });
 
   /**
