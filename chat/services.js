@@ -437,6 +437,7 @@ export const handleChangeChatColor = async (params) => {
         },
       }
     );
+    return true;
   } catch (err) {
     console.log("change chat fail: ", chatTagId);
     return false;
