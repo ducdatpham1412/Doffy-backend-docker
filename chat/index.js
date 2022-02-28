@@ -15,6 +15,7 @@ import {
   handleStartNewChatTagEnjoy,
   handleSendMessage,
   increaseAndGetNumberBubbles,
+  handleChangeChatColor,
 } from "./services.js";
 import Static from "./static.js";
 
@@ -196,11 +197,26 @@ io.on("connection", (socket) => {
   });
 
   socket.on(SOCKET_EVENT.changeGroupName, async (params) => {
-    await changeGroupName(params);
-    io.to(params.chatTagId).emit(SOCKET_EVENT.changeGroupName, {
-      chatTagId: params.chatTagId,
-      newName: params.newName,
+    const check = await changeGroupName(params);
+    if (check) {
+      io.to(params.chatTagId).emit(SOCKET_EVENT.changeGroupName, {
+        chatTagId: params.chatTagId,
+        newName: params.newName,
+      });
+    }
+  });
+
+  socket.on(SOCKET_EVENT.changeChatColor, async (params) => {
+    const check = await handleChangeChatColor({
+      socketId: socket.id,
+      ...params,
     });
+    if (check) {
+      io.to(params.chatTagId).emit(SOCKET_EVENT.changeChatColor, {
+        chatTagId: params.chatTagId,
+        newColor: params.newColor,
+      });
+    }
   });
 
   /**

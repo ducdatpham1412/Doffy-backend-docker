@@ -18,4 +18,6 @@ export default class Static {
 
   static putInBackground(socketId: string): void;
   static putBackActive(socketId: string): void;
+
+  static getUserIdFromSocketId(socketId: string): number | undefined;
 }

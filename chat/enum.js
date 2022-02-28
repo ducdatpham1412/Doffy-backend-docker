@@ -14,6 +14,8 @@ export const SOCKET_EVENT = {
   requestPublicChat: "2.2",
   agreePublicChat: "2.3",
   allAgreePublicChat: "2.4",
+  changeGroupName: "2.5",
+  changeChatColor: "2.6",
   // message
   message: "3.0",
   messageEnjoy: "3.1",
@@ -24,9 +26,9 @@ export const SOCKET_EVENT = {
   // block or stop conversation
   isBlocked: "4.0",
   unBlocked: "4.1",
-  changeGroupName: "4.2",
   stopConversation: "4.3",
   openConversation: "4.4",
+  // comment from server
 };
 
 export const CHAT_TAG = {
