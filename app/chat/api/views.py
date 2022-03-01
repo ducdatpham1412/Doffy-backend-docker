@@ -217,20 +217,22 @@ class GetListMessages(GenericAPIView):
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
 
-        # query get list messages
-        list_messages = mongoDb.message.find(
-            {'chatTag': chat_tag}).sort([('createdTime', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
-        total_message = mongoDb.message.count_documents({'chatTag': chat_tag})
-
-        # get avatar of list user in chat tag
         info_chattag = mongoDb.chatTag.find_one({'_id': ObjectId(chat_tag)})
+
+        # Query page index get list messages
+        start = take * (page_index - 1)
+        end = start + take
+        list_messages = info_chattag['listMessages'][start:end]
+        total_message = info_chattag['totalMessages']
+
+        # Choose avatar for list user in chat tag
         object_sender_avatar = {}
         for user_id in info_chattag['listUser']:
             avatar = self.get_sender_avatar_send_message(
                 user_id, info_chattag['isPrivate'])
             object_sender_avatar[user_id] = avatar
 
-        # custom respose list message
+        # Custom respose list message
         data_messages = []
         for message in list_messages:
             id = str(message.pop('_id'))
