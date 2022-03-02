@@ -9,8 +9,8 @@ class Profile(models.Model):
     )
     name = models.CharField(max_length=enums.NAME_MAX_LENGTH,
                             default=enums.NAME_DEFAULT)
-    description = models.CharField(
-        max_length=enums.DESCRIPTION_MAX_LENGTH, default=enums.string_not_specify)
+    description = models.TextField(
+        default=enums.string_not_specify, max_length=enums.DESCRIPTION_MAX_LENGTH)
     avatar = models.TextField(default=enums.AVATAR_DEFAULT)
     cover = models.TextField(default='')
     followers = models.IntegerField(default=0)

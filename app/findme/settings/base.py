@@ -3,6 +3,7 @@ from datetime import timedelta
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+SECRET_KEY = 'secret_key_here'
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
