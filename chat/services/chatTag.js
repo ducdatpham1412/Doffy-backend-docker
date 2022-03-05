@@ -245,28 +245,28 @@ export const getLatestMessage = async (params) => {
             : message.senderId !== myId;
     });
 
-    if (!latestMessage) return;
-
     // update seen message of chat tag
-    await mongoDb.collection("chatTag").findOneAndUpdate(
-        {
-            _id: ObjectId(chatTagId),
-        },
-        {
-            $set: {
-                [`userSeenMessage.${myId}`]: {
-                    latestMessage: String(latestMessage._id),
-                    isLatest: true,
-                },
+    if (latestMessage) {
+        await mongoDb.collection("chatTag").findOneAndUpdate(
+            {
+                _id: ObjectId(chatTagId),
             },
-        }
-    );
+            {
+                $set: {
+                    [`userSeenMessage.${myId}`]: {
+                        latestMessage: String(latestMessage._id),
+                        isLatest: true,
+                    },
+                },
+            }
+        );
+    }
 
     const res = {
         chatTagId,
         data: {
             [`${myId}`]: {
-                latestMessage: String(latestMessage._id),
+                latestMessage: String(latestMessage?._id || ""),
                 isLatest: true,
             },
         },
