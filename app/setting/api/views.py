@@ -355,3 +355,8 @@ class TermsOfUse(GenericAPIView):
 class DoffySupport(GenericAPIView):
     def get(self, request):
         return render(request, '../templates/doffy_support.html')
+
+
+class UserGuide(GenericAPIView):
+    def get(self, request):
+        return render(request, '../templates/user_guide.html')

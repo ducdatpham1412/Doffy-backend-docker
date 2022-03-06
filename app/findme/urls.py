@@ -14,7 +14,8 @@ urlpatterns = [
     path('chat/', include('chat.api.urls')),
     path('about-us/policy', views.PrivacyPolicy.as_view()),
     path('about-us/support', views.DoffySupport.as_view()),
-    path('about-us/terms', views.TermsOfUse.as_view())
+    path('about-us/terms', views.TermsOfUse.as_view()),
+    path('about-us/guideline', views.UserGuide.as_view())
 ]
 
 # + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
