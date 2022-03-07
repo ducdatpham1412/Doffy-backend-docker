@@ -78,16 +78,6 @@ export const handleStartNewChatTag = async (params) => {
         };
         await mongoDb.collection("chatTag").insertOne(insertChatTag);
 
-        // save the first message to mongo
-        // const newMessage = {
-        //     chatTag: String(insertChatTag._id),
-        //     type: MESSAGE_TYPE.text,
-        //     content: newChatTag.content,
-        //     senderId: newChatTag.senderId,
-        //     createdTime: new Date(),
-        // };
-        // await mongoDb.collection("message").insertOne(newMessage);
-
         // Notification to receiver
         const receiver =
             listUserId.filter((item) => item != newChatTag.senderId)[0] ||
@@ -146,16 +136,6 @@ export const handleStartNewChatTag = async (params) => {
         if (!check) {
             return await handleInteractBubble();
         }
-
-        // if conversation exited, only need to send socket message
-        // const newMessage = {
-        //     chatTag: String(check._id),
-        //     type: MESSAGE_TYPE.text,
-        //     content: newChatTag.content,
-        //     senderId: newChatTag.senderId,
-        //     createdTime: getDateTimeNow(),
-        // };
-        // await mongoDb.collection("message").insertOne(newMessage);
 
         const responseMessage = {
             id: String(newMessageId),
@@ -366,24 +346,19 @@ export const handleAgreePublicChat = async (params) => {
 
 export const changeGroupName = async (params) => {
     const { token, chatTagId, newName } = params;
-    try {
-        await request.put(
-            `chat/change-group-name/${chatTagId}`,
-            {
-                name: newName,
+
+    await request.put(
+        `chat/change-group-name/${chatTagId}`,
+        {
+            name: newName,
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
             },
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-        return true;
-    } catch (err) {
-        // user enjoy mode - token not valid
-        console.log("change group name for enjoy mode: ", chatTagId);
-        return false;
-    }
+        }
+    );
+    return true;
 };
 
 export const handleChangeChatColor = async (params) => {
@@ -394,22 +369,18 @@ export const handleChangeChatColor = async (params) => {
     if (String(userId).includes("__")) {
         return true;
     }
+
     // user have account
-    try {
-        await request.put(
-            `chat/change-chat-color/${chatTagId}`,
-            {
-                color: newColor,
+    await request.put(
+        `chat/change-chat-color/${chatTagId}`,
+        {
+            color: newColor,
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
             },
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-        return true;
-    } catch (err) {
-        console.log("change chat fail: ", chatTagId);
-        return false;
-    }
+        }
+    );
+    return true;
 };

@@ -38,9 +38,9 @@ io.on("connection", (socket) => {
      * Authenticate
      */
     socket.on(SOCKET_EVENT.authenticate, async (params) => {
-        // user have account
-        if (params?.token) {
-            try {
+        try {
+            // user have account
+            if (params?.token) {
                 const { listMyChatTag, myId } = await getMyListChatTagsAndMyId(
                     params.token
                 );
@@ -60,26 +60,27 @@ io.on("connection", (socket) => {
                 listMyChatTag.forEach((item) => {
                     socket.join(String(item._id));
                 });
-            } catch (err) {
-                socket.emit(SOCKET_EVENT.unauthorized);
             }
-        }
 
-        // use enjoy mode
-        else if (params?.myId) {
-            await mongoDb
-                .collection("userActive")
-                .deleteMany({ userId: params.myId });
-            await mongoDb.collection("userActive").insertOne({
-                userId: params.myId,
-                socketId: socket.id,
-            });
-            Static.addUserActive({
-                userId: params.myId,
-                socketId: socket.id,
-            });
-            // join room for only enjoy user
-            socket.join(enjoyModeRoom);
+            // use enjoy mode
+            else if (params?.myId) {
+                await mongoDb
+                    .collection("userActive")
+                    .deleteMany({ userId: params.myId });
+                await mongoDb.collection("userActive").insertOne({
+                    userId: params.myId,
+                    socketId: socket.id,
+                });
+                Static.addUserActive({
+                    userId: params.myId,
+                    socketId: socket.id,
+                });
+                // join room for only enjoy user
+                socket.join(enjoyModeRoom);
+            }
+        } catch (err) {
+            console.log("Error authenticate: ", socket.id);
+            socket.emit(SOCKET_EVENT.unauthorized);
         }
     });
 
@@ -94,23 +95,27 @@ io.on("connection", (socket) => {
      * Bubble
      */
     socket.on(SOCKET_EVENT.createBubble, async ({ myId, bubble }) => {
-        const idOfNewBubble = await increaseAndGetNumberBubbles();
-        const newBubble = {
-            id: idOfNewBubble,
-            name: bubble.name,
-            icon: bubble.icon,
-            color: bubble.idHobby,
-            description: bubble.description,
-            creatorId: myId,
-            creatorAvatar: bubble.privateAvatar,
-        };
-        // user enjoy - only send to other user enjoy
-        if (String(myId).includes("__")) {
-            io.to(enjoyModeRoom).emit(SOCKET_EVENT.createBubble, newBubble);
-        }
-        // user have account - send to all
-        else {
-            io.emit(SOCKET_EVENT.createBubble, newBubble);
+        try {
+            const idOfNewBubble = await increaseAndGetNumberBubbles();
+            const newBubble = {
+                id: idOfNewBubble,
+                name: bubble.name,
+                icon: bubble.icon,
+                color: bubble.idHobby,
+                description: bubble.description,
+                creatorId: myId,
+                creatorAvatar: bubble.privateAvatar,
+            };
+            // user enjoy - only send to other user enjoy
+            if (String(myId).includes("__")) {
+                io.to(enjoyModeRoom).emit(SOCKET_EVENT.createBubble, newBubble);
+            }
+            // user have account - send to all
+            else {
+                io.emit(SOCKET_EVENT.createBubble, newBubble);
+            }
+        } catch (err) {
+            console.log("Error create bubble: ", socket.id);
         }
     });
 
@@ -118,51 +123,61 @@ io.on("connection", (socket) => {
      * ChatTag
      */
     socket.on(SOCKET_EVENT.createChatTag, async (params) => {
-        // User have account
-        if (params?.token) {
-            const res = await handleStartNewChatTag(params);
-            // If chat tag existed, only send message to user
-            if (res.isChatTagExisted) {
-                io.to(res.response.chatTag).emit(
-                    SOCKET_EVENT.message,
-                    res.response
+        try {
+            // User have account
+            if (params?.token) {
+                const res = await handleStartNewChatTag(params);
+                // If chat tag existed, only send message to user
+                if (res.isChatTagExisted) {
+                    io.to(res.response.chatTag).emit(
+                        SOCKET_EVENT.message,
+                        res.response
+                    );
+                    return;
+                }
+
+                // If not, first send socket delete bubble to all
+                // then send socket new chat tag to member is this chat tag
+                if (params.newChatTag?.idBubble) {
+                    io.emit(
+                        SOCKET_EVENT.deleteBubble,
+                        params.newChatTag?.idBubble
+                    );
+                }
+                const listSocketId = await getSocketIdOfListUserActive(
+                    res.response.listUser.map((item) => item.id)
                 );
-                return;
+                listSocketId.forEach((socketId) => {
+                    io.to(socketId).emit(
+                        SOCKET_EVENT.createChatTag,
+                        res.response
+                    );
+                });
             }
 
-            // If not, first send socket delete bubble to all
-            // then send socket new chat tag to member is this chat tag
-            if (params.newChatTag?.idBubble) {
-                io.emit(SOCKET_EVENT.deleteBubble, params.newChatTag?.idBubble);
-            }
-            const listSocketId = await getSocketIdOfListUserActive(
-                res.response.listUser.map((item) => item.id)
-            );
-            listSocketId.forEach((socketId) => {
-                io.to(socketId).emit(SOCKET_EVENT.createChatTag, res.response);
-            });
-        }
+            // User enjoy mode
+            else if (params?.myId) {
+                const res = handleStartNewChatTagEnjoy(params);
 
-        // User enjoy mode
-        else if (params?.myId) {
-            const res = handleStartNewChatTagEnjoy(params);
+                // send socket delete bubble
+                const listSocketEnjoy = await getListSocketIdOfUserEnjoy();
+                listSocketEnjoy.forEach((socketId) => {
+                    io.to(socketId).emit(
+                        SOCKET_EVENT.deleteBubble,
+                        params.newChatTag?.idBubble
+                    );
+                });
 
-            // send socket delete bubble
-            const listSocketEnjoy = await getListSocketIdOfUserEnjoy();
-            listSocketEnjoy.forEach((socketId) => {
-                io.to(socketId).emit(
-                    SOCKET_EVENT.deleteBubble,
-                    params.newChatTag?.idBubble
+                // send new chat tag to all member in chat
+                const listSocketId = await getSocketIdOfListUserActive(
+                    res.newChatTag.listUser.map((item) => item.id)
                 );
-            });
-
-            // send new chat tag to all member in chat
-            const listSocketId = await getSocketIdOfListUserActive(
-                res.newChatTag.listUser.map((item) => item.id)
-            );
-            listSocketId.forEach((socketId) => {
-                io.to(socketId).emit(SOCKET_EVENT.createChatTag, res);
-            });
+                listSocketId.forEach((socketId) => {
+                    io.to(socketId).emit(SOCKET_EVENT.createChatTag, res);
+                });
+            }
+        } catch (err) {
+            console.log("Error when create chat tag: ", socket.id);
         }
     });
     // after receive socket "createChatTag" in client, join room of that chat tag
@@ -172,55 +187,75 @@ io.on("connection", (socket) => {
     });
 
     socket.on(SOCKET_EVENT.seenMessage, async (params) => {
-        let res = undefined;
-        // enjoy mode
-        if (params?.isEnjoy) {
-            res = {
-                chatTagId: params.chatTagId,
-                userSeen: params.myId,
-            };
+        try {
+            let res = undefined;
+            // enjoy mode
+            if (params?.isEnjoy) {
+                res = {
+                    chatTagId: params.chatTagId,
+                    userSeen: params.myId,
+                };
+            }
+            // user have account
+            else {
+                res = await getLatestMessage(params);
+            }
+            io.to(params.chatTagId).emit(SOCKET_EVENT.seenMessage, res);
+        } catch (err) {
+            console.log("Error seen message: ", socket.id);
         }
-        // user have account
-        else {
-            res = await getLatestMessage(params);
-        }
-        io.to(params.chatTagId).emit(SOCKET_EVENT.seenMessage, res);
     });
 
     socket.on(SOCKET_EVENT.requestPublicChat, async (chatTagId) => {
-        await handleRequestPublicChat(chatTagId);
-        io.to(chatTagId).emit(SOCKET_EVENT.requestPublicChat, chatTagId);
+        try {
+            await handleRequestPublicChat(chatTagId);
+            io.to(chatTagId).emit(SOCKET_EVENT.requestPublicChat, chatTagId);
+        } catch (err) {
+            console.log("Error request public chat: ", socket.id);
+        }
     });
     socket.on(SOCKET_EVENT.agreePublicChat, async (params) => {
-        const chatTagPublic = await handleAgreePublicChat(params);
-        if (chatTagPublic) {
-            io.to(chatTagPublic.id).emit(
-                SOCKET_EVENT.allAgreePublicChat,
-                chatTagPublic
-            );
+        try {
+            const chatTagPublic = await handleAgreePublicChat(params);
+            if (chatTagPublic) {
+                io.to(chatTagPublic.id).emit(
+                    SOCKET_EVENT.allAgreePublicChat,
+                    chatTagPublic
+                );
+            }
+        } catch (err) {
+            console.log("Error agree public chat: ", socket.id);
         }
     });
 
     socket.on(SOCKET_EVENT.changeGroupName, async (params) => {
-        const check = await changeGroupName(params);
-        if (check) {
-            io.to(params.chatTagId).emit(SOCKET_EVENT.changeGroupName, {
-                chatTagId: params.chatTagId,
-                newName: params.newName,
-            });
+        try {
+            const check = await changeGroupName(params);
+            if (check) {
+                io.to(params.chatTagId).emit(SOCKET_EVENT.changeGroupName, {
+                    chatTagId: params.chatTagId,
+                    newName: params.newName,
+                });
+            }
+        } catch (err) {
+            console.log("Error change group name: ", socket.id);
         }
     });
 
     socket.on(SOCKET_EVENT.changeChatColor, async (params) => {
-        const check = await handleChangeChatColor({
-            socketId: socket.id,
-            ...params,
-        });
-        if (check) {
-            io.to(params.chatTagId).emit(SOCKET_EVENT.changeChatColor, {
-                chatTagId: params.chatTagId,
-                newColor: params.newColor,
+        try {
+            const check = await handleChangeChatColor({
+                socketId: socket.id,
+                ...params,
             });
+            if (check) {
+                io.to(params.chatTagId).emit(SOCKET_EVENT.changeChatColor, {
+                    chatTagId: params.chatTagId,
+                    newColor: params.newColor,
+                });
+            }
+        } catch (err) {
+            console.log("Error change chat color: ", socket.id);
         }
     });
 
@@ -228,16 +263,24 @@ io.on("connection", (socket) => {
      * Block, stop conversation
      */
     socket.on(SOCKET_EVENT.isBlocked, async ({ listUserId, listChatTagId }) => {
-        const listSocketId = await getSocketIdOfListUserActive(listUserId);
-        listSocketId.forEach((item) => {
-            io.to(item).emit(SOCKET_EVENT.isBlocked, listChatTagId);
-        });
+        try {
+            const listSocketId = await getSocketIdOfListUserActive(listUserId);
+            listSocketId.forEach((item) => {
+                io.to(item).emit(SOCKET_EVENT.isBlocked, listChatTagId);
+            });
+        } catch (err) {
+            console.log("Error block: ", socket.id);
+        }
     });
     socket.on(SOCKET_EVENT.unBlocked, async ({ listUserId, listChatTagId }) => {
-        const listSocketId = await getSocketIdOfListUserActive(listUserId);
-        listSocketId.forEach((item) => {
-            io.to(item).emit(SOCKET_EVENT.unBlocked, listChatTagId);
-        });
+        try {
+            const listSocketId = await getSocketIdOfListUserActive(listUserId);
+            listSocketId.forEach((item) => {
+                io.to(item).emit(SOCKET_EVENT.unBlocked, listChatTagId);
+            });
+        } catch (err) {
+            console.log("Error un-block: ", socket.id);
+        }
     });
 
     socket.on(SOCKET_EVENT.stopConversation, (chatTagId) => {
@@ -275,15 +318,19 @@ io.on("connection", (socket) => {
      * Disconnect
      */
     socket.on("disconnect", async (reason) => {
-        console.log(`Disconnected: ${socket.id}\nReason: `, reason);
+        try {
+            console.log(`Disconnected: ${socket.id}\nReason: `, reason);
 
-        await mongoDb
-            .collection("userActive")
-            .findOneAndDelete({ socketId: socket.id });
-        /**
-         * Leave room - you don't need because socketIO will do this for you
-         */
-        Static.removeUserActive(socket.id);
+            await mongoDb
+                .collection("userActive")
+                .findOneAndDelete({ socketId: socket.id });
+            /**
+             * Leave room - you don't need because socketIO will do this for you
+             */
+            Static.removeUserActive(socket.id);
+        } catch (err) {
+            console.log("Error disconnect: ", socket.id);
+        }
     });
 });
 
