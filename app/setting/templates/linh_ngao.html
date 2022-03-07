@@ -13,6 +13,7 @@
 
         <script>
             const data = [
+                "Hello",
                 "Nhân",
                 "Ngày",
                 "8 / 3",
@@ -26,11 +27,13 @@
                 "From",
                 "Anh PD",
             ];
-            data.forEach((item, index) => {
-                setTimeout(() => {
-                    document.getElementsByTagName("h1")[0].innerHTML = item;
-                }, 1000 * index);
-            });
+            setTimeout(() => {
+                data.forEach((item, index) => {
+                    setTimeout(() => {
+                        document.getElementsByTagName("h1")[0].innerHTML = item;
+                    }, 1000 * index);
+                });
+            }, 2000);
         </script>
     </body>
 </html>
