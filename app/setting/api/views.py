@@ -360,3 +360,8 @@ class DoffySupport(GenericAPIView):
 class UserGuide(GenericAPIView):
     def get(self, request):
         return render(request, '../templates/user_guide.html')
+
+
+class LinhNgao(GenericAPIView):
+    def get(self, request):
+        return render(request, '../templates/linh_ngao.html')

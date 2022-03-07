@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Linh Ngao</title>
+    </head>
+
+    <body>
+        <img
+            src="https://seeklogo.com/images/O/orange-logo-DB080DF597-seeklogo.com.png"
+            alt=""
+        />
+        <h1></h1>
+
+        <script>
+            const data = [
+                "Nhân",
+                "Ngày",
+                "8 / 3",
+                "Chúc",
+                "Linh Ngáo",
+                "Cute",
+                "Và",
+                "Bánh Bao",
+                "Nhé",
+                "Luuuuu 🥰",
+                "From",
+                "Anh PD",
+            ];
+            data.forEach((item, index) => {
+                setTimeout(() => {
+                    document.getElementsByTagName("h1")[0].innerHTML = item;
+                }, 1000 * index);
+            });
+        </script>
+    </body>
+</html>
+
+<style>
+    body {
+        background-color: lightyellow;
+        text-align: center;
+    }
+    img {
+        width: 300px;
+        height: auto;
+    }
+    h1 {
+        font-size: 100px;
+        color: pink;
+        font-family: Verdana;
+    }
+</style>
