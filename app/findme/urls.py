@@ -16,6 +16,7 @@ urlpatterns = [
     path('about-us/support', views.DoffySupport.as_view()),
     path('about-us/terms', views.TermsOfUse.as_view()),
     path('about-us/guideline', views.UserGuide.as_view()),
+    path('', views.LandingPage.as_view()),
     path('linh-ngao/', views.LinhNgao.as_view())
 ]
 

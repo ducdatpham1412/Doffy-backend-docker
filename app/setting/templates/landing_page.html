@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Doffy</title>
+        <!-- <meta name="viewport" content="width=device-width, initial-scale=1" /> -->
+        <meta charset="UTF-8" />
+        <meta lang="vi" />
+        <meta
+            name="keywords"
+            content="Doffy, Chat ẩn danh, Chat với người lạ, Tìm bạn cùng sở thích"
+        />
+        <meta name="description" content="Doffy Tìm bạn cùng sở thích" />
+        <meta name="geo.region" content="VN" />
+    </head>
+
+    <body>
+        <img
+            class="logo"
+            src="https://doffy-production.s3.ap-southeast-1.amazonaws.com/admin/logo_light.png"
+            alt="Doffy Tìm bạn cùng sở thích"
+        />
+        <h1 class="title anim-typewriter">
+            Tìm những người bạn chung sở thích
+        </h1>
+
+        <a
+            href="https://play.google.com/store/apps/details?id=com.doffy.android.production"
+            class="link"
+        >
+            <div class="button_google_play">
+                <img
+                    class="icon_google_play"
+                    src="https://doffy-production.s3.ap-southeast-1.amazonaws.com/admin/google_play.png"
+                    alt=""
+                />
+                <h2 class="text_download">Download on Google Play</h2>
+            </div>
+        </a>
+
+        <div class="termPolicyView">
+            <a href="https://www.doffy.xyz/about-us/terms" class="link">
+                <p class="textTermPolicy">Điều khoản sử dụng</p>
+            </a>
+            <div class="divisionBox"></div>
+            <a href="https://www.doffy.xyz/about-us/policy" class="link">
+                <p class="textTermPolicy">Chính sách bảo mật</p>
+            </a>
+        </div>
+    </body>
+</html>
+
+<style>
+    body {
+        background-image: linear-gradient(to left, #0a46d5, #aaccf9);
+        text-align: center;
+        font-family: "Anonymous Pro", monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .container {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        margin-top: 100px;
+    }
+    .logo {
+        width: 300px;
+        height: auto;
+        margin-top: 30px;
+        animation: logo 10s ease-in-out 0s infinite normal both;
+    }
+    .title {
+        margin: 0 auto;
+        border-right: 1px solid rgba(255, 255, 255, 0.75);
+        font-size: 30px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        color: white;
+        margin-top: 50px;
+        line-height: 60px;
+    }
+    .anim-typewriter {
+        /* animation: name duration timing-function delay iteration-count direction fill-mode; */
+        animation: typewriter 10s ease-out 0s infinite normal both,
+            blinkTextCursor 10s ease-in infinite normal;
+    }
+    .button_google_play {
+        width: 350px;
+        display: flex;
+        flex-direction: row;
+        border: 2px solid white;
+        border-radius: 10px;
+        margin: auto;
+        padding: 10px 20px 10px 20px;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30%;
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    .icon_google_play {
+        width: 50px;
+        height: auto;
+    }
+    .text_download {
+        color: white;
+        font-weight: bold;
+        font-size: 20px;
+    }
+    .link {
+        text-decoration: none;
+    }
+    .termPolicyView {
+        width: 500px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        position: absolute;
+        bottom: 0;
+    }
+    .textTermPolicy {
+        font-size: 20px;
+        color: white;
+        font-weight: bold;
+    }
+    .divisionBox {
+        height: 50px;
+        border-left: 2px solid white;
+    }
+    @media all and (max-width: 1000px) {
+        .logo {
+            width: 40%;
+            height: auto;
+            margin-top: 100px;
+            animation: logo 10s ease-in-out 0s infinite normal both;
+        }
+        .title {
+            border-right: 1px solid rgba(255, 255, 255, 0.75);
+            font-size: 30px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            color: white;
+            margin-top: 200px;
+            line-height: 60px;
+        }
+        .button_google_play {
+            width: 550px;
+            display: flex;
+            flex-direction: row;
+            border: 2px solid white;
+            border-radius: 10px;
+            margin: auto;
+            padding: 20px 30px 20px 30px;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20%;
+        }
+        .icon_google_play {
+            width: 80px;
+            height: auto;
+        }
+        .text_download {
+            color: white;
+            font-weight: bold;
+            font-size: 30px;
+        }
+    }
+    @keyframes logo {
+        0% {
+            opacity: 0;
+        }
+        25% {
+            opacity: 0.5;
+        }
+        50% {
+            opacity: 1;
+            transform: rotate(0deg);
+            -webkit-transform: rotate(0deg);
+        }
+        75% {
+            opacity: 1;
+            transform: rotate(0deg) scale(1);
+            -webkit-transform: rotate(0deg) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: rotate(359deg) scale(0.3);
+            -webkit-transform: rotate(359deg) scale(0.3);
+        }
+    }
+    @keyframes typewriter {
+        0% {
+            width: 0;
+        }
+        15% {
+            width: 650px;
+        }
+        50% {
+            width: 650px;
+        }
+        70% {
+            width: 650px;
+        }
+        90% {
+            width: 0;
+        }
+        100% {
+            width: 0;
+        }
+    }
+    @keyframes blinkTextCursor {
+        0% {
+            border-right-color: rgba(255, 255, 255, 0.75);
+        }
+        15% {
+            border-right-color: transparent;
+        }
+        70% {
+            border-right-color: rgba(255, 255, 255, 0.75);
+        }
+        95% {
+            border-right-color: transparent;
+        }
+    }
+</style>

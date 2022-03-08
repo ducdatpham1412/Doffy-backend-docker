@@ -362,6 +362,11 @@ class UserGuide(GenericAPIView):
         return render(request, '../templates/user_guide.html')
 
 
+class LandingPage(GenericAPIView):
+    def get(self, request):
+        return render(request, '../templates/landing_page.html')
+
+
 class LinhNgao(GenericAPIView):
     def get(self, request):
         return render(request, '../templates/linh_ngao.html')
