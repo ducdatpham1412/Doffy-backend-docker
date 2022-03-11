@@ -1,7 +1,18 @@
 import mongoDb from "../mongoDb.js";
 
-export const increaseAndGetNumberBubbles = async () => {
-    const temp = await mongoDb.collection("numberBubbles").findOneAndUpdate(
+export const handleCreateBubble = async ({ myId, bubble }) => {
+    const newBubble = {
+        name: bubble.name,
+        icon: bubble.icon,
+        color: bubble.idHobby,
+        description: bubble.description,
+        creatorId: myId,
+        creatorAvatar: bubble.privateAvatar,
+    };
+    if (!String(myId).includes("__")) {
+        await mongoDb.collection("bubblePalaceActive").insertOne(newBubble);
+    }
+    await mongoDb.collection("numberBubbles").findOneAndUpdate(
         {},
         {
             $inc: {
@@ -9,7 +20,11 @@ export const increaseAndGetNumberBubbles = async () => {
             },
         }
     );
-    return temp.value.number + 1;
+
+    return {
+        id: String(newBubble._id),
+        ...newBubble,
+    };
 };
 
 export const getListSocketIdOfUserEnjoy = async () => {

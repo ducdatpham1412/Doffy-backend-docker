@@ -6,7 +6,7 @@ import { getSocketIdOfListUserActive } from "./services/assistant.js";
 import Static from "./static.js";
 import { getMyListChatTagsAndMyId } from "./services/authentication.js";
 import {
-    increaseAndGetNumberBubbles,
+    handleCreateBubble,
     getListSocketIdOfUserEnjoy,
 } from "./services/bubble.js";
 import {
@@ -17,6 +17,7 @@ import {
     handleAgreePublicChat,
     changeGroupName,
     handleChangeChatColor,
+    removeBubblePalaceFromDb,
 } from "./services/chatTag.js";
 import {
     handleSendMessage,
@@ -96,16 +97,7 @@ io.on("connection", (socket) => {
      */
     socket.on(SOCKET_EVENT.createBubble, async ({ myId, bubble }) => {
         try {
-            const idOfNewBubble = await increaseAndGetNumberBubbles();
-            const newBubble = {
-                id: idOfNewBubble,
-                name: bubble.name,
-                icon: bubble.icon,
-                color: bubble.idHobby,
-                description: bubble.description,
-                creatorId: myId,
-                creatorAvatar: bubble.privateAvatar,
-            };
+            const newBubble = await handleCreateBubble({ myId, bubble });
             // user enjoy - only send to other user enjoy
             if (String(myId).includes("__")) {
                 io.to(enjoyModeRoom).emit(SOCKET_EVENT.createBubble, newBubble);
@@ -124,6 +116,9 @@ io.on("connection", (socket) => {
      */
     socket.on(SOCKET_EVENT.createChatTag, async (params) => {
         try {
+            // remove bubble from collection "bubblePalaceAction"
+            await removeBubblePalaceFromDb(params.newChatTag.idBubble);
+
             // User have account
             if (params?.token) {
                 const res = await handleStartNewChatTag(params);

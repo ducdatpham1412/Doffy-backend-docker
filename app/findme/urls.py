@@ -17,7 +17,7 @@ urlpatterns = [
     path('about-us/terms', views.TermsOfUse.as_view()),
     path('about-us/guideline', views.UserGuide.as_view()),
     path('', views.LandingPage.as_view()),
-    path('linh-ngao/', views.LinhNgao.as_view())
+    # path('linh-ngao/', views.LinhNgao.as_view())
 ]
 
 # + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

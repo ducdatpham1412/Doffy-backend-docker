@@ -384,3 +384,9 @@ export const handleChangeChatColor = async (params) => {
     );
     return true;
 };
+
+export const removeBubblePalaceFromDb = async (idBubble) => {
+    await mongoDb.collection("bubblePalaceActive").deleteOne({
+        _id: ObjectId(idBubble),
+    });
+};

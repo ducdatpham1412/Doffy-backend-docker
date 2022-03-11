@@ -194,3 +194,25 @@ class ReportUser(GenericAPIView):
         mongoDb.reportUser.insert_one(insert_report_user)
 
         return Response(None, status=status.HTTP_200_OK)
+
+
+class GetListBubbleActive(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        my_id = services.get_user_id_from_request(request)
+
+        list_bubbles = mongoDb.bubblePalaceActive.find({
+            'creatorId': {
+                '$ne': my_id
+            }
+        }).limit(3)
+
+        res = []
+        for bubble in list_bubbles:
+            res.append({
+                'id': str(bubble.pop('_id')),
+                **bubble
+            })
+
+        return Response(res, status=status.HTTP_200_OK)
