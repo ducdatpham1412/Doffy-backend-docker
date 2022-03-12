@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import mongoDb from "../mongoDb.js";
 
 export const handleCreateBubble = async ({ myId, bubble }) => {
@@ -22,7 +23,7 @@ export const handleCreateBubble = async ({ myId, bubble }) => {
     );
 
     return {
-        id: String(newBubble._id),
+        id: String(newBubble._id || ObjectId()),
         ...newBubble,
     };
 };
