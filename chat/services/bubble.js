@@ -11,7 +11,15 @@ export const handleCreateBubble = async ({ myId, bubble }) => {
         creatorAvatar: bubble.privateAvatar,
     };
     if (!String(myId).includes("__")) {
-        await mongoDb.collection("bubblePalaceActive").insertOne(newBubble);
+        const checkAllBubblePalaceOfThisUser = await mongoDb
+            .collection("bubblePalaceActive")
+            .findOne({
+                color: bubble.idHobby,
+                creatorId: myId,
+            });
+        if (!checkAllBubblePalaceOfThisUser) {
+            await mongoDb.collection("bubblePalaceActive").insertOne(newBubble);
+        }
     }
     await mongoDb.collection("numberBubbles").findOneAndUpdate(
         {},
