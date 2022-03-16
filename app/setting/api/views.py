@@ -272,7 +272,11 @@ class StopConversation(GenericAPIView):
         my_id = services.get_user_id_from_request(request)
 
         chat_tag = mongoDb.chatTag.find_one({'_id': ObjectId(chat_tag_id)})
-        # you self
+
+        if not chat_tag:
+            raise CustomError()
+
+        # check is this my chat tag - chat to your self
         your_id = None
         for user_id in chat_tag['listUser']:
             if user_id != my_id:
@@ -281,11 +285,23 @@ class StopConversation(GenericAPIView):
             raise CustomError()
 
         # insert chat tag stop
-        mongoDb.chatTagStopped.insert_one({
-            'chatTag': ObjectId(chat_tag_id),
-            'userStop': my_id,
-            'isActive': True,
-        })
+        check = mongoDb.chatTagStopped.find_one_and_update(
+            {
+                'chatTag': chat_tag_id,
+                'userStop': my_id,
+            },
+            {
+                '$set': {
+                    'isActive': True
+                }
+            }
+        )
+        if not check:
+            mongoDb.chatTagStopped.insert_one({
+                'chatTag': chat_tag_id,
+                'userStop': my_id,
+                'isActive': True
+            })
 
         return Response(None, status=status.HTTP_200_OK)
 
@@ -299,7 +315,7 @@ class OpenConversation(GenericAPIView):
         # set in chatTagStopped
         check_stop_chat = mongoDb.chatTagStopped.find_one_and_update(
             {
-                'chatTag': ObjectId(chat_tag_id),
+                'chatTag': chat_tag_id,
                 'userStop': my_id
             },
             {

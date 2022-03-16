@@ -9,9 +9,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     cover = serializers.SerializerMethodField()
     followers = serializers.SerializerMethodField()
     followings = serializers.SerializerMethodField()
+    anonymousName = serializers.SerializerMethodField()
 
     def get_id(self, obj):
         return obj.user.id
+
+    def get_anonymousName(self, obj):
+        return obj.anonymous_name
 
     def get_avatar(self, obj):
         return create_link_image(obj.avatar)
@@ -29,7 +33,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Profile
-        fields = ['id', 'name', 'avatar', 'cover',
+        fields = ['id', 'name', 'anonymousName', 'avatar', 'cover',
                   'description', 'followers', 'followings']
         read_only_fields = ['user']
 
@@ -37,7 +41,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 class EditProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Profile
-        fields = ['name', 'description', 'avatar', 'cover']
+        fields = ['name', 'anonymous_name', 'description', 'avatar', 'cover']
 
 
 class FollowSerializer(serializers.ModelSerializer):

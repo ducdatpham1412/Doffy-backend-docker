@@ -1,6 +1,6 @@
 from django.db import models
 from authentication.models import User
-from utilities import enums
+from utilities import enums, services
 
 
 class Profile(models.Model):
@@ -9,6 +9,8 @@ class Profile(models.Model):
     )
     name = models.CharField(max_length=enums.NAME_MAX_LENGTH,
                             default=enums.NAME_DEFAULT)
+    anonymous_name = models.CharField(
+        max_length=enums.NAME_MAX_LENGTH, default=services.init_name_profile())
     description = models.TextField(
         default=enums.string_not_specify, max_length=enums.DESCRIPTION_MAX_LENGTH)
     avatar = models.TextField(default=enums.AVATAR_DEFAULT)

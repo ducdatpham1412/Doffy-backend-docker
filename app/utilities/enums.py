@@ -113,3 +113,9 @@ disable_follow = 'follow'
 disable_profile_post = 'profilePost'
 disable_message = 'message'
 disable_request_delete_account = 'requestDeleteAccount'
+
+# notification
+notification_new_chat_tag = 0
+notification_message = 1
+notification_follow = 2
+notification_like_post = 3

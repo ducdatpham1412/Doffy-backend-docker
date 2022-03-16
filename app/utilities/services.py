@@ -14,6 +14,8 @@ from django.conf import settings
 import requests
 import json
 from django.conf import settings
+from findme.mongo import mongoDb
+from utilities.exception.exception_handler import CustomError
 
 
 def send_to_mail(mail, verify_code):
@@ -154,3 +156,28 @@ def send_notification(body: object):
         "app_id": settings.ONESIGNAL_APP_ID,
         **body
     }))
+
+
+data_anonymous_name = ['Rồng', 'Sói', 'Ngựa', 'Cáchép', 'Hổ', 'SưTử',
+                       'Cáo', 'Báo', 'Chồn', 'TêTê', 'Gà', 'ĐạiBàng', 'Mèo', 'Khỉ', ]
+
+
+def init_name_profile():
+    return '{}{}'.format(random.choice(data_anonymous_name), 'ẩndanh')
+
+
+def get_list_user_id_i_know(my_id: int):
+    res = mongoDb.analysis.find_one({
+        'type': 'checkHadKnowEachOther'
+    })
+    temp = res['data']['{}'.format(my_id)]
+    if not temp:
+        raise CustomError()
+    return temp
+
+
+def check_had_i_know(list_user_id: list, partner_id: int):
+    for user_id in list_user_id:
+        if user_id == partner_id:
+            return True
+    return False

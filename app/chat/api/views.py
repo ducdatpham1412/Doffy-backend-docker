@@ -27,10 +27,7 @@ class GetListChatTags(GenericAPIView):
             if not is_chattag_private:
                 return passport['profile']['avatar']
             else:
-                if passport['setting']['display_avatar']:
-                    return passport['profile']['avatar']
-                else:
-                    return services.choose_private_avatar(passport['information']['gender'])
+                return services.choose_private_avatar(passport['information']['gender'])
 
         name = '' if is_chattag_private else passport['profile']['name']
         avatar = get_avatar()
@@ -94,7 +91,7 @@ class GetListChatTags(GenericAPIView):
                 'listUser': infoListUser,
                 'groupName': chat_tag['groupName'],
                 'isPrivate': chat_tag['isPrivate'],
-                'isStop': get_is_stop(chat_tag['_id']),
+                'isStop': get_is_stop(str(chat_tag['_id'])),
                 'isBlock': get_is_blocked(chat_tag['listUser']),
                 'userSeenMessage': chat_tag['userSeenMessage'],
                 'type': chat_tag['type'],
@@ -128,10 +125,8 @@ class GetDetailChatTag(GenericAPIView):
                 if not is_chattag_private:
                     return passport['profile']['avatar']
                 else:
-                    if passport['setting']['display_avatar']:
-                        return passport['profile']['avatar']
-                    else:
-                        return services.choose_private_avatar(passport['information']['gender'])
+                    return services.choose_private_avatar(passport['information']['gender'])
+
             name = '' if is_chattag_private else passport['profile']['name']
             avatar = get_avatar()
             gender = passport['information']['gender']
@@ -207,10 +202,7 @@ class GetListMessages(GenericAPIView):
         if not is_chattag_private:
             return passport['profile']['avatar']
         else:
-            if passport['setting']['display_avatar']:
-                return passport['profile']['avatar']
-            else:
-                return services.choose_private_avatar(passport['information']['gender'])
+            return services.choose_private_avatar(passport['information']['gender'])
 
     def get(self, request, chat_tag):
         my_id = services.get_user_id_from_request(request)
@@ -307,15 +299,15 @@ class GetListUserInfo(GenericAPIView):
             user = User.objects.get(id=user_id)
             passport = GetPassportSerializer(user).data
 
+            avatar = passport['profile']['avatar'] if display_avatar else services.choose_private_avatar(
+                passport['information']['gender'])
+
             temp = {
                 'id': user_id,
-                'avatar': passport['profile']['avatar'],
+                'avatar': avatar,
                 'name': passport['profile']['name'],
                 'gender': passport['information']['gender']
             }
-
-            if not display_avatar and not passport['setting']['display_avatar']:
-                temp['avatar'] = services.choose_private_avatar(temp['gender'])
 
             result.append(temp)
 

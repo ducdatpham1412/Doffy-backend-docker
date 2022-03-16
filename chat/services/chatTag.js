@@ -78,6 +78,79 @@ export const handleStartNewChatTag = async (params) => {
         };
         await mongoDb.collection("chatTag").insertOne(insertChatTag);
 
+        // If this is chat from bubble decrease the priority of profilePost
+        const nameBubble = newChatTag?.nameBubble;
+        if (nameBubble) {
+            const profilePost = await mongoDb
+                .collection("profilePost")
+                .findOneAndUpdate(
+                    {
+                        _id: ObjectId(idBubble),
+                    },
+                    {
+                        $inc: {
+                            priority: 1,
+                        },
+                    }
+                );
+            const priority = profilePost.value.priority;
+            if (priority === 1) {
+                await mongoDb.collection("analysis").findOneAndUpdate(
+                    {
+                        type: "priority",
+                    },
+                    {
+                        $pull: {
+                            one: idBubble,
+                        },
+                        $push: {
+                            two: idBubble,
+                        },
+                        $inc: {
+                            oneLength: -1,
+                            twoLength: 1,
+                        },
+                    }
+                );
+            } else if (priority === 2) {
+                await mongoDb.collection("analysis").findOneAndUpdate(
+                    {
+                        type: "priority",
+                    },
+                    {
+                        $pull: {
+                            two: idBubble,
+                        },
+                        $push: {
+                            three: idBubble,
+                        },
+                        $inc: {
+                            twoLength: -1,
+                            threeLength: 1,
+                        },
+                    }
+                );
+            } else if (priority === 3) {
+                await mongoDb.collection("analysis").findOneAndUpdate(
+                    {
+                        type: "priority",
+                    },
+                    {
+                        $pull: {
+                            three: idBubble,
+                        },
+                        $push: {
+                            four: idBubble,
+                        },
+                        $inc: {
+                            threeLength: -1,
+                            fourLength: 1,
+                        },
+                    }
+                );
+            }
+        }
+
         // Notification to receiver
         const receiver =
             listUserId.filter((item) => item != newChatTag.senderId)[0] ||
@@ -103,10 +176,11 @@ export const handleStartNewChatTag = async (params) => {
 
     const handleSendFromProfile = async () => {
         const newMessageId = ObjectId();
+        const currentTime = getDateTimeNow();
         const check = (
             await mongoDb.collection("chatTag").findOneAndUpdate(
                 {
-                    listUser: { $all: newChatTag.listUser },
+                    listUser: newChatTag.listUser.sort(),
                     type: CHAT_TAG.newFromProfile,
                 },
                 {
@@ -119,7 +193,7 @@ export const handleStartNewChatTag = async (params) => {
                                     type: MESSAGE_TYPE.text,
                                     content: newChatTag.content,
                                     senderId: newChatTag.senderId,
-                                    createdTime: getDateTimeNow(),
+                                    createdTime: currentTime,
                                 },
                             ],
                             $position: 0,
@@ -139,13 +213,13 @@ export const handleStartNewChatTag = async (params) => {
 
         const responseMessage = {
             id: String(newMessageId),
-            chatTag: newChatTag.chatTag,
-            type: newMessage.type,
-            content: newMessage.content,
-            senderId: newMessage.senderId,
+            chatTag: String(check._id),
+            type: MESSAGE_TYPE.text,
+            content: newChatTag.content,
+            senderId: newChatTag.senderId,
             senderAvatar: "",
             tag: "",
-            createdTime: String(newMessage.createdTime),
+            createdTime: currentTime,
         };
 
         return {
@@ -383,10 +457,4 @@ export const handleChangeChatColor = async (params) => {
         }
     );
     return true;
-};
-
-export const removeBubblePalaceFromDb = async (idBubble) => {
-    await mongoDb.collection("bubblePalaceActive").deleteOne({
-        _id: ObjectId(idBubble),
-    });
 };

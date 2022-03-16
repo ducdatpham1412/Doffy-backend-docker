@@ -7,12 +7,13 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from setting.models import Block
+from setting.models import Block, Information
 from utilities import enums, services
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
 import pymongo
 from utilities.disableObject import DisableObject
+from myprofile.models import Profile
 
 
 class GetProfile(GenericAPIView):
@@ -172,7 +173,7 @@ class FollowUser(GenericAPIView):
                     }
                 ],
                 'data': {
-                    'type': 2
+                    'type': enums.notification_follow
                 }
             })
 
@@ -236,12 +237,32 @@ class CreatePost(GenericAPIView):
         insert_post = {
             'content': request.data['content'],
             'images': request.data['images'],
+            'totalLikes': 0,
+            'totalComments': 0,
             'peopleLike': [],
+            'listComments': [],
             'creatorId': my_id,
             'createdTime': services.get_datetime_now(),
-            'isActive': True,
+            'priority': 1,
+            'color': request.data['color'],
+            'name': request.data['name']
         }
         mongoDb.profilePost.insert_one(insert_post)
+
+        mongoDb.analysis.find_one_and_update(
+            {
+                'type': 'priority'
+            },
+            {
+                '$inc': {
+                    'totalPosts': 1,
+                    'oneLength': 1
+                },
+                '$push': {
+                    'one': str(insert_post['_id'])
+                }
+            }
+        )
 
         res_images = []
         for img in insert_post['images']:
@@ -253,11 +274,15 @@ class CreatePost(GenericAPIView):
             'id': str(insert_post['_id']),
             'content': insert_post['content'],
             'images': res_images,
-            'peopleLike': [],
+            'totalLikes': 0,
+            'totalComments': 0,
             'creatorId': my_id,
             'creatorName': info['name'],
             'creatorAvatar': info['avatar'],
             'createdTime': str(insert_post['createdTime']),
+            'color': insert_post['color'],
+            'name': insert_post['name'],
+            'isLiked': False,
             'relationship': enums.relationship_self
         }
 
@@ -276,9 +301,7 @@ class EditPost(GenericAPIView):
                 'creatorId': id,
             },
             {
-                '$set': {
-                    'content': request.data['content']
-                }
+                '$set': request.data
             }
         )
 
@@ -327,7 +350,6 @@ class GetListPost(GenericAPIView):
 
         list_posts = mongoDb.profilePost.find({
             'creatorId': user_id,
-            'isActive': True
         }).sort([('createdTime', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
 
         res = []
@@ -338,15 +360,16 @@ class GetListPost(GenericAPIView):
             relationship = enums.relationship_self if post[
                 'creatorId'] == id else enums.relationship_not_know
 
-            people_like = []
+            # people_like = []
             is_liked = False
             for people in post['peopleLike']:
-                people_like.append({
-                    'id': people['id'],
-                    'createdTime': str(people['createdTime'])
-                })
+                # people_like.append({
+                #     'id': people['id'],
+                #     'createdTime': str(people['createdTime'])
+                # })
                 if not is_liked and people['id'] == id:
                     is_liked = True
+                    break
 
             info_creator = self.get_creator_name_avatar(user_id)
 
@@ -354,11 +377,14 @@ class GetListPost(GenericAPIView):
                 'id': str(post['_id']),
                 'content': post['content'],
                 'images': link_images,
-                'peopleLike': people_like,
+                'totalLikes': post['totalLikes'],
+                'totalComments': post['totalComments'],
                 'creatorId': post['creatorId'],
                 'creatorName': info_creator['name'],
                 'creatorAvatar': info_creator['avatar'],
                 'createdTime': str(post['createdTime']),
+                'color': post['color'],
+                'name': post['name'],
                 'isLiked': is_liked,
                 'relationship': relationship
             }
@@ -385,6 +411,9 @@ class LikePost(GenericAPIView):
                         'id': user_id,
                         'createdTime': services.get_datetime_now()
                     }
+                },
+                '$inc': {
+                    'totalLikes': 1
                 }
             }
         )
@@ -392,10 +421,37 @@ class LikePost(GenericAPIView):
         if not check:
             raise CustomError(error_message.you_have_liked_this_post,
                               error_key.you_have_liked_this_post)
+        return check
 
     def put(self, request, post_id):
         my_id = services.get_user_id_from_request(request)
-        self.get_object(post_id, my_id)
+        post = self.get_object(post_id, my_id)
+
+        list_user_i_know = services.get_list_user_id_i_know(my_id)
+        hadFollow = services.check_had_i_know(
+            list_user_id=list_user_i_know, partner_id=post['creatorId'])
+
+        profile = Profile.objects.get(user=my_id)
+
+        target_name = profile.name if hadFollow else profile.anonymous_name
+
+        services.send_notification({
+            'contents': {
+                'en': '{} thích bài đăng của bạn'.format(target_name)
+            },
+            'filters': [
+                {
+                    'field': 'tag',
+                    'key': 'userId',
+                    'relation': '=',
+                    'value': post['creatorId']
+                }
+            ],
+            'data': {
+                'type': enums.notification_like_post
+            }
+        })
+
         return Response(None, status=status.HTTP_200_OK)
 
 
@@ -413,6 +469,9 @@ class UnLikePost(GenericAPIView):
                     'peopleLike': {
                         'id': user_id
                     }
+                },
+                '$inc': {
+                    'totalLikes': -1
                 }
             }
         )
@@ -431,14 +490,15 @@ class GetListFollow(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
     my_id = None
     is_get_follower = False
+    is_get_list_of_me = False
 
     def get_relationship_follower(self, your_id):
         # your self
         if (your_id == self.my_id):
             return enums.relationship_self
 
-        # get list following not need to check
-        if not self.is_get_follower:
+        # get list following of me -> not need to check
+        if not self.is_get_follower and self.is_get_list_of_me:
             return enums.relationship_not_know
 
         # only check when get list follower
@@ -449,15 +509,24 @@ class GetListFollow(GenericAPIView):
             return enums.relationship_not_following
 
     def get_info_user(self, list_id):
+        list_user_i_know = services.get_list_user_id_i_know(self.my_id)
+
         res = []
         for id in list_id:
-            query = models.Profile.objects.get(user=id)
-            data_profile = serializers.ProfileSerializer(query).data
+            profile = models.Profile.objects.get(user=id)
+            had_i_know = True if self.my_id == id else services.check_had_i_know(
+                list_user_id=list_user_i_know, partner_id=id)
+
+            avatar = services.create_link_image(profile.avatar)
+            if not had_i_know:
+                information = Information.objects.get(user=id)
+                avatar = services.choose_private_avatar(information.gender)
+
             temp = {
-                'id': data_profile['id'],
-                'name': data_profile['name'],
-                'avatar': data_profile['avatar'],
-                'description': data_profile['description'],
+                'id': profile.user.id if had_i_know else None,
+                'name': profile.name if had_i_know else profile.anonymous_name,
+                'avatar': avatar,
+                'description': profile.description if had_i_know else '',
                 'relationship': self.get_relationship_follower(id)
             }
             res.append(temp)
@@ -466,6 +535,7 @@ class GetListFollow(GenericAPIView):
 
     def get(self, request, user_id):
         self.my_id = services.get_user_id_from_request(request)
+        self.is_get_list_of_me = self.my_id == user_id
 
         type_follow = int(request.query_params['typeFollow'][0])
         page_index = int(request.query_params['pageIndex'])
@@ -479,9 +549,11 @@ class GetListFollow(GenericAPIView):
             self.is_get_follower = True
             query = models.Follow.objects.filter(followed=user_id)[start:end]
             data_follower = serializers.FollowSerializer(query, many=True).data
+
             list_id = []
             for follower in data_follower:
                 list_id.append(follower['follower'])
+
             return Response(self.get_info_user(list_id), status=status.HTTP_200_OK)
 
         # get list my followings
@@ -489,9 +561,11 @@ class GetListFollow(GenericAPIView):
             query = models.Follow.objects.filter(follower=user_id)[start:end]
             data_following = serializers.FollowSerializer(
                 query, many=True).data
+
             list_id = []
             for following in data_following:
                 list_id.append(following['followed'])
+
             return Response(self.get_info_user(list_id), status=status.HTTP_200_OK)
 
         else:

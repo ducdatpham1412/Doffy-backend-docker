@@ -3,26 +3,20 @@ import { Server } from "socket.io";
 import { SOCKET_EVENT } from "./enum.js";
 import mongoDb from "./mongoDb.js";
 import { getSocketIdOfListUserActive } from "./services/assistant.js";
-import Static from "./static.js";
 import { getMyListChatTagsAndMyId } from "./services/authentication.js";
 import {
-    handleCreateBubble,
-    getListSocketIdOfUserEnjoy,
-} from "./services/bubble.js";
-import {
-    handleStartNewChatTag,
-    handleStartNewChatTagEnjoy,
-    getLatestMessage,
-    handleRequestPublicChat,
-    handleAgreePublicChat,
     changeGroupName,
+    getLatestMessage,
+    handleAgreePublicChat,
     handleChangeChatColor,
-    removeBubblePalaceFromDb,
+    handleRequestPublicChat,
+    handleStartNewChatTag,
 } from "./services/chatTag.js";
 import {
     handleSendMessage,
     handleSendMessageEnjoy,
 } from "./services/message.js";
+import Static from "./static.js";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -95,82 +89,28 @@ io.on("connection", (socket) => {
     /**
      * Bubble
      */
-    socket.on(SOCKET_EVENT.createBubble, async ({ myId, bubble }) => {
-        try {
-            const newBubble = await handleCreateBubble({ myId, bubble });
-            // user enjoy - only send to other user enjoy
-            if (String(myId).includes("__")) {
-                io.to(enjoyModeRoom).emit(SOCKET_EVENT.createBubble, newBubble);
-            }
-            // user have account - send to all
-            else {
-                io.emit(SOCKET_EVENT.createBubble, newBubble);
-            }
-        } catch (err) {
-            console.log("Error create bubble: ", socket.id);
-        }
-    });
 
     /**
      * ChatTag
      */
     socket.on(SOCKET_EVENT.createChatTag, async (params) => {
         try {
-            // remove bubble from collection "bubblePalaceAction"
-            await removeBubblePalaceFromDb(params.newChatTag.idBubble);
-
-            // User have account
-            if (params?.token) {
-                const res = await handleStartNewChatTag(params);
-                // If chat tag existed, only send message to user
-                if (res.isChatTagExisted) {
-                    io.to(res.response.chatTag).emit(
-                        SOCKET_EVENT.message,
-                        res.response
-                    );
-                    return;
-                }
-
-                // If not, first send socket delete bubble to all
-                // then send socket new chat tag to member is this chat tag
-                if (params.newChatTag?.idBubble) {
-                    io.emit(
-                        SOCKET_EVENT.deleteBubble,
-                        params.newChatTag?.idBubble
-                    );
-                }
-                const listSocketId = await getSocketIdOfListUserActive(
-                    res.response.listUser.map((item) => item.id)
+            const res = await handleStartNewChatTag(params);
+            // If chat tag existed, only send message to user
+            if (res.isChatTagExisted) {
+                io.to(res.response.chatTag).emit(
+                    SOCKET_EVENT.message,
+                    res.response
                 );
-                listSocketId.forEach((socketId) => {
-                    io.to(socketId).emit(
-                        SOCKET_EVENT.createChatTag,
-                        res.response
-                    );
-                });
+                return;
             }
 
-            // User enjoy mode
-            else if (params?.myId) {
-                const res = handleStartNewChatTagEnjoy(params);
-
-                // send socket delete bubble
-                const listSocketEnjoy = await getListSocketIdOfUserEnjoy();
-                listSocketEnjoy.forEach((socketId) => {
-                    io.to(socketId).emit(
-                        SOCKET_EVENT.deleteBubble,
-                        params.newChatTag?.idBubble
-                    );
-                });
-
-                // send new chat tag to all member in chat
-                const listSocketId = await getSocketIdOfListUserActive(
-                    res.newChatTag.listUser.map((item) => item.id)
-                );
-                listSocketId.forEach((socketId) => {
-                    io.to(socketId).emit(SOCKET_EVENT.createChatTag, res);
-                });
-            }
+            const listSocketId = await getSocketIdOfListUserActive(
+                res.response.listUser.map((item) => item.id)
+            );
+            listSocketId.forEach((socketId) => {
+                io.to(socketId).emit(SOCKET_EVENT.createChatTag, res.response);
+            });
         } catch (err) {
             console.log("Error when create chat tag: ", socket.id);
         }
