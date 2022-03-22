@@ -162,7 +162,8 @@ class FollowUser(GenericAPIView):
             profile = models.Profile.objects.get(user=my_id)
             services.send_notification({
                 'contents': {
-                    'en': '{} bắt đầu theo dõi bạn'.format(profile.name)
+                    'vi': '{} bắt đầu theo dõi bạn'.format(profile.name),
+                    'en': '{} start following you'.format(profile.name),
                 },
                 'filters': [
                     {
@@ -437,7 +438,8 @@ class LikePost(GenericAPIView):
 
         services.send_notification({
             'contents': {
-                'en': '{} thích bài đăng của bạn'.format(target_name)
+                'vi': '{} thích bài đăng của bạn'.format(target_name),
+                'en': '{} like your post'.format(target_name)
             },
             'filters': [
                 {
