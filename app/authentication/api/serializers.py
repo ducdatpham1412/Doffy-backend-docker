@@ -6,6 +6,7 @@ from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q
+from findme.mongo import mongoDb
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,6 +55,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         Information.objects.create(user=user)
         Profile.objects.create(user=user)
         Extend.objects.create(user=user)
+        mongoDb.analysis.find_one_and_update(
+            {
+                'type': 'checkHadKnowEachOther'
+            },
+            {
+                '$set': {
+                    'data.{}'.format(user.id): []
+                }
+            }
+        )
 
         return user
 

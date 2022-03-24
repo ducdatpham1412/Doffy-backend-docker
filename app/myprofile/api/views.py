@@ -357,7 +357,8 @@ class GetListPost(GenericAPIView):
         for post in list_posts:
             link_images = []
             for image in post['images']:
-                link_images.append(services.create_link_image(image))
+                link_images.append(
+                    services.create_link_image(image) if image else '')
             relationship = enums.relationship_self if post[
                 'creatorId'] == id else enums.relationship_not_know
 
