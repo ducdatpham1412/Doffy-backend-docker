@@ -51,7 +51,7 @@ export default class Notification {
         try {
             await sendNotification({
                 contents: { en: message },
-                headings: { en: "Một người lạ làm quen với bạn 😇" },
+                headings: { en: "Một người lạ làm quen với bạn này 😇" },
                 filters: [
                     {
                         field: "tag",

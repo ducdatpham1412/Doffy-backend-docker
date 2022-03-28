@@ -27,7 +27,11 @@ export const SOCKET_EVENT = {
     unBlocked: "4.1",
     stopConversation: "4.3",
     openConversation: "4.4",
-    // comment from server
+    // notification
+    notificationStartChatTag: "5.0",
+    notificationFollow: "5.1",
+    notificationLikePost: "5.2",
+    notificationFriendPostNew: "5.3",
 };
 
 export const CHAT_TAG = {
@@ -43,6 +47,7 @@ export const MESSAGE_TYPE = {
 
 export const TYPE_NOTIFICATION = {
     newChatTag: 0,
-    message: 1,
-    follow: 2,
+    follow: 1,
+    likePost: 2,
+    friendPostNew: 3,
 };

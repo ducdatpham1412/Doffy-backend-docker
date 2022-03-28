@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { CHAT_TAG, MESSAGE_TYPE } from "../enum.js";
+import { CHAT_TAG, MESSAGE_TYPE, TYPE_NOTIFICATION } from "../enum.js";
 import mongoDb from "../mongoDb.js";
 import Notification from "../notification.js";
 import { request } from "../request.js";
@@ -10,6 +10,7 @@ import {
     getDateTimeNow,
     createLinkImage,
 } from "./assistant.js";
+import { executiveQuery } from "../mysqlDb.js";
 
 export const handleStartNewChatTag = async (params) => {
     const { token, newChatTag } = params;
@@ -78,9 +79,8 @@ export const handleStartNewChatTag = async (params) => {
         };
         await mongoDb.collection("chatTag").insertOne(insertChatTag);
 
-        // If this is chat from bubble decrease the priority of profilePost
-        const nameBubble = newChatTag?.nameBubble;
-        if (nameBubble) {
+        // If this is chat from bubble, decrease the priority of profilePost
+        if (isInteractBubble) {
             const profilePost = await mongoDb
                 .collection("profilePost")
                 .findOneAndUpdate(
@@ -151,15 +151,40 @@ export const handleStartNewChatTag = async (params) => {
             }
         }
 
-        // Notification to receiver
-        const receiver =
+        // Notification to receiverId
+        const receiverId =
             listUserId.filter((item) => item != newChatTag.senderId)[0] ||
             listUserId[0]; // if not found id different senderId, get senderId
         await Notification.startNewChatTag({
             message: newChatTag.content,
-            receiver,
+            receiver: receiverId,
             chatTagId: String(insertChatTag._id),
         });
+
+        // Save notification to data
+        // const selectedName = isInteractBubble ? "anonymous_name" : "name";
+        // const query = `SELECT ${selectedName} FROM myprofile_profile WHERE user_id = ${newChatTag.senderId}`;
+        // const content = `${
+        //     (await executiveQuery(query))[0][selectedName]
+        // } làm quen với bạn này 😇`;
+
+        // const dataNotification = {
+        //     id: String(ObjectId()),
+        //     type: TYPE_NOTIFICATION.newChatTag,
+        //     content,
+        //     chatTagId: String(insertChatTag._id),
+        // };
+        // mongoDb.collection("notification").findOneAndUpdate(
+        //     {
+        //         userId: receiverId,
+        //     },
+        //     {
+        //         $push: {
+        //             $each: [dataNotification],
+        //             $position: 0,
+        //         },
+        //     }
+        // );
 
         // Response
         const socketChatTag = {
@@ -171,6 +196,7 @@ export const handleStartNewChatTag = async (params) => {
         return {
             isChatTagExisted: false,
             response: socketChatTag,
+            dataNotification,
         };
     };
 

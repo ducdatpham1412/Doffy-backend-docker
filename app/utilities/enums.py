@@ -116,6 +116,6 @@ disable_request_delete_account = 'requestDeleteAccount'
 
 # notification
 notification_new_chat_tag = 0
-notification_message = 1
-notification_follow = 2
-notification_like_post = 3
+notification_follow = 1
+notification_like_post = 2
+notification_friend_post_new = 3

@@ -170,10 +170,11 @@ def get_list_user_id_i_know(my_id: int) -> list:
     res = mongoDb.analysis.find_one({
         'type': 'checkHadKnowEachOther'
     })
-    temp = res['data']['{}'.format(my_id)]
-    if not temp:
+    try:
+        temp = res['data']['{}'.format(my_id)]
+        return temp
+    except KeyError:
         raise CustomError()
-    return temp
 
 
 def check_had_i_know(list_user_id: list, partner_id: int):

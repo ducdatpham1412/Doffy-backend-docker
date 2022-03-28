@@ -119,6 +119,10 @@ io.on("connection", (socket) => {
             );
             listSocketId.forEach((socketId) => {
                 io.to(socketId).emit(SOCKET_EVENT.createChatTag, res.response);
+                io.to(socketId).emit(
+                    SOCKET_EVENT.notificationStartChatTag,
+                    res.dataNotification
+                );
             });
         } catch (err) {
             console.log("Error when create chat tag: ", socket.id);
