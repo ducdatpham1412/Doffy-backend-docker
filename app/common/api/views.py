@@ -385,3 +385,85 @@ class GetDetailBubbleProfileEnjoy(GenericAPIView):
         }
 
         return Response(res, status=status.HTTP_200_OK)
+
+
+class GetListComment(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+    list_user_i_know = []
+
+    def check_i_have_know(self, user_id):
+        for id in self.list_user_i_know:
+            if id == user_id:
+                return True
+        return False
+
+    def get_avatar(self, user_id: int, display_avatar: bool):
+        profile = Profile.objects.get(user=user_id)
+
+        if display_avatar:
+            return services.create_link_image(profile.avatar)
+
+        information = Information.objects.get(user=user_id)
+        return services.choose_private_avatar(information.gender)
+
+    def get(self, request, bubble_id):
+        my_id = services.get_user_id_from_request(request)
+        self.list_user_i_know = services.get_list_user_id_i_know(my_id)
+
+        post = mongoDb.profilePost.find_one({
+            '_id': ObjectId(bubble_id)
+        })
+
+        avatar_object = {}
+
+        for user_comment in post['listUsersComment']:
+            avatar_object['{}'.format(user_comment)] = self.get_avatar(
+                my_id, True) if user_comment == my_id else self.get_avatar(user_comment, self.check_i_have_know(user_comment))
+
+        res = []
+        for comment in post['listComments']:
+            res.append({
+                'id': comment['id'],
+                'content': comment['content'],
+                'creatorId': comment['creatorId'],
+                'creatorAvatar': avatar_object['{}'.format(comment['creatorId'])],
+                'createdTime': str(comment['createdTime'])
+            })
+
+        return Response(res, status=status.HTTP_200_OK)
+
+
+class AddComment(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def post(self, request, bubble_id):
+        my_id = services.get_user_id_from_request(request)
+
+        new_comment = {
+            'id': str(ObjectId()),
+            'content': request.data['content'],
+            'creatorId': my_id,
+            'createdTime': str(services.get_datetime_now())
+        }
+
+        mongoDb.profilePost.find_one_and_update(
+            {
+                '_id': ObjectId(bubble_id)
+            },
+            {
+                '$addToSet': {
+                    'listUsersComment': my_id
+                },
+                '$push': {
+                    'listComments': {
+                        '$each': [new_comment],
+                        '$position': 0
+                    }
+                },
+                '$inc': {
+                    'totalComments': 1
+                }
+            }
+        )
+
+        return Response(new_comment, status=status.HTTP_200_OK)

@@ -4,6 +4,7 @@ import { SOCKET_EVENT } from "./enum.js";
 import mongoDb from "./mongoDb.js";
 import { getSocketIdOfListUserActive } from "./services/assistant.js";
 import { getMyListChatTagsAndMyId } from "./services/authentication.js";
+import { addComment } from "./services/bubble.js";
 import {
     changeGroupName,
     getLatestMessage,
@@ -89,6 +90,14 @@ io.on("connection", (socket) => {
     /**
      * Bubble
      */
+    socket.on(SOCKET_EVENT.addComment, async (params) => {
+        try {
+            const res = await addComment(params);
+            io.to(params.bubbleId).emit(SOCKET_EVENT.addComment, res);
+        } catch (err) {
+            console.log("Err adding comment: ", socket.id);
+        }
+    });
 
     /**
      * ChatTag

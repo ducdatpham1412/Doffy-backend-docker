@@ -166,7 +166,7 @@ def init_name_profile():
     return '{}{}'.format(random.choice(data_anonymous_name), 'ẩndanh')
 
 
-def get_list_user_id_i_know(my_id: int):
+def get_list_user_id_i_know(my_id: int) -> list:
     res = mongoDb.analysis.find_one({
         'type': 'checkHadKnowEachOther'
     })

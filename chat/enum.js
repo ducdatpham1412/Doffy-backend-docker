@@ -6,7 +6,7 @@ export const SOCKET_EVENT = {
     appActive: "0.3",
     appBackground: "0.4",
     // bubble
-    disableBubble: "1.0",
+    addComment: "1.0",
     // chat tag
     createChatTag: "2.0",
     joinRoom: "2.1",
