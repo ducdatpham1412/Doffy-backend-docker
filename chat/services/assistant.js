@@ -1,6 +1,7 @@
 import mongoDb from "../mongoDb.js";
 import { request } from "../request.js";
 import env from "../env.js";
+import { GENDER } from "../enum.js";
 
 const filterTheSame = (originArray) => {
     const res = originArray.filter((item, index, self) => {
@@ -19,6 +20,13 @@ export const getSocketIdOfListUserActive = async (listUserId) => {
         if (check) result.push(check.socketId);
     }
     return result;
+};
+
+export const getSocketIdOfUserId = async (userId) => {
+    const result = await mongoDb.collection("userActive").findOne({
+        userId,
+    });
+    return result?.socketId || "";
 };
 
 export const getListInfoUser = async ({ listUserId, displayAvatar, token }) => {
@@ -52,4 +60,17 @@ export const getDateTimeNow = () => {
 
 export const createLinkImage = (imageName) => {
     return `${env.AWS_IMAGE_URL}/${imageName}`;
+};
+
+export const choosePrivateAvatar = (gender) => {
+    switch (gender) {
+        case GENDER.male:
+            return createLinkImage("__admin_girl.png");
+        case GENDER.female:
+            return createLinkImage("__admin_boy.png");
+        case GENDER.notToSay:
+            return createLinkImage("__admin_lgbt.png");
+        default:
+            return createLinkImage("__admin_girl.png");
+    }
 };
