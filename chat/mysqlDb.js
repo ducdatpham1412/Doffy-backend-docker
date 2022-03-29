@@ -9,8 +9,6 @@ const connectionObject = {
     database: env.DATABASE_NAME,
 };
 
-console.log("connection object:\n", connectionObject);
-
 const con = mysql.createConnection(connectionObject);
 
 con.connect();
