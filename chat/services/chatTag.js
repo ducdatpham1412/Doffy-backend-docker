@@ -81,6 +81,7 @@ export const handleStartNewChatTag = async (params) => {
 
         // If this is chat from bubble, decrease the priority of profilePost
         if (isInteractBubble) {
+            const idBubble = newChatTag.idBubble;
             const profilePost = await mongoDb
                 .collection("profilePost")
                 .findOneAndUpdate(
@@ -161,30 +162,42 @@ export const handleStartNewChatTag = async (params) => {
             chatTagId: String(insertChatTag._id),
         });
 
-        // Save notification to data
-        // const selectedName = isInteractBubble ? "anonymous_name" : "name";
-        // const query = `SELECT ${selectedName} FROM myprofile_profile WHERE user_id = ${newChatTag.senderId}`;
-        // const content = `${
-        //     (await executiveQuery(query))[0][selectedName]
-        // } làm quen với bạn này 😇`;
+        // Data and Socket notification
+        const selectedName = isInteractBubble ? "anonymous_name" : "name";
+        const query = `SELECT ${selectedName} AS name, avatar FROM myprofile_profile WHERE user_id = ${newChatTag.senderId}`;
+        const profileSender = (await executiveQuery(query))[0];
+        const content = `${profileSender.name} làm quen với bạn này 😇`;
 
-        // const dataNotification = {
-        //     id: String(ObjectId()),
-        //     type: TYPE_NOTIFICATION.newChatTag,
-        //     content,
-        //     chatTagId: String(insertChatTag._id),
-        // };
-        // mongoDb.collection("notification").findOneAndUpdate(
-        //     {
-        //         userId: receiverId,
-        //     },
-        //     {
-        //         $push: {
-        //             $each: [dataNotification],
-        //             $position: 0,
-        //         },
-        //     }
-        // );
+        let senderAvatar = "";
+        if (isInteractBubble) {
+            const temp = listInfoUser.find(
+                (item) => item.id === newChatTag.senderId
+            );
+            senderAvatar = temp.avatar || "";
+        } else {
+            senderAvatar = createLinkImage(profileSender.avatar || "");
+        }
+
+        const dataNotification = {
+            id: String(ObjectId()),
+            type: TYPE_NOTIFICATION.newChatTag,
+            content,
+            image: senderAvatar,
+            chatTagId: String(insertChatTag._id),
+        };
+        mongoDb.collection("notification").findOneAndUpdate(
+            {
+                userId: receiverId,
+            },
+            {
+                $push: {
+                    list: {
+                        $each: [dataNotification],
+                        $position: 0,
+                    },
+                },
+            }
+        );
 
         // Response
         const socketChatTag = {

@@ -1,3 +1,4 @@
+import json
 from authentication.models import User
 from bson.objectid import ObjectId
 from findme.mongo import mongoDb
@@ -14,6 +15,7 @@ from utilities.exception.exception_handler import CustomError
 import pymongo
 from utilities.disableObject import DisableObject
 from myprofile.models import Profile
+import requests
 
 
 class GetProfile(GenericAPIView):
@@ -177,6 +179,34 @@ class FollowUser(GenericAPIView):
                     'type': enums.notification_follow
                 }
             })
+
+            # Send socket notification
+            data_notification = {
+                'id': str(ObjectId()),
+                'type': enums.notification_follow,
+                'content': '{} đã bắt đầu theo dõi bạn'.format(profile.name),
+                'image': services.create_link_image(profile.avatar),
+                'creatorId': my_id
+            }
+
+            mongoDb.notification.find_one_and_update(
+                {
+                    'userId': id
+                },
+                {
+                    '$push': {
+                        'list': {
+                            '$each': [data_notification],
+                            '$position': 0
+                        }
+                    }
+                }
+            )
+
+            requests.post('http://chat:1412/notification/follow', data=json.dumps({
+                'receiver': id,
+                'data': data_notification,
+            }))
 
             return Response(None, status=status.HTTP_200_OK)
 
@@ -410,8 +440,11 @@ class LikePost(GenericAPIView):
             {
                 '$push': {
                     'peopleLike': {
-                        'id': user_id,
-                        'createdTime': services.get_datetime_now()
+                        '$each': [{
+                            'id': user_id,
+                            'createdTime': services.get_datetime_now()
+                        }],
+                        '$position': 0
                     }
                 },
                 '$inc': {
@@ -437,6 +470,7 @@ class LikePost(GenericAPIView):
 
         target_name = profile.name if hadFollow else profile.anonymous_name
 
+        # Push notification one signal
         services.send_notification({
             'contents': {
                 'vi': '{} thích bài đăng của bạn'.format(target_name),
@@ -454,6 +488,36 @@ class LikePost(GenericAPIView):
                 'type': enums.notification_like_post
             }
         })
+
+        # Send notification
+        data_notification = {
+            'id': str(ObjectId()),
+            'type': enums.notification_like_post,
+            'content': '{} thích bài đăng của bạn'.format(target_name),
+            'image': services.create_link_image(post['images'][0]),
+            'creatorId': my_id,
+            'bubbleId': post_id,
+        }
+
+        mongoDb.notification.find_one_and_update(
+            {
+                'userId': post['creatorId']
+            },
+            {
+                '$push': {
+                    'list': {
+                        '$each': [data_notification],
+                        '$position': 0
+                    }
+                }
+            }
+        )
+
+        requests.post('http://chat:1412/notification/like-post',
+                      data=json.dumps({
+                          'receiver': post['creatorId'],
+                          'data': data_notification
+                      }))
 
         return Response(None, status=status.HTTP_200_OK)
 
@@ -573,3 +637,22 @@ class GetListFollow(GenericAPIView):
 
         else:
             raise CustomError()
+
+
+class GetListNotification(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def get(self, request):
+        my_id = services.get_user_id_from_request(request)
+        page_index = int(request.query_params['pageIndex'])
+        take = int(request.query_params['take'])
+
+        start = int((page_index-1) * take)
+        end = int(page_index * take)
+
+        data_notification = mongoDb.notification.find_one({
+            'userId': my_id
+        })
+        res = data_notification['list'][start:end]
+
+        return Response(res, status=status.HTTP_200_OK)

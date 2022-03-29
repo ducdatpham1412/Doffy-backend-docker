@@ -1,8 +1,11 @@
-import { createServer } from "http";
+import http from "http";
 import { Server } from "socket.io";
 import { SOCKET_EVENT } from "./enum.js";
 import mongoDb from "./mongoDb.js";
-import { getSocketIdOfListUserActive } from "./services/assistant.js";
+import {
+    getSocketIdOfListUserActive,
+    getSocketIdOfUserId,
+} from "./services/assistant.js";
 import { getMyListChatTagsAndMyId } from "./services/authentication.js";
 import { addComment } from "./services/bubble.js";
 import {
@@ -19,7 +22,7 @@ import {
 } from "./services/message.js";
 import Static from "./static.js";
 
-const httpServer = createServer();
+const httpServer = http.createServer();
 const io = new Server(httpServer, {
     pingTimeout: 60000,
     pingInterval: 25000,
@@ -117,12 +120,15 @@ io.on("connection", (socket) => {
             const listSocketId = await getSocketIdOfListUserActive(
                 res.response.listUser.map((item) => item.id)
             );
+
             listSocketId.forEach((socketId) => {
                 io.to(socketId).emit(SOCKET_EVENT.createChatTag, res.response);
-                io.to(socketId).emit(
-                    SOCKET_EVENT.notificationStartChatTag,
-                    res.dataNotification
-                );
+                socket
+                    .to(socketId)
+                    .emit(
+                        SOCKET_EVENT.notificationStartChatTag,
+                        res.dataNotification
+                    );
             });
         } catch (err) {
             console.log("Error when create chat tag: ", socket.id);
@@ -283,3 +289,52 @@ io.on("connection", (socket) => {
 });
 
 httpServer.listen(3000);
+
+/**
+ * This for request http from app
+ */
+const listenAppServer = http.createServer(async (req, res) => {
+    const url = req.url;
+
+    if (req.method === "POST") {
+        let data = "";
+        req.on("data", (chunk) => {
+            data += chunk;
+        });
+
+        req.on("end", async () => {
+            data = JSON.parse(data);
+
+            /**
+             * NOTIFICATION
+             */
+
+            // Like post
+            if (url === "/notification/like-post") {
+                const socketId = await getSocketIdOfUserId(data.receiver);
+                if (socketId) {
+                    io.to(socketId).emit(
+                        SOCKET_EVENT.notificationLikePost,
+                        data.data
+                    );
+                }
+            }
+
+            // Follow
+            if (url === "/notification/follow") {
+                const socketId = await getSocketIdOfUserId(data.receiver);
+                if (socketId) {
+                    io.to(socketId).emit(
+                        SOCKET_EVENT.notificationFollow,
+                        data.data
+                    );
+                }
+            }
+
+            res.end();
+        });
+    } else {
+        res.end("Null");
+    }
+});
+listenAppServer.listen(1412);

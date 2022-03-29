@@ -51,3 +51,9 @@ export const TYPE_NOTIFICATION = {
     likePost: 2,
     friendPostNew: 3,
 };
+
+export const GENDER = {
+    male: 0,
+    female: 1,
+    notToSay: 2,
+};
