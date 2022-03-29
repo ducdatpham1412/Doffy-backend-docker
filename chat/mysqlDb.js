@@ -1,13 +1,17 @@
 import mysql from "mysql2";
 import env from "./env.js";
 
-const con = mysql.createConnection({
+const connectionObject = {
     host: env.DATABASE_HOST,
     user: env.DATABASE_USER,
     password: env.DATABASE_PASSWORD,
     port: env.DATABASE_PORT,
     database: env.DATABASE_NAME,
-});
+};
+
+console.log("connection object:\n", connectionObject);
+
+const con = mysql.createConnection(connectionObject);
 
 con.connect();
 
