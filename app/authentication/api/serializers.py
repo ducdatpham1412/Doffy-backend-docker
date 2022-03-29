@@ -65,6 +65,10 @@ class RegisterSerializer(serializers.ModelSerializer):
                 }
             }
         )
+        mongoDb.notification.insert_one({
+            'userId': user.id,
+            'list': []
+        })
 
         return user
 
