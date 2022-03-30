@@ -10,6 +10,7 @@ export const SOCKET_EVENT = {
     // chat tag
     createChatTag: "2.0",
     joinRoom: "2.1",
+    leaveRoom: "2.1.1",
     requestPublicChat: "2.2",
     agreePublicChat: "2.3",
     allAgreePublicChat: "2.4",

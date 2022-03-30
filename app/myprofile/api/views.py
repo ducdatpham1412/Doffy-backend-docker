@@ -272,6 +272,7 @@ class CreatePost(GenericAPIView):
             'totalComments': 0,
             'peopleLike': [],
             'listComments': [],
+            'listUsersComment': [],
             'creatorId': my_id,
             'createdTime': services.get_datetime_now(),
             'priority': 1,
@@ -494,7 +495,7 @@ class LikePost(GenericAPIView):
             'id': str(ObjectId()),
             'type': enums.notification_like_post,
             'content': '{} thích bài đăng của bạn'.format(target_name),
-            'image': services.create_link_image(post['images'][0]),
+            'image': services.create_link_image(post['images'][0]) if post['images'][0] else '',
             'creatorId': my_id,
             'bubbleId': post_id,
         }

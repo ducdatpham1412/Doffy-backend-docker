@@ -96,10 +96,15 @@ io.on("connection", (socket) => {
     socket.on(SOCKET_EVENT.addComment, async (params) => {
         try {
             const res = await addComment(params);
-            io.to(params.bubbleId).emit(SOCKET_EVENT.addComment, res);
+            io.to(params.bubbleId).emit(SOCKET_EVENT.addComment, res.data);
         } catch (err) {
             console.log("Err adding comment: ", socket.id);
         }
+    });
+
+    socket.on(SOCKET_EVENT.leaveRoom, (bubbleId) => {
+        console.log("Leave room: ", bubbleId);
+        socket.leave(bubbleId);
     });
 
     /**
