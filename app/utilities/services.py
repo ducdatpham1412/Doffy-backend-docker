@@ -138,9 +138,10 @@ def get_datetime_now():
     return datetime.now()
 
 
-def get_local_string_date_time(utc_time: datetime):
+def get_local_string_date_time(utc_time: any):
     # print('time zone info: ', datetime.now().astimezone().tzinfo)
-    hanoi_time = utc_time + timedelta(hours=7)
+    temp = datetime.strptime(str(utc_time), '%Y-%m-%d %H:%M:%S.%f')
+    hanoi_time = temp + timedelta(hours=7)
     return str(hanoi_time)
 
 
@@ -180,5 +181,12 @@ def get_list_user_id_i_know(my_id: int) -> list:
 def check_had_i_know(list_user_id: list, partner_id: int):
     for user_id in list_user_id:
         if user_id == partner_id:
+            return True
+    return False
+
+
+def check_include(list: list, value: any):
+    for _value in list:
+        if _value == value:
             return True
     return False

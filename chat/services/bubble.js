@@ -14,12 +14,15 @@ export const getListSocketIdOfUserEnjoy = async () => {
 };
 
 export const addComment = async (params) => {
-    const { token, bubbleId, content } = params;
+    const { token, bubbleId, content, commentReplied } = params;
+
+    console.log("param add comment: ", params);
 
     const res = await request.post(
         `/common/add-comment/${bubbleId}`,
         {
             content,
+            commentReplied,
         },
         {
             headers: {
