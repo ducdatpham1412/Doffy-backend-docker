@@ -391,8 +391,11 @@ class GetDetailBubbleProfileEnjoy(GenericAPIView):
 class GetListComment(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
     list_user_i_know = []
+    my_id = 0
 
     def check_i_have_know(self, user_id):
+        if self.my_id == user_id:
+            return True
         for id in self.list_user_i_know:
             if id == user_id:
                 return True
@@ -414,8 +417,8 @@ class GetListComment(GenericAPIView):
         }
 
     def get(self, request, bubble_id):
-        my_id = services.get_user_id_from_request(request)
-        self.list_user_i_know = services.get_list_user_id_i_know(my_id)
+        self.my_id = services.get_user_id_from_request(request)
+        self.list_user_i_know = services.get_list_user_id_i_know(self.my_id)
 
         post = mongoDb.profilePost.find_one({
             '_id': ObjectId(bubble_id)
@@ -426,8 +429,8 @@ class GetListComment(GenericAPIView):
         for user_comment in post['listUsersComment']:
             check_i_had_know = self.check_i_have_know(user_comment)
 
-            if user_comment == my_id:
-                avatar_name = self.get_avatar_name(my_id, True)
+            if user_comment == self.my_id:
+                avatar_name = self.get_avatar_name(self.my_id, True)
             else:
                 avatar_name = self.get_avatar_name(
                     user_comment, check_i_had_know)
@@ -441,7 +444,7 @@ class GetListComment(GenericAPIView):
         res = []
         for comment in post['listComments']:
             is_liked = services.check_include(
-                list=comment['peopleLike'], value=my_id)
+                list=comment['peopleLike'], value=self.my_id)
             id_name_avatar = id_name_avatar_object['{}'.format(
                 comment['creatorId'])]
 
@@ -450,7 +453,7 @@ class GetListComment(GenericAPIView):
                 id_name_avatar_reply = id_name_avatar_object['{}'.format(
                     comment_reply['creatorId'])]
                 is_liked_reply = services.check_include(
-                    list=comment_reply['peopleLike'], value=my_id)
+                    list=comment_reply['peopleLike'], value=self.my_id)
 
                 list_replies.append({
                     'id': comment_reply['id'],
