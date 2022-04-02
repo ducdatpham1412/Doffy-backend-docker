@@ -9,15 +9,19 @@ const connectionObject = {
     database: env.DATABASE_NAME,
 };
 
-const con = mysql.createConnection(connectionObject);
-
-con.connect();
-
 export const executiveQuery = (query) => {
+    const con = mysql.createConnection(connectionObject);
+
     return new Promise((resolve, reject) => {
-        con.query(query, (err, res) => {
+        con.connect((err) => {
             if (err) reject(err);
-            resolve(res);
+            con.query(query, (err, res) => {
+                if (err) reject(err);
+                con.end((err) => {
+                    if (err) reject(err);
+                    resolve(res);
+                });
+            });
         });
     });
 };

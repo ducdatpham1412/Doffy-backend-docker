@@ -16,6 +16,7 @@ from setting.models import Information
 from bson.objectid import ObjectId
 from utilities.exception import error_message, error_key
 from myprofile.models import Profile
+from utilities.renderers import PagingRenderer
 
 
 class GetPassport(GenericAPIView):
@@ -578,3 +579,32 @@ class AddComment(GenericAPIView):
             }
 
         return Response(new_comment, status=status.HTTP_200_OK)
+
+
+class GestListNotification(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+    renderer_classes = [PagingRenderer, ]
+
+    def get(self, request):
+        my_id = services.get_user_id_from_request(request)
+        take = int(request.query_params['take'])
+        page_index = int(request.query_params['pageIndex'])
+
+        data_notification = mongoDb.notification.find_one({
+            'userId': my_id
+        })
+
+        totals = len(data_notification['list'])
+        start = (page_index-1) * take
+        end = page_index * take
+
+        data = data_notification['list'][start:end]
+
+        res = {
+            'take': take,
+            'pageIndex': page_index,
+            'totalItems': totals,
+            'data': data,
+        }
+
+        return Response(res, status=status.HTTP_200_OK)

@@ -16,5 +16,6 @@ urlpatterns = [
     path('detail-bubble-profile-enjoy/<str:bubble_id>',
          views.GetDetailBubbleProfileEnjoy.as_view()),
     path('list-comments/<str:bubble_id>', views.GetListComment.as_view()),
-    path('add-comment/<str:bubble_id>', views.AddComment.as_view())
+    path('add-comment/<str:bubble_id>', views.AddComment.as_view()),
+    path('list-notifications', views.GestListNotification.as_view())
 ]
