@@ -184,6 +184,7 @@ export const handleStartNewChatTag = async (params) => {
             content,
             image: senderAvatar,
             chatTagId: String(insertChatTag._id),
+            hadRead: false,
         };
         mongoDb.collection("notification").findOneAndUpdate(
             {

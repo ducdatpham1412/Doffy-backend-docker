@@ -33,6 +33,7 @@ export const SOCKET_EVENT = {
     notificationFollow: "5.1",
     notificationLikePost: "5.2",
     notificationFriendPostNew: "5.3",
+    notificationComment: "5.4",
 };
 
 export const CHAT_TAG = {

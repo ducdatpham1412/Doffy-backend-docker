@@ -336,6 +336,18 @@ const listenAppServer = http.createServer(async (req, res) => {
                 }
             }
 
+            // Comment
+            if (url === "/notification/comment") {
+                console.log("backend reisdlsfls: ", data.data);
+                const socketId = await getSocketIdOfUserId(data.receiver);
+                if (socketId) {
+                    io.to(socketId).emit(
+                        SOCKET_EVENT.notificationComment,
+                        data.data
+                    );
+                }
+            }
+
             res.end();
         });
     } else {
