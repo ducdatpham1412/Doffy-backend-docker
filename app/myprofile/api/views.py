@@ -186,7 +186,8 @@ class FollowUser(GenericAPIView):
                 'type': enums.notification_follow,
                 'content': '{} đã bắt đầu theo dõi bạn'.format(profile.name),
                 'image': services.create_link_image(profile.avatar),
-                'creatorId': my_id
+                'creatorId': my_id,
+                'hadRead': False,
             }
 
             mongoDb.notification.find_one_and_update(
@@ -505,6 +506,7 @@ class LikePost(GenericAPIView):
             'image': self.get_images(post['images']),
             'creatorId': my_id,
             'bubbleId': post_id,
+            'hadRead': False,
         }
 
         mongoDb.notification.find_one_and_update(

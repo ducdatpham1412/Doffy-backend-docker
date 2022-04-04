@@ -587,7 +587,8 @@ class AddComment(GenericAPIView):
             'content': '{} đã bình luận về bài đăng của bạn'.format(name_avatar['name']),
             'image': name_avatar['avatar'],
             'creatorId': my_id,
-            'bubbleId': bubble_id
+            'bubbleId': bubble_id,
+            'hadRead': False,
         }
         mongoDb.notification.find_one_and_update(
             {
