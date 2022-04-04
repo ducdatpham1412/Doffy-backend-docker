@@ -459,6 +459,13 @@ class LikePost(GenericAPIView):
                               error_key.you_have_liked_this_post)
         return check
 
+    def get_images(self, list_images: list):
+        try:
+            temp = services.create_link_image(list_images[0])
+            return temp
+        except IndexError:
+            return ''
+
     def put(self, request, post_id):
         my_id = services.get_user_id_from_request(request)
         post = self.get_object(post_id, my_id)
@@ -495,7 +502,7 @@ class LikePost(GenericAPIView):
             'id': str(ObjectId()),
             'type': enums.notification_like_post,
             'content': '{} thích bài đăng của bạn'.format(target_name),
-            'image': services.create_link_image(post['images'][0]) if post['images'][0] else '',
+            'image': self.get_images(post['images']),
             'creatorId': my_id,
             'bubbleId': post_id,
         }
