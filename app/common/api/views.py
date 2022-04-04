@@ -17,6 +17,8 @@ from bson.objectid import ObjectId
 from utilities.exception import error_message, error_key
 from myprofile.models import Profile
 from utilities.renderers import PagingRenderer
+import requests
+import json
 
 
 class GetPassport(GenericAPIView):
@@ -515,7 +517,7 @@ class AddComment(GenericAPIView):
         name_avatar = self.get_name_avatar(my_id)
 
         if comment_replied_id:
-            mongoDb.profilePost.find_one_and_update(
+            profile_post = mongoDb.profilePost.find_one_and_update(
                 {
                     '_id': ObjectId(bubble_id),
                     'listComments.id': comment_replied_id,
@@ -549,7 +551,7 @@ class AddComment(GenericAPIView):
                 **new_comment,
                 'listCommentsReply': []
             }
-            mongoDb.profilePost.find_one_and_update(
+            profile_post = mongoDb.profilePost.find_one_and_update(
                 {
                     '_id': ObjectId(bubble_id)
                 },
@@ -577,6 +579,33 @@ class AddComment(GenericAPIView):
                 'createdTime': services.get_local_string_date_time(new_comment['createdTime']),
                 'listCommentsReply': new_comment['listCommentsReply'],
             }
+
+        # Notification
+        data_notification = {
+            'id': new_comment['id'],
+            'type': enums.notification_comment,
+            'content': '{} đã bình luận về bài đăng của bạn'.format(name_avatar['name']),
+            'image': name_avatar['avatar'],
+            'creatorId': my_id,
+            'bubbleId': bubble_id
+        }
+        mongoDb.notification.find_one_and_update(
+            {
+                'userId': profile_post['creatorId']
+            },
+            {
+                '$push': {
+                    'list': {
+                        '$each': [data_notification],
+                        '$position': 0
+                    }
+                }
+            }
+        )
+        requests.post('http://chat:1412/notification/comment', data=json.dumps({
+            'receiver': profile_post['creatorId'],
+            'data': data_notification,
+        }))
 
         return Response(new_comment, status=status.HTTP_200_OK)
 
@@ -608,3 +637,24 @@ class GestListNotification(GenericAPIView):
         }
 
         return Response(res, status=status.HTTP_200_OK)
+
+
+class ReadNotification(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def put(self, request, notification_id):
+        my_id = services.get_user_id_from_request(request)
+
+        mongoDb.notification.update_one(
+            {
+                'userId': my_id,
+                'list.id': notification_id
+            },
+            {
+                '$set': {
+                    'list.$.hadRead': True,
+                }
+            }
+        )
+
+        return Response(None, status=status.HTTP_200_OK)

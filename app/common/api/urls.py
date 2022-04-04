@@ -17,5 +17,7 @@ urlpatterns = [
          views.GetDetailBubbleProfileEnjoy.as_view()),
     path('list-comments/<str:bubble_id>', views.GetListComment.as_view()),
     path('add-comment/<str:bubble_id>', views.AddComment.as_view()),
-    path('list-notifications', views.GestListNotification.as_view())
+    path('list-notifications', views.GestListNotification.as_view()),
+    path('read-notification/<str:notification_id>',
+         views.ReadNotification.as_view())
 ]

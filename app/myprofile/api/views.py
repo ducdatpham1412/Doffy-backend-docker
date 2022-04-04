@@ -501,7 +501,7 @@ class LikePost(GenericAPIView):
         data_notification = {
             'id': str(ObjectId()),
             'type': enums.notification_like_post,
-            'content': '{} thích bài đăng của bạn'.format(target_name),
+            'content': '{} thích bài đăng của bạn 😎'.format(target_name),
             'image': self.get_images(post['images']),
             'creatorId': my_id,
             'bubbleId': post_id,
