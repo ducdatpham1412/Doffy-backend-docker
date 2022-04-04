@@ -16,3 +16,5 @@ urlpatterns = [
     path('follow/get-list/<int:user_id>', views.GetListFollow.as_view()),
     path('get-list-notifications', views.GetListNotification.as_view())
 ]
+
+# check
