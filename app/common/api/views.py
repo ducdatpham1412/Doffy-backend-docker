@@ -29,7 +29,19 @@ class GetPassport(GenericAPIView):
         user = User.objects.get(id=id)
         passport = serializers.GetPassportSerializer(user).data
 
-        return Response(passport, status=status.HTTP_200_OK)
+        data_notification = mongoDb.notification.find_one({
+            'userId': id,
+        })
+        number_new_notifications = 0
+        for notification in data_notification['list'][0:29]:
+            if not notification['hadRead']:
+                number_new_notifications += 1
+        res = {
+            **passport,
+            'numberNewNotifications': number_new_notifications,
+        }
+
+        return Response(res, status=status.HTTP_200_OK)
 
 
 class UploadImage(GenericAPIView):
@@ -581,11 +593,21 @@ class AddComment(GenericAPIView):
             }
 
         # Notification
+        image_notification = name_avatar['avatar']
+        try:
+            temp = services.create_link_image(
+                profile_post['images'][0])
+            image_notification = temp
+        except IndexError:
+            pass
+        content_notification = '{} đã bình luận về bài đăng của bạn'.format(
+            name_avatar['name'])
+
         data_notification = {
             'id': new_comment['id'],
             'type': enums.notification_comment,
-            'content': '{} đã bình luận về bài đăng của bạn'.format(name_avatar['name']),
-            'image': name_avatar['avatar'],
+            'content': content_notification,
+            'image': image_notification,
             'creatorId': my_id,
             'bubbleId': bubble_id,
             'hadRead': False,
@@ -603,6 +625,28 @@ class AddComment(GenericAPIView):
                 }
             }
         )
+
+        # send onesignal
+        services.send_notification({
+            'contents': {
+                'vi': content_notification,
+                'en': '{} commented on your post'.format(name_avatar['name'])
+            },
+            'filters': [
+                {
+                    'field': 'tag',
+                    'key': 'userId',
+                    'relation': '=',
+                    'value': profile_post['creatorId']
+                }
+            ],
+            'data': {
+                'type': enums.notification_comment,
+                'bubbleId': bubble_id,
+            }
+        })
+
+        # socket notification
         requests.post('http://chat:1412/notification/comment', data=json.dumps({
             'receiver': profile_post['creatorId'],
             'data': data_notification,

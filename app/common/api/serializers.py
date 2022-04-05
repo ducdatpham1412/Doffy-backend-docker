@@ -32,7 +32,7 @@ class GetPassportSerializer(serializers.ModelSerializer):
                 **information
             },
             'profile': profile,
-            'setting': setting
+            'setting': setting,
         }
         return res
 

@@ -130,10 +130,7 @@ io.on("connection", (socket) => {
                 io.to(socketId).emit(SOCKET_EVENT.createChatTag, res.response);
                 socket
                     .to(socketId)
-                    .emit(
-                        SOCKET_EVENT.notificationStartChatTag,
-                        res.dataNotification
-                    );
+                    .emit(SOCKET_EVENT.notification, res.dataNotification);
             });
         } catch (err) {
             console.log("Error when create chat tag: ", socket.id);
@@ -318,10 +315,7 @@ const listenAppServer = http.createServer(async (req, res) => {
             if (url === "/notification/like-post") {
                 const socketId = await getSocketIdOfUserId(data.receiver);
                 if (socketId) {
-                    io.to(socketId).emit(
-                        SOCKET_EVENT.notificationLikePost,
-                        data.data
-                    );
+                    io.to(socketId).emit(SOCKET_EVENT.notification, data.data);
                 }
             }
 
@@ -329,22 +323,15 @@ const listenAppServer = http.createServer(async (req, res) => {
             if (url === "/notification/follow") {
                 const socketId = await getSocketIdOfUserId(data.receiver);
                 if (socketId) {
-                    io.to(socketId).emit(
-                        SOCKET_EVENT.notificationFollow,
-                        data.data
-                    );
+                    io.to(socketId).emit(SOCKET_EVENT.notification, data.data);
                 }
             }
 
             // Comment
             if (url === "/notification/comment") {
-                console.log("backend reisdlsfls: ", data.data);
                 const socketId = await getSocketIdOfUserId(data.receiver);
                 if (socketId) {
-                    io.to(socketId).emit(
-                        SOCKET_EVENT.notificationComment,
-                        data.data
-                    );
+                    io.to(socketId).emit(SOCKET_EVENT.notification, data.data);
                 }
             }
 
