@@ -494,7 +494,8 @@ class LikePost(GenericAPIView):
                 }
             ],
             'data': {
-                'type': enums.notification_like_post
+                'type': enums.notification_like_post,
+                'bubbleId': post_id,
             }
         })
 
