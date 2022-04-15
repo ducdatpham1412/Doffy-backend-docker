@@ -11,6 +11,8 @@ urlpatterns = [
     path('get-list-bubble-profile', views.GetListBubbleProfile.as_view()),
     path('get-list-bubble-profile-enjoy',
          views.GetListBubbleProfileOfUserEnjoy.as_view()),
+    path('get-list-bubble-group', views.GetListBubbleGroup.as_view()),
+    path('get-list-bubble-group-enjoy', views.GetListBubbleGroup.as_view()),
     path('detail-bubble-profile/<str:bubble_id>',
          views.GetDetailBubbleProfile.as_view()),
     path('detail-bubble-profile-enjoy/<str:bubble_id>',

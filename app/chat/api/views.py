@@ -29,7 +29,7 @@ class GetListChatTags(GenericAPIView):
             else:
                 return services.choose_private_avatar(passport['information']['gender'])
 
-        name = '' if is_chattag_private else passport['profile']['name']
+        name = passport['profile']['anonymousName'] if is_chattag_private else passport['profile']['name']
         avatar = get_avatar()
         gender = passport['information']['gender']
 
@@ -51,13 +51,22 @@ class GetListChatTags(GenericAPIView):
 
         data_list = []
 
-        def get_is_blocked(list_user: list):
+        def get_is_blocked(type: int, list_user: list):
+            """
+            If is chattag group, return False
+            """
+            if type == enums.chat_tag_group:
+                return False
+
+            """
+            Chattag couple
+            """
             your_id = None
             for user_id in list_user:
                 if (user_id != id):
                     your_id = user_id
 
-            # is me
+            # This is chattag of me
             if your_id == None:
                 return False
 
@@ -92,12 +101,15 @@ class GetListChatTags(GenericAPIView):
                 'groupName': chat_tag['groupName'],
                 'isPrivate': chat_tag['isPrivate'],
                 'isStop': get_is_stop(str(chat_tag['_id'])),
-                'isBlock': get_is_blocked(chat_tag['listUser']),
+                'isBlock': get_is_blocked(chat_tag['type'], chat_tag['listUser']),
                 'userSeenMessage': chat_tag['userSeenMessage'],
                 'type': chat_tag['type'],
                 'color': chat_tag['color'],
                 'updateTime': str(chat_tag['updateTime']),
             }
+
+            if chat_tag['type'] == enums.chat_tag_group:
+                temp['image'] = services.create_link_image(chat_tag['image'])
 
             data_list.append(temp)
 
@@ -187,6 +199,8 @@ class GetDetailChatTag(GenericAPIView):
             'color': chat_tag['color'],
             'updateTime': str(chat_tag['updateTime']),
         }
+        if chat_tag['type'] == enums.chat_tag_group:
+            res['image'] = services.create_link_image(chat_tag['image'])
 
         return Response(res, status=status.HTTP_200_OK)
 

@@ -21,13 +21,20 @@ export const handleSendMessage = async (newMessage) => {
             ? newMessage.listUser[0]
             : newMessage.listUser[1];
 
+    const setUpdate = {};
+    newMessage.listUser.forEach((userId) => {
+        if (userId !== insertMessage.senderId) {
+            setUpdate[`userSeenMessage.${userId}.istLatest`] = false;
+        }
+    });
+
     await mongoDb.collection("chatTag").findOneAndUpdate(
         {
             _id: ObjectId(newMessage.chatTag),
         },
         {
             $set: {
-                [`userSeenMessage.${partnerId}.isLatest`]: false,
+                ...setUpdate,
                 updateTime: getDateTimeNow(),
             },
             $push: {

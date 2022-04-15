@@ -7,7 +7,7 @@ import {
     getSocketIdOfUserId,
 } from "./services/assistant.js";
 import { getMyListChatTagsAndMyId } from "./services/authentication.js";
-import { addComment } from "./services/bubble.js";
+import { addComment, joinCommunity } from "./services/bubble.js";
 import {
     changeGroupName,
     getLatestMessage,
@@ -107,6 +107,16 @@ io.on("connection", (socket) => {
         socket.leave(bubbleId);
     });
 
+    socket.on(SOCKET_EVENT.joinCommunity, async (params) => {
+        try {
+            const chatTagId = await joinCommunity(params);
+            socket.join(chatTagId);
+            io.to(socket.id).emit(SOCKET_EVENT.joinCommunity, chatTagId);
+        } catch (err) {
+            console.log("Err join community: ", err);
+        }
+    });
+
     /**
      * ChatTag
      */
@@ -145,6 +155,7 @@ io.on("connection", (socket) => {
     socket.on(SOCKET_EVENT.seenMessage, async (params) => {
         try {
             let res = undefined;
+
             // enjoy mode
             if (params?.isEnjoy) {
                 res = {
@@ -156,7 +167,10 @@ io.on("connection", (socket) => {
             else {
                 res = await getLatestMessage(params);
             }
-            io.to(params.chatTagId).emit(SOCKET_EVENT.seenMessage, res);
+
+            if (res) {
+                io.to(params.chatTagId).emit(SOCKET_EVENT.seenMessage, res);
+            }
         } catch (err) {
             console.log("Error seen message: ", socket.id);
         }
@@ -320,7 +334,7 @@ const listenAppServer = http.createServer(async (req, res) => {
             }
 
             // Follow
-            if (url === "/notification/follow") {
+            else if (url === "/notification/follow") {
                 const socketId = await getSocketIdOfUserId(data.receiver);
                 if (socketId) {
                     io.to(socketId).emit(SOCKET_EVENT.notification, data.data);
@@ -328,10 +342,18 @@ const listenAppServer = http.createServer(async (req, res) => {
             }
 
             // Comment
-            if (url === "/notification/comment") {
+            else if (url === "/notification/comment") {
                 const socketId = await getSocketIdOfUserId(data.receiver);
                 if (socketId) {
                     io.to(socketId).emit(SOCKET_EVENT.notification, data.data);
+                }
+            }
+
+            // New chat-tag from create group
+            else if (url === "/new-chat-tag") {
+                const socketId = await getSocketIdOfUserId(data.receiver);
+                if (socketId) {
+                    io.to(socketId).emit(SOCKET_EVENT.createChatTag, data.data);
                 }
             }
 

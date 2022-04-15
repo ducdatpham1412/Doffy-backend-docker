@@ -7,6 +7,7 @@ export const SOCKET_EVENT = {
     appBackground: "0.4",
     // bubble
     addComment: "1.0",
+    joinCommunity: "1.1",
     // chat tag
     createChatTag: "2.0",
     joinRoom: "2.1",
@@ -35,6 +36,7 @@ export const SOCKET_EVENT = {
 export const CHAT_TAG = {
     newFromBubble: 0,
     newFromProfile: 1,
+    group: 2,
 };
 
 export const MESSAGE_TYPE = {
