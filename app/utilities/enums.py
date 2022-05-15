@@ -66,14 +66,22 @@ relationship_friend = 4
 relationship_not_know = 10
 
 
+# group palace relationship
+group_relationship_self = 0
+group_relationship_joined = 1
+group_relationship_not_joined = 2
+
+
 # type_chat_tag
 chat_tag_new_from_bubble = 0
 chat_tag_new_from_profile = 1
+chat_tag_group = 2
 
 # type message
 message_text = 0
 message_image = 1
 message_sticker = 2
+message_join_community = 3
 
 
 # socket

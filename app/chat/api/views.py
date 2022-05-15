@@ -29,7 +29,7 @@ class GetListChatTags(GenericAPIView):
             else:
                 return services.choose_private_avatar(passport['information']['gender'])
 
-        name = '' if is_chattag_private else passport['profile']['name']
+        name = passport['profile']['anonymousName'] if is_chattag_private else passport['profile']['name']
         avatar = get_avatar()
         gender = passport['information']['gender']
 
@@ -51,13 +51,22 @@ class GetListChatTags(GenericAPIView):
 
         data_list = []
 
-        def get_is_blocked(list_user: list):
+        def get_is_blocked(type: int, list_user: list):
+            """
+            If is chattag group, return False
+            """
+            if type == enums.chat_tag_group:
+                return False
+
+            """
+            Chattag couple
+            """
             your_id = None
             for user_id in list_user:
                 if (user_id != id):
                     your_id = user_id
 
-            # is me
+            # This is chattag of me
             if your_id == None:
                 return False
 
@@ -92,12 +101,15 @@ class GetListChatTags(GenericAPIView):
                 'groupName': chat_tag['groupName'],
                 'isPrivate': chat_tag['isPrivate'],
                 'isStop': get_is_stop(str(chat_tag['_id'])),
-                'isBlock': get_is_blocked(chat_tag['listUser']),
+                'isBlock': get_is_blocked(chat_tag['type'], chat_tag['listUser']),
                 'userSeenMessage': chat_tag['userSeenMessage'],
                 'type': chat_tag['type'],
                 'color': chat_tag['color'],
                 'updateTime': str(chat_tag['updateTime']),
             }
+
+            if chat_tag['type'] == enums.chat_tag_group:
+                temp['image'] = services.create_link_image(chat_tag['image'])
 
             data_list.append(temp)
 
@@ -187,6 +199,8 @@ class GetDetailChatTag(GenericAPIView):
             'color': chat_tag['color'],
             'updateTime': str(chat_tag['updateTime']),
         }
+        if chat_tag['type'] == enums.chat_tag_group:
+            res['image'] = services.create_link_image(chat_tag['image'])
 
         return Response(res, status=status.HTTP_200_OK)
 
@@ -195,14 +209,20 @@ class GetListMessages(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
     renderer_classes = [PagingRenderer, ]
 
-    def get_sender_avatar_send_message(self, user_id, is_chattag_private):
+    def get_avatar_and_name(self, user_id, is_chattag_private):
         user = User.objects.get(id=user_id)
         passport = GetPassportSerializer(user).data
 
         if not is_chattag_private:
-            return passport['profile']['avatar']
-        else:
-            return services.choose_private_avatar(passport['information']['gender'])
+            return {
+                'avatar': passport['profile']['avatar'],
+                'name': passport['profile']['name']
+            }
+
+        return {
+            'avatar': services.choose_private_avatar(passport['information']['gender']),
+            'name': passport['profile']['anonymousName']
+        }
 
     def get(self, request, chat_tag):
         my_id = services.get_user_id_from_request(request)
@@ -217,12 +237,12 @@ class GetListMessages(GenericAPIView):
         list_messages = info_chattag['listMessages'][start:end]
         total_message = info_chattag['totalMessages']
 
-        # Choose avatar for list user in chat tag
-        object_sender_avatar = {}
+        # Choose avatar and name for list user
+        object_avatar_name = {}
         for user_id in info_chattag['listUser']:
-            avatar = self.get_sender_avatar_send_message(
+            avatar = self.get_avatar_and_name(
                 user_id, info_chattag['isPrivate'])
-            object_sender_avatar[user_id] = avatar
+            object_avatar_name[user_id] = avatar
 
         # Custom respose list message
         data_messages = []
@@ -239,13 +259,17 @@ class GetListMessages(GenericAPIView):
             relationship = enums.relationship_self if message[
                 'senderId'] == my_id else enums.relationship_not_know
 
+            content = message['content']
+            if message['type'] == enums.message_join_community:
+                content = object_avatar_name[message['senderId']]['name']
             temp = {
                 'id': id,
                 'chatTag': chat_tag,
                 'type': message['type'],
-                'content': message['content'],
+                'content': content,
                 'senderId': message['senderId'],
-                'senderAvatar': object_sender_avatar[message['senderId']],
+                'senderAvatar': object_avatar_name[message['senderId']]['avatar'],
+                'senderName': object_avatar_name[message['senderId']]['name'],
                 'createdTime': createdTime,
                 'relationship': relationship,
             }

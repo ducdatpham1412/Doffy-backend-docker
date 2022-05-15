@@ -332,6 +332,10 @@ export const getLatestMessage = async (params) => {
         _id: ObjectId(chatTagId),
     });
 
+    if (!chatTag) {
+        return null;
+    }
+
     const isMyChatTag = chatTag.listUser[0] === chatTag.listUser[1];
     const latestMessage = chatTag.listMessages.find((message) => {
         return isMyChatTag
