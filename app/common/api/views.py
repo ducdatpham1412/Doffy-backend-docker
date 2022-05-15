@@ -1,5 +1,3 @@
-from distutils.command.build_ext import build_ext
-from locale import resetlocale
 from authentication.models import User
 from common import models
 from common.api import serializers
@@ -19,6 +17,7 @@ from myprofile.models import Profile
 from utilities.renderers import PagingRenderer
 import requests
 import json
+import pymongo
 
 
 class GetPassport(GenericAPIView):
@@ -60,7 +59,7 @@ class UploadImage(GenericAPIView):
         quality = self.get_quality(request)
 
         res = []
-        form = ImageForm(request.POST, request.data)
+        form = ImageForm(files=request.data)
         if form.is_valid():
             list_image = form.files.getlist('image')
 
@@ -71,7 +70,6 @@ class UploadImage(GenericAPIView):
 
                 resize_image = services.handle_resize_image(image, quality)
                 models.Images.objects.create(image=resize_image)
-                # serializer = serializers.ImageSerializer(temp)
                 res.append(image.name)
 
         return Response(res, status=status.HTTP_200_OK)
@@ -89,9 +87,10 @@ class GetResource(GenericAPIView):
         mongo_resource = mongoDb.resource.find()
         image_background = mongo_resource[0]['imageBackground']
         gradient = mongo_resource[1]['gradient']
+        listHobbies = mongo_resource[2]['listHobbies']
 
         res = {
-            'listHobbies': self.get_list_hobbies(),
+            'listHobbies': listHobbies,
             'imageBackground': image_background,
             'gradient': gradient
         }
@@ -299,6 +298,69 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
                 'isLiked': is_liked,
                 'relationship': relationship
             })
+
+        return Response(res, status=status.HTTP_200_OK)
+
+
+class GetListBubbleGroup(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def get(self, request):
+        my_id = services.get_user_id_from_request(request)
+        take = int(request.query_params['take'])
+        page_index = int(request.query_params['pageIndex'])
+
+        list_groups = mongoDb.profilePostGroup.find().sort(
+            [('createdTime', pymongo.DESCENDING)]).limit(take).skip((page_index - 1) * take)
+
+        res = []
+        for group in list_groups:
+            relationship = enums.group_relationship_not_joined
+
+            if my_id == group['creatorId']:
+                relationship = enums.group_relationship_self
+            elif services.check_include(group['listMembers'], my_id):
+                relationship = enums.group_relationship_joined
+
+            temp = {
+                'id': str(group['_id']),
+                'content': group['content'],
+                'images': [services.create_link_image(group['images'][0])],
+                'chatTagId': group['chatTagId'],
+                'creatorId': group['creatorId'],
+                'createdTime': str(group['createdTime']),
+                'color': str(group['color']),
+                'name': str(group['name']),
+                'relationship': relationship
+            }
+
+            res.append(temp)
+
+        return Response(res, status=status.HTTP_200_OK)
+
+
+class GetListBubbleGroupOfUserEnjoy(GenericAPIView):
+    def get(self, request):
+        take = int(request.query_params['take'])
+        page_index = int(request.query_params['pageIndex'])
+
+        list_groups = mongoDb.profilePostGroup.find().sort(
+            [('createdTime', pymongo.DESCENDING)]).limit(take).skip((page_index - 1) * take)
+
+        res = []
+        for group in list_groups:
+            temp = {
+                'id': str(group['_id']),
+                'content': group['content'],
+                'images': [services.create_link_image(group['images'][0])],
+                'chatTagId': group['chatTagId'],
+                'creatorId': group['creatorId'],
+                'createdTime': str(group['createdTime']),
+                'color': str(group['color']),
+                'name': str(group['name']),
+                'relationship': enums.group_relationship_not_joined
+            }
+            res.append(temp)
 
         return Response(res, status=status.HTTP_200_OK)
 
