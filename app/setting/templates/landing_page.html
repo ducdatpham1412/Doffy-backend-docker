@@ -14,15 +14,25 @@
     </head>
 
     <body>
-        <img
-            class="logo"
-            src="https://doffy-production.s3.ap-southeast-1.amazonaws.com/admin/logo_light.png"
-            alt="Doffy Tìm bạn cùng sở thích"
-        />
-        <h1 class="title anim-typewriter">
-            Tìm những người bạn chung sở thích
-        </h1>
+        <!-- Logo and slogan -->
+        <div class="logoAndSloganView">
+            <img
+                class="logo"
+                src="https://doffy-production.s3.ap-southeast-1.amazonaws.com/admin/logo.png"
+                alt="Doffy Tìm bạn cùng sở thích"
+            />
+            <div style="width: 30px"></div>
+            <div class="sloganAndContentBox">
+                <h1 class="title">Tìm những người bạn chung sở thích</h1>
+                <p>Doffy la ung dung nhan tin hen ho</p>
+            </div>
+        </div>
 
+        <!-- Confession -->
+        <p class="textTermPolicy">Confession</p>
+
+        <!-- Download -->
+        <p class="textTermPolicy">Download</p>
         <a
             href="https://play.google.com/store/apps/details?id=com.doffy.android.production"
             class="link"
@@ -37,26 +47,39 @@
             </div>
         </a>
 
+        <!-- About us -->
+        <p class="textTermPolicy">About us</p>
         <div class="termPolicyView">
             <a href="https://www.doffy.xyz/about-us/terms" class="link">
-                <p class="textTermPolicy">Điều khoản sử dụng</p>
+                <p class="textTermPolicy">Điều khoản</p>
             </a>
             <div class="divisionBox"></div>
             <a href="https://www.doffy.xyz/about-us/policy" class="link">
-                <p class="textTermPolicy">Chính sách bảo mật</p>
+                <p class="textTermPolicy">Bảo mật</p>
             </a>
         </div>
+
+        <script>
+            console.log("Xin chao Viet Name: ", window.innerWidth);
+        </script>
     </body>
 </html>
 
 <style>
     body {
-        background-image: linear-gradient(to left, #0a46d5, #aaccf9);
+        /* background-image: linear-gradient(to left, #003dd4, #001d55, #081019); */
+        background-image: url("https://img.freepik.com/free-vector/color-seamless-space-pattern_102902-2360.jpg?t=st=1653670751~exp=1653671351~hmac=ede18cf1a409beec0071caad16db044c5d0bc1ec1b1e90b70a5e8ed7278b80ef&w=1480");
+        background-repeat: round;
+        background-attachment: fixed;
+        background-position: center;
         text-align: center;
         font-family: "Anonymous Pro", monospace;
         display: flex;
         flex-direction: column;
         align-items: center;
+    }
+    div {
+        display: flex;
     }
     .container {
         width: 100%;
@@ -66,22 +89,30 @@
         justify-content: center;
         margin-top: 100px;
     }
+    .logoAndSloganView {
+        width: 90%;
+        display: flex;
+        flex-direction: row;
+    }
     .logo {
         width: 300px;
         height: auto;
-        margin-top: 30px;
-        animation: logo 10s ease-in-out 0s infinite normal both;
+        /* animation: logo 10s ease-in-out 0s infinite normal both; */
+    }
+    .sloganAndContentBox {
+        display: flex;
+        flex: 1;
+        background-color: rgba(0, 0, 0, 0.2);
+        padding-left: 100px;
+        flex-direction: column;
+        align-items: flex-start;
+        border-radius: 30px;
     }
     .title {
-        margin: 0 auto;
-        border-right: 1px solid rgba(255, 255, 255, 0.75);
+        /* border-right: 1px solid rgba(255, 255, 255, 0.75); */
         font-size: 30px;
-        text-align: center;
         white-space: nowrap;
-        overflow: hidden;
         color: white;
-        margin-top: 50px;
-        line-height: 60px;
     }
     .anim-typewriter {
         /* animation: name duration timing-function delay iteration-count direction fill-mode; */
@@ -114,16 +145,14 @@
         text-decoration: none;
     }
     .termPolicyView {
-        width: 500px;
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        position: absolute;
-        bottom: 0;
+        background-color: orange;
     }
     .textTermPolicy {
-        font-size: 20px;
+        font-size: 50px;
         color: white;
         font-weight: bold;
     }
@@ -140,7 +169,7 @@
         }
         .title {
             border-right: 1px solid rgba(255, 255, 255, 0.75);
-            font-size: 30px;
+            font-size: 40px;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
@@ -170,7 +199,7 @@
             font-size: 30px;
         }
     }
-    @keyframes logo {
+    /* @keyframes logo {
         0% {
             opacity: 0;
         }
@@ -198,13 +227,13 @@
             width: 0;
         }
         15% {
-            width: 650px;
+            width: 830px;
         }
         50% {
-            width: 650px;
+            width: 830px;
         }
         70% {
-            width: 650px;
+            width: 830px;
         }
         90% {
             width: 0;
@@ -226,5 +255,5 @@
         95% {
             border-right-color: transparent;
         }
-    }
+    } */
 </style>
