@@ -21,6 +21,7 @@ import {
     handleSendMessageEnjoy,
 } from "./services/message.js";
 import Static from "./static.js";
+import { startBotDiscord } from "./services/discord.js";
 
 const httpServer = http.createServer();
 const io = new Server(httpServer, {
@@ -368,3 +369,8 @@ const listenAppServer = http.createServer(async (req, res) => {
     }
 });
 listenAppServer.listen(1412);
+
+/**
+ * This is for discord bot
+ */
+startBotDiscord();
