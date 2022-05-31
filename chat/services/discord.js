@@ -35,6 +35,14 @@ const remindWeeklyMeeting = new MessageEmbed()
         "https://media2.giphy.com/media/kHZu4LDtvpY63RT1He/giphy.gif?cid=ecf05e47og5bunp51tjuw9yr4azasgodt3zzzjjit0anx4mv&rid=giphy.gif&ct=g"
     );
 
+// const test = new MessageEmbed()
+//     .setTitle(`Start working <@everyone>`)
+//     .setDescription("Okay ")
+//     .setColor("GOLD")
+//     .setImage(
+//         "https://media4.giphy.com/media/RhQ7bHvqAbySEm5euO/giphy.gif?cid=ecf05e47uvhvyo4vvyk7hy5zldxywwtpfex1mi5yp4t7uccd&rid=giphy.gif&ct=g"
+//     );
+
 export const startBotDiscord = () => {
     if (process.env.ENVIRONMENT_TYPE === "production") {
         const client = new Client({
@@ -43,7 +51,9 @@ export const startBotDiscord = () => {
 
         client.on("ready", () => {
             console.log("Doffy assistant had been ready");
-            client.channels.fetch("981025057402945636").then((channels) => {
+            client.channels.fetch("956027516047482933").then((channels) => {
+                // channels.send({ embeds: [test] });
+                
                 // good morning message
                 new CronJob("00 30 08 * * 1-5", () => {
                     channels.send({ embeds: [morningMessage] });
