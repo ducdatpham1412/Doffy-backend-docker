@@ -55,22 +55,46 @@ export const startBotDiscord = () => {
                 // channels.send({ embeds: [test] });
 
                 // good morning message
-                new CronJob("00 30 08 * * 1-5", () => {
-                    channels.send({ embeds: [morningMessage] });
-                }).start();
-                new CronJob("00 30 08 * * 0,6", () => {
-                    channels.send({ embeds: [morningMessageLastWeek] });
-                }).start();
+                new CronJob(
+                    "00 30 08 * * 1-5",
+                    () => {
+                        channels.send({ embeds: [morningMessage] });
+                    },
+                    null,
+                    true,
+                    "Asia/Ho_Chi_Minh"
+                ).start();
+                new CronJob(
+                    "00 30 08 * * 0,6",
+                    () => {
+                        channels.send({ embeds: [morningMessageLastWeek] });
+                    },
+                    null,
+                    true,
+                    "Asia/Ho_Chi_Minh"
+                ).start();
 
                 // good night message
-                new CronJob("00 50 23 * * *", () => {
-                    channels.send({ embeds: [goodNightMessage] });
-                }).start();
+                new CronJob(
+                    "00 30 23 * * *",
+                    () => {
+                        channels.send({ embeds: [goodNightMessage] });
+                    },
+                    null,
+                    true,
+                    "Asia/Ho_Chi_Minh"
+                ).start();
 
                 // weekly meeting
-                new CronJob("00 30 20 * * 1,4", () => {
-                    channels.send({ embeds: [remindWeeklyMeeting] });
-                }).start();
+                new CronJob(
+                    "00 30 20 * * 1,4",
+                    () => {
+                        channels.send({ embeds: [remindWeeklyMeeting] });
+                    },
+                    null,
+                    true,
+                    "Asia/Ho_Chi_Minh"
+                ).start();
             });
         });
 
