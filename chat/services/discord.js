@@ -53,24 +53,24 @@ export const startBotDiscord = () => {
             console.log("Doffy assistant had been ready");
             client.channels.fetch("956027516047482933").then((channels) => {
                 // channels.send({ embeds: [test] });
-                
+
                 // good morning message
                 new CronJob("00 30 08 * * 1-5", () => {
                     channels.send({ embeds: [morningMessage] });
                 }).start();
                 new CronJob("00 30 08 * * 0,6", () => {
                     channels.send({ embeds: [morningMessageLastWeek] });
-                });
+                }).start();
 
                 // good night message
-                new CronJob("00 45 23 * * *", () => {
+                new CronJob("00 50 23 * * *", () => {
                     channels.send({ embeds: [goodNightMessage] });
-                });
+                }).start();
 
                 // weekly meeting
                 new CronJob("00 30 20 * * 1,4", () => {
                     channels.send({ embeds: [remindWeeklyMeeting] });
-                });
+                }).start();
             });
         });
 
