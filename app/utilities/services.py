@@ -16,6 +16,8 @@ import json
 from django.conf import settings
 from findme.mongo import mongoDb
 from utilities.exception.exception_handler import CustomError
+import whatimage
+import pyheif
 
 
 def send_to_mail(mail, verify_code):
@@ -76,35 +78,77 @@ def create_socket_message_detail(group_id):
     return 'message_detail_{}'.format(group_id)
 
 
-def handle_resize_image(image, new_width=150):
+"""
+Resize image
+"""
+
+
+def change_to_content_jpeg(image: InMemoryUploadedFile):
+    if image.content_type == 'image/heic':
+        img_io = io.BytesIO()
+        heif_file = pyheif.read(image)
+        img = Image.frombytes(
+            heif_file.mode,
+            heif_file.size,
+            heif_file.data,
+            "raw",
+            heif_file.mode,
+            heif_file.stride,
+        )
+        img.save(img_io, format='JPEG')
+        temp = InMemoryUploadedFile(
+            file=img_io,
+            field_name='ImageField',
+            name=image.name,
+            content_type='image/jpeg',
+            size=sys.getsizeof(img_io),
+            charset=image.charset,
+            content_type_extra=image.content_type_extra,
+        )
+        return temp
+
+    return image
+
+
+def handle_resize_image(image: InMemoryUploadedFile, new_width=150):
     img_io = io.BytesIO()
-    img = Image.open(image)
+
+    image_changed = change_to_content_jpeg(image)
+
+    img = Image.open(image_changed)
     img = ImageOps.exif_transpose(img)
 
-    # if image's size is smaller than standart, not need to thumbnail
+    # If image's size is smaller than standard, not need to thumbnail
     if (img.width < new_width):
         return image
+
     # if image is not jpeg (png,...), convert it jpg
     if (img.mode != 'RGB'):
         img = img.convert('RGB')
 
-    # else thumbnail it
+    # Else thumbnail it
     percent = img.height / img.width
     new_height = int(percent * new_width)
     img.thumbnail((new_width, new_height), Image.ANTIALIAS)
-    img.save(img_io, format='JPEG')
+    # can pass quality= to here to compress image
+    img.save(img_io, format='JPEG',)
 
     new_pic = InMemoryUploadedFile(
         file=img_io,
         field_name='ImageField',
-        name=image.name,
-        content_type=image.content_type,
+        name=image_changed.name,
+        content_type='image/jpeg',
         size=sys.getsizeof(img_io),
-        charset=image.charset,
-        content_type_extra=image.content_type_extra,
+        charset=image_changed.charset,
+        content_type_extra=image_changed.content_type_extra,
     )
 
     return new_pic
+
+
+"""
+Resize image
+"""
 
 
 def create_link_image(image_name):

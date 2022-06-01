@@ -60,7 +60,7 @@ class UploadImage(GenericAPIView):
 
         res = []
         form = ImageForm(files=request.data)
-        if form.is_valid():
+        if True:
             list_image = form.files.getlist('image')
 
             for image in list_image:
@@ -70,7 +70,7 @@ class UploadImage(GenericAPIView):
 
                 resize_image = services.handle_resize_image(image, quality)
                 models.Images.objects.create(image=resize_image)
-                res.append(image.name)
+                res.append(resize_image.name)
 
         return Response(res, status=status.HTTP_200_OK)
 
