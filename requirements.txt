@@ -20,3 +20,4 @@ urllib3==1.26.7
 requests==2.27.1
 whatimage==0.0.3
 pyheif==0.7.0
+django-rest-framework-social-oauth2==1.1.0

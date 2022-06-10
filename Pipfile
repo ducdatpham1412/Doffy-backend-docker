@@ -19,6 +19,7 @@ sqlparse = "==0.4.2"
 Django = "==3.2.8"
 Pillow = "==8.4.0"
 requests = "*"
+django-rest-framework-social-oauth2 = "*"
 
 [dev-packages]
 

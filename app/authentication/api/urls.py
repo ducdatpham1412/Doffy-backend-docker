@@ -1,4 +1,5 @@
 from django.urls.conf import path
+from authentication.api.next_views.login_faceboook import SocialLogin
 from authentication.api import views
 
 
@@ -7,6 +8,7 @@ urlpatterns = [
     path('check-otp', views.CheckOTP.as_view()),
     path('register', views.Register.as_view()),
     path('login', views.Login.as_view()),
+    path('login-social', SocialLogin.as_view()),
     path('refresh-token', views.MyRefreshToken.as_view()),
     path('log-out', views.Logout.as_view()),
     path('reset-password', views.ResetPassword.as_view()),

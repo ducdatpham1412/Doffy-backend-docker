@@ -128,3 +128,9 @@ notification_follow = 1
 notification_like_post = 2
 notification_friend_post_new = 3
 notification_comment = 4
+
+
+# social sign in
+sign_in_apple = 'apple'
+sign_in_facebook = 'facebook'
+sign_in_google = 'google'
