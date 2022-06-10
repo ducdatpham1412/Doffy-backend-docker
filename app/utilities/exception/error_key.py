@@ -17,6 +17,7 @@ login_fail = 10
 token_expired = 11
 token_blacklisted = 12
 username_not_exist = 13
+login_facebook_failed = 13.1
 
 # setting
 you_have_blocked_this_person = 14

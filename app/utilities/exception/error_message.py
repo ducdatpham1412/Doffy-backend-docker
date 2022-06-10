@@ -17,6 +17,7 @@ login_fail = 'login_fail'
 token_expired = 'token_expired'
 token_blacklisted = 'token_blacklisted'
 username_not_exist = 'username_not_exist'
+login_facebook_failed = 'login_facebook_failed'
 
 # setting
 you_have_blocked_this_person = 'you_have_blocked_this_person'
