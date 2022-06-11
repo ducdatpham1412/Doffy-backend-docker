@@ -5,7 +5,7 @@ from utilities.exception.exception_handler import CustomError
 from utilities.exception import error_message, error_key
 from authentication.api import serializers
 from social_django.utils import load_backend, load_strategy
-from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden
+from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden, AuthAlreadyAssociated
 from requests.exceptions import HTTPError
 from social_core.backends.oauth import BaseOAuth2
 from utilities import enums
@@ -15,7 +15,7 @@ class SocialLogin(GenericAPIView):
     serializer_class = serializers.SocialSerializer
     permission_classes = [permissions.AllowAny]
 
-    def sign_in_facebook(self, request):
+    def sign_in_facebook_google(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         provider = serializer.data.get('provider', None)
@@ -51,14 +51,13 @@ class SocialLogin(GenericAPIView):
         except AuthForbidden:
             raise CustomError(error_message.login_facebook_failed,
                               error_key.login_facebook_failed)
+        except AuthAlreadyAssociated:
+            print('continue login')
 
         if authenticated_user and authenticated_user.is_active:
             print('login successfully: ', authenticated_user)
 
         return Response('Hello, ', status=status.HTTP_200_OK)
-
-    def sign_in_google(self, request):
-        return {}
 
     def sign_in_apple(self, request):
         return {}
@@ -66,8 +65,8 @@ class SocialLogin(GenericAPIView):
     def post(self, request):
         provider = request.data['provider']
 
-        if provider == enums.sign_in_facebook:
-            res = self.sign_in_facebook(request)
+        if provider == enums.sign_in_facebook or provider == enums.sign_in_google:
+            res = self.sign_in_facebook_google(request)
         else:
             res = {}
 
