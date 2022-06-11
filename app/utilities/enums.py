@@ -133,4 +133,4 @@ notification_comment = 4
 # social sign in
 sign_in_apple = 'apple'
 sign_in_facebook = 'facebook'
-sign_in_google = 'google'
+sign_in_google = 'google-oauth2'
