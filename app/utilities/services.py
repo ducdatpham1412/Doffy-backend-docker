@@ -189,6 +189,11 @@ def get_local_string_date_time(utc_time: any):
     return str(hanoi_time)
 
 
+def format_datetime(time: datetime):
+    temp = datetime.strftime(time, '%Y-%m-%d %H:%M:%S')
+    return datetime.strptime(temp, '%Y-%m-%d %H:%M:%S')
+
+
 # Notification follow user
 headers = {
     "Content-Type": "application/json; charset=utf-8",

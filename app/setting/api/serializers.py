@@ -27,9 +27,6 @@ class ExtendSerializer(serializers.ModelSerializer):
         exclude = ['user']
         read_only_fields = ['user']
 
-    def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
-
 
 class ListBlockSerializer(serializers.ModelSerializer):
     class Meta:
