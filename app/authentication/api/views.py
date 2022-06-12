@@ -1,5 +1,4 @@
 from datetime import timedelta
-from os import stat
 from rest_framework_simplejwt.exceptions import TokenError
 from authentication import models
 from rest_framework import status
@@ -11,13 +10,17 @@ from utilities.exception import error_message, error_key
 from utilities import enums
 from utilities import services
 from utilities import validate
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from findme.mongo import mongoDb
 from django.db.models import Q
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.permissions import IsAuthenticated
 from utilities.disableObject import DisableObject
+from social_django.utils import load_backend, load_strategy
+from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden, AuthAlreadyAssociated
+from requests.exceptions import HTTPError
+from social_core.backends.oauth import BaseOAuth2
 
 
 class RequestOTP(GenericAPIView):
@@ -289,6 +292,73 @@ class Login(GenericAPIView):
 
         # login success
         return Response(user.tokens(), status=status.HTTP_200_OK)
+
+
+class SocialLogin(GenericAPIView):
+    serializer_class = serializers.SocialSerializer
+    permission_classes = [AllowAny]
+
+    def sign_in_facebook_google(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        provider = serializer.data.get('provider', None)
+        strategy = load_strategy(request)
+
+        # Load backend
+        try:
+            backend = load_backend(
+                strategy=strategy, name=provider, redirect_uri=None)
+        except MissingBackend:
+            raise CustomError(error_message.login_facebook_failed,
+                              error_key.login_facebook_failed)
+
+        # Get user
+        try:
+            if isinstance(backend, BaseOAuth2):
+                access_token = serializer.data.get('access_token', None)
+            user = backend.do_auth(access_token=access_token)
+        except HTTPError:
+            raise CustomError(error_message.login_facebook_failed,
+                              error_key.login_facebook_failed)
+        except AuthTokenError:
+            raise CustomError(error_message.login_facebook_failed,
+                              error_key.login_facebook_failed)
+
+        # Authenticate user
+        try:
+            authenticated_user = backend.do_auth(
+                access_token=access_token, user=user)
+        except HTTPError:
+            raise CustomError(error_message.login_facebook_failed,
+                              error_key.login_facebook_failed)
+        except AuthForbidden:
+            raise CustomError(error_message.login_facebook_failed,
+                              error_key.login_facebook_failed)
+        except AuthAlreadyAssociated:
+            print('continue login')
+
+        if authenticated_user and authenticated_user.is_active:
+            print('login successfully: ', authenticated_user)
+
+        return Response('Hello, ', status=status.HTTP_200_OK)
+
+    def sign_in_apple(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        access_token = serializer.data.get('access_token', None)
+
+        apple_authenticated = models.AppleIdAuth()
+        apple_authenticated.do_auth(access_token=access_token)
+
+    def post(self, request):
+        provider = request.data['provider']
+
+        if provider == enums.sign_in_facebook or provider == enums.sign_in_google:
+            res = self.sign_in_facebook_google(request)
+        else:
+            res = {}
+
+        return Response(res, status=status.HTTP_200_OK)
 
 
 class Logout(GenericAPIView):
