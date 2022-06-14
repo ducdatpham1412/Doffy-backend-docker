@@ -1,7 +1,5 @@
-from asgiref.sync import async_to_sync
 from authentication.api.serializers import UserSerializer
 from authentication.models import User
-from channels.layers import get_channel_layer
 from django.shortcuts import render
 from findme.mongo import mongoDb
 from myprofile.api.serializers import ProfileSerializer
@@ -155,6 +153,12 @@ class ChangeInformation(GenericAPIView):
         user_serializer = UserSerializer(user, data=new_information)
         user_serializer.is_valid(raise_exception=True)
         user_serializer.save()
+
+        # update name in profile
+        profile = Profile.objects.get(user=id)
+        profile_serializer = ProfileSerializer(profile, data=new_information)
+        profile_serializer.is_valid(raise_exception=True)
+        profile_serializer.save()
 
         return Response(None, status=status.HTTP_200_OK)
 
