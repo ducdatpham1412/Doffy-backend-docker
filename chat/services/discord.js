@@ -26,9 +26,9 @@ const goodNightMessage = new MessageEmbed()
     );
 
 const remindWeeklyMeeting = new MessageEmbed()
-    .setTitle(`BÁO CÁO WEEKLY MEETING <@everyone>`)
+    .setTitle(`WEEKLY MEETING <@everyone>`)
     .setDescription(
-        "Tối nay ta sẽ có buổi họp, mọi người chú ý điền báo cáo:\nhttps://docs.google.com/spreadsheets/d/1iQVhVffoHQRixVxU13q8eWC3lIH_H5n0kzyprKLQXFA/edit?usp=sharing"
+        "Tối nay ta sẽ có buổi họp, mọi người chú ý cập nhật các task trong bảng Trello:\nhttps://trello.com/b/HVPnocTh/doffy-dev-2022"
     )
     .setColor("GOLD")
     .setImage(
