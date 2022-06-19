@@ -19,7 +19,9 @@ class User(AbstractUser):
     groups = None
     user_permissions = None
 
-    facebook = models.CharField(default='', max_length=200)
+    facebook_acc = models.CharField(default='', max_length=200)
+    google_acc = models.CharField(default='', max_length=200)
+    apple_acc = models.CharField(default='', max_length=200)
     email = models.EmailField(default='',)
     phone = models.CharField(default='', max_length=enums.PHONE_MAX_LENGTH)
     password = models.CharField(max_length=enums.PASSWORD_MAX_LENGTH)
@@ -41,6 +43,7 @@ class VerifyCode(models.Model):
     username = models.TextField()
     # type = models.SmallIntegerField()
     code = models.SmallIntegerField()
+    # created = models.DateTimeField()
 
     def __str__(self):
         return str(self.code)

@@ -21,6 +21,7 @@ from social_django.utils import load_backend, load_strategy
 from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden, AuthAlreadyAssociated
 from requests.exceptions import HTTPError
 from social_core.backends.oauth import BaseOAuth2
+from django.conf import settings
 
 
 class RequestOTP(GenericAPIView):
@@ -306,6 +307,37 @@ class SocialLogin(GenericAPIView):
     serializer_class = serializers.SocialSerializer
     permission_classes = [AllowAny]
 
+    def sign_in_google(self, id_token: str, os: int):
+        res = services.google_validate_id_token(id_token)
+        audience = res['aud']
+        check_audience = ''
+        if os == enums.os_iOS:
+            check_audience = settings.IOS_GOOGLE_OAUTH2_CLIENT_ID
+        elif os == enums.os_android:
+            check_audience = settings.ANDROID_GOOGLE_OAUTH2_CLIENT_ID
+
+        if audience == check_audience:
+            try:
+                user = models.User.objects.get(google_acc=res['email'])
+                return {
+                    'isNewUser': False,
+                    **user.tokens()
+                }
+            # If not exist, register
+            except models.User.DoesNotExist:
+                register_data = {
+                    'google_acc': res['email'],
+                }
+                serializer = serializers.RegisterSerializer(data=register_data)
+                serializer.is_valid(raise_exception=True)
+                user = serializer.save()
+                return {
+                    'isNewUser': True,
+                    **user.tokens()
+                }
+        else:
+            raise CustomError(error_message.login_fail, error_key.login_fail)
+
     def sign_in_facebook_google(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -359,12 +391,12 @@ class SocialLogin(GenericAPIView):
         apple_authenticated.do_auth(access_token=access_token)
 
     def post(self, request):
+        id_token = request.headers.get('Authorization')
         provider = request.data['provider']
+        os = request.data['os']
 
-        if provider == enums.sign_in_facebook or provider == enums.sign_in_google:
-            res = self.sign_in_facebook_google(request)
-        else:
-            res = {}
+        if provider == enums.sign_in_google:
+            res = self.sign_in_google(id_token=id_token, os=os)
 
         return Response(res, status=status.HTTP_200_OK)
 

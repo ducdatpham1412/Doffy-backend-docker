@@ -1,6 +1,3 @@
-from utilities.services import create_link_image
-
-
 USERNAME_MIN_LENGTH = 7
 USERNAME_MAX_LENGTH = 20
 
@@ -22,6 +19,8 @@ PRIVATE_AVATAR = {
     'boy': '__admin_boy.png',
     'lgbt': '__admin_lgbt.png',
 }
+
+GOOGLE_ID_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
 
 # any value not specify
 number_not_specify = -1
@@ -134,3 +133,7 @@ notification_comment = 4
 sign_in_apple = 'apple'
 sign_in_facebook = 'facebook'
 sign_in_google = 'google-oauth2'
+
+# os
+os_android = 0
+os_iOS = 1
