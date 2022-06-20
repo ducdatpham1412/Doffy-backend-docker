@@ -234,8 +234,20 @@ def check_had_i_know(list_user_id: list, partner_id: int):
     return False
 
 
-def check_include(list: list, value: any):
+def check_include(list: list, value: any) -> bool:
     for _value in list:
         if _value == value:
             return True
     return False
+
+
+def google_validate_id_token(id_token: str) -> bool:
+    response = requests.get(
+        enums.GOOGLE_ID_TOKEN_INFO_URL,
+        params={'id_token': id_token}
+    )
+
+    if not response.ok:
+        raise CustomError()
+
+    return response.json()
