@@ -1,0 +1,76 @@
+{
+    "explorer.confirmDragAndDrop": false,
+    "explorer.confirmDelete": false,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "editor.fontSize": 13,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    },
+    "editor.fontLigatures": true,
+    "editor.formatOnSave": true,
+    "editor.rulers": [85],
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wrappingIndent": "same",
+    "editor.wordWrapColumn": 85,
+    "editor.detectIndentation": false,
+    "eslint.rules.customizations": [
+        { "rule": "prettier/prettier", "severity": "error" },
+        { "rule": "@typescript-eslint/no-unused-vars", "severity": "warn" }
+    ],
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "workbench.iconTheme": "material-icon-theme",
+    "workbench.colorTheme": "Dracula",
+    "workbench.editorAssociations": {
+        "*.ipynb": "jupyter-notebook"
+    },
+    "terminal.integrated.profiles.osx": {
+        "bash": {
+            "path": "bash",
+            "args": ["-l"],
+            "icon": "terminal-bash"
+        },
+        "zsh": {
+            "path": "zsh",
+            "args": ["-l"]
+        },
+        "fish": {
+            "path": "fish",
+            "args": ["-l"]
+        },
+        "tmux": {
+            "path": "tmux",
+            "icon": "terminal-tmux"
+        },
+        "pwsh": {
+            "path": "pwsh",
+            "icon": "terminal-powershell"
+        },
+        "csh": {
+            "path": "/bin/csh"
+        }
+    },
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "editor.linkedEditing": true,
+    "security.workspace.trust.untrustedFiles": "open",
+    "gitlens.views.branches.showBranchComparison": false,
+    "notebook.cellToolbarLocation": {
+        "default": "right",
+        "jupyter-notebook": "left"
+    },
+    "prettier.tabWidth": 4,
+    "python.defaultInterpreterPath": "~./.local/share/virtualenvs/Doffy-backend-tLfXx8bP"
+}

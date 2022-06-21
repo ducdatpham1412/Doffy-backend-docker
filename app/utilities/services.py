@@ -9,15 +9,14 @@ from PIL import Image, ImageOps
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import sys
 from datetime import datetime, timedelta
-import pytz
 from django.conf import settings
 import requests
 import json
 from django.conf import settings
 from findme.mongo import mongoDb
 from utilities.exception.exception_handler import CustomError
-import whatimage
 import pyheif
+from dateutil import parser
 
 
 def send_to_mail(mail, verify_code):
@@ -184,9 +183,9 @@ def get_datetime_now():
 
 def get_local_string_date_time(utc_time: any):
     # print('time zone info: ', datetime.now().astimezone().tzinfo)
-    temp = datetime.strptime(str(utc_time), '%Y-%m-%d %H:%M:%S.%f')
-    hanoi_time = temp + timedelta(hours=7)
-    return str(hanoi_time)
+    parsed_date = parser.parse(utc_time)
+    parsed_date_vn = parsed_date + timedelta(hours=7)
+    return datetime.strftime(parsed_date_vn, '%Y-%m-%d %H:%M:%S')
 
 
 def format_datetime(time: datetime):
