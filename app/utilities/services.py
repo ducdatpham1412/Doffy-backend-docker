@@ -17,6 +17,7 @@ from findme.mongo import mongoDb
 from utilities.exception.exception_handler import CustomError
 import pyheif
 from dateutil import parser
+import pytz
 
 
 def send_to_mail(mail, verify_code):
@@ -184,7 +185,7 @@ def get_datetime_now():
 def get_local_string_date_time(utc_time: any):
     # print('time zone info: ', datetime.now().astimezone().tzinfo)
     parsed_date = parser.parse(str(utc_time))
-    parsed_date_vn = parsed_date + timedelta(hours=7)
+    parsed_date_vn = parsed_date.astimezone(pytz.timezone('Asia/Ho_Chi_Minh'))
     return datetime.strftime(parsed_date_vn, '%Y-%m-%d %H:%M:%S')
 
 
