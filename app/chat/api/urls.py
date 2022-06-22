@@ -1,15 +1,18 @@
+from chat.views import (get_detail_chat_tag, get_list_chat_tag,
+                        get_list_messages, change_chat_color, get_list_user_info, change_channel_name, delete_message)
 from django.urls import path
-from . import views
 
 
 urlpatterns = [
-    path('get-list-chat-tag', views.GetListChatTags.as_view()),
+    path('get-list-chat-tag', get_list_chat_tag.GetListChatTags.as_view()),
     path('get-detail-chat-tag/<str:chat_tag_id>',
-         views.GetDetailChatTag.as_view()),
-    path('get-list-messages/<str:chat_tag>', views.GetListMessages.as_view()),
+         get_detail_chat_tag.GetDetailChatTag.as_view()),
+    path('get-list-messages/<str:chat_tag>',
+         get_list_messages.GetListMessages.as_view()),
     path('change-group-name/<str:chat_tag>',
-         views.ChangeGroupNameChatTag.as_view()),
-    path('change-chat-color/<str:chat_tag>', views.ChangeChatColor.as_view()),
-    path('list-info-user', views.GetListUserInfo.as_view()),
-    path('delete-message', views.DeleteMessage.as_view())
+         change_channel_name.ChangeGroupNameChatTag.as_view()),
+    path('change-chat-color/<str:chat_tag>',
+         change_chat_color.ChangeChatColor.as_view()),
+    path('list-info-user', get_list_user_info.GetListUserInfo.as_view()),
+    path('delete-message', delete_message.DeleteMessage.as_view())
 ]
