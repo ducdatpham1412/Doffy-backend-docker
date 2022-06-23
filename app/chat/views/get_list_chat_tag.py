@@ -119,6 +119,11 @@ class GetListChatTags(GenericAPIView):
         return Response(res, status=status.HTTP_200_OK)
 
 
+"""
+New structure
+"""
+
+
 class GetListChannelChat(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
     renderer_classes = [PagingRenderer, ]
@@ -179,6 +184,8 @@ class GetListChannelChat(GenericAPIView):
                     Block.objects.get(block=friend_id, blocked=id)
                 except Block.DoesNotExist:
                     return False
+
+            return True
 
         for channel in list_channel_chat:
             info_list_user = []

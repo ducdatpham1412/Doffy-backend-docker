@@ -63,6 +63,7 @@ export const handleSendMessage = async (newMessage) => {
         type: insertMessage.type,
         content: insertMessage.content,
         senderId: insertMessage.senderId,
+        senderName: newMessage.senderName,
         senderAvatar: newMessage.senderAvatar,
         tag: newMessage.tag,
         createdTime: String(insertMessage.createdTime),
