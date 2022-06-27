@@ -11,7 +11,7 @@ urlpatterns = [
     path('profile/', include('myprofile.api.urls')),
     path('common/', include('common.api.urls')),
     path('setting/', include('setting.api.urls')),
-    path('chat/', include('chat.api.urls')),
+    path('chat/', include('chat.urls')),
     path('about-us/policy', views.PrivacyPolicy.as_view()),
     path('about-us/support', views.DoffySupport.as_view()),
     path('about-us/terms', views.TermsOfUse.as_view()),

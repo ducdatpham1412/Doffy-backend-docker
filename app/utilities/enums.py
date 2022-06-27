@@ -137,3 +137,7 @@ sign_in_google = 'google-oauth2'
 # os
 os_android = 0
 os_iOS = 1
+
+# status
+status_not_active = 0
+status_active = 1

@@ -29,3 +29,26 @@ class ChangeGroupNameChatTag(GenericAPIView):
         )
 
         return Response(None, status=status.HTTP_200_OK)
+
+
+class ChangeChannelName(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def put(self, request, channel_id):
+        my_id = services.get_user_id_from_request(request)
+        new_name = request.data['name']
+
+        mongoDb.channel_chat.find_one_and_update(
+            {
+                '_id': ObjectId(channel_id),
+                'list_user': my_id
+            },
+            {
+                '$set': {
+                    'channel_name': new_name,
+                    'modified': services.get_datetime_now()
+                }
+            }
+        )
+
+        return Response(None, status=status.HTTP_200_OK)
