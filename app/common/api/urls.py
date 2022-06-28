@@ -1,5 +1,6 @@
 from django.urls.conf import path
 from common.api import views
+from common.views import get_list_bubble_profile
 
 
 urlpatterns = [
@@ -8,7 +9,8 @@ urlpatterns = [
     path('get-resource', views.GetResource.as_view()),
     path('update-my-bubbles', views.UpdateMyBubbles.as_view()),
     path('report-user/<int:user_id>', views.ReportUser.as_view()),
-    path('get-list-bubble-profile', views.GetListBubbleProfile.as_view()),
+    path('get-list-bubble-profile',
+         get_list_bubble_profile.GetListBubbleProfile.as_view()),
     path('get-list-bubble-profile-enjoy',
          views.GetListBubbleProfileOfUserEnjoy.as_view()),
     path('get-list-bubble-group', views.GetListBubbleGroup.as_view()),
