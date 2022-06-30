@@ -1,4 +1,4 @@
-from authentication.api.serializers import UserSerializer
+from authentication.serializers import UserSerializer
 from authentication.models import User
 from django.shortcuts import render
 from findme.mongo import mongoDb

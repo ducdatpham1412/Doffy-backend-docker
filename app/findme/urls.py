@@ -7,7 +7,7 @@ from setting.api import views
 
 
 urlpatterns = [
-    path('auth/', include('authentication.api.urls')),
+    path('auth/', include('authentication.urls')),
     path('profile/', include('myprofile.api.urls')),
     path('common/', include('common.api.urls')),
     path('setting/', include('setting.api.urls')),
