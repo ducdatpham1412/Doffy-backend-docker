@@ -8,7 +8,7 @@ urlpatterns = [
     path('register', register.Register.as_view()),
     path('login', login.Login.as_view()),
     path('login-social', social_login.SocialLogin.as_view()),
-    path('refresh-token', refresh_token.RefreshToken.as_view()),
+    path('refresh-token', refresh_token.MyRefreshToken.as_view()),
     path('log-out', log_out.Logout.as_view()),
     path('reset-password', reset_password.ResetPassword.as_view()),
     path('verify-token', verify_token.VerifyToken.as_view()),

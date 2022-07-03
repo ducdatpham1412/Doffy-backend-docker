@@ -74,44 +74,46 @@ class AppleIdAuth(BaseOAuth2):
             key=settings.SOCIAL_AUTH_APPLE_PRIVATE_KEY,
             algorithm='ES256',
             headers=headers
-        )
+        ).decode('utf-8')
+        print('private key: ', settings.SOCIAL_AUTH_APPLE_PRIVATE_KEY)
 
-        return settings.CLIENT_ID, client_secret
+        return settings.CLIENT_ID, ''
 
     @handle_http_errors
     def do_auth(self, access_token, *args, **kwargs):
         response_data = {}
         client_id, client_secret = self.get_key_and_secret()
-        headers = {
-            'content-type': "application/x-www-form-urlencoded"
-        }
-        data = {
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'code': access_token,
-            'grant_type': 'authorization_code',
-        }
+        print('key and secret: ', client_id, ' - ', client_secret)
+        # headers = {
+        #     'content-type': "application/x-www-form-urlencoded"
+        # }
+        # data = {
+        #     'client_id': client_id,
+        #     'client_secret': client_secret,
+        #     'code': access_token,
+        #     'grant_type': 'authorization_code',
+        # }
 
-        res = requests.post(AppleIdAuth.ACCESS_TOKEN_URL,
-                            data=data, headers=headers)
-        response_dict = res.json()
-        id_token = response_dict.get('id_token', None)
+        # res = requests.post(AppleIdAuth.ACCESS_TOKEN_URL,
+        #                     data=data, headers=headers)
+        # response_dict = res.json()
+        # id_token = response_dict.get('id_token', None)
 
-        if id_token:
-            decoded = jwt.decode(id_token, '', verify=False)
-            response_data.update(
-                {'email': decoded['email']}) if 'email' in decoded else None
-            response_data.update(
-                {'uid': decoded['sub']}) if 'sub' in decoded else None
+        # if id_token:
+        #     decoded = jwt.decode(id_token, '', verify=False)
+        #     response_data.update(
+        #         {'email': decoded['email']}) if 'email' in decoded else None
+        #     response_data.update(
+        #         {'uid': decoded['sub']}) if 'sub' in decoded else None
 
-        response = kwargs.get('response') or {}
-        response.update(response_data)
-        response.update({'access_token': access_token}
-                        ) if 'access_token' not in response else None
+        # response = kwargs.get('response') or {}
+        # response.update(response_data)
+        # response.update({'access_token': access_token}
+        #                 ) if 'access_token' not in response else None
 
-        kwargs.update({'response': response, 'backend': self})
+        # kwargs.update({'response': response, 'backend': self})
 
-        return self.strategy.authenticate(*args, **kwargs)
+        # return self.strategy.authenticate(*args, **kwargs)
 
     def get_user_details(self, response):
         email = response.get('email', None)

@@ -94,13 +94,10 @@ class SocialLogin(GenericAPIView):
 
         return Response('Hello, ', status=status.HTTP_200_OK)
 
-    def sign_in_apple(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        access_token = serializer.data.get('access_token', None)
-
+    def sign_in_apple(self, id_token: str):
         apple_authenticated = models.AppleIdAuth()
-        apple_authenticated.do_auth(access_token=access_token)
+        check = apple_authenticated.do_auth(access_token=id_token)
+        print('check is: ', check)
 
     def post(self, request):
         id_token = request.headers.get('Authorization')
@@ -109,5 +106,8 @@ class SocialLogin(GenericAPIView):
 
         if provider == enums.sign_in_google:
             res = self.sign_in_google(id_token=id_token, os=os)
+
+        if provider == enums.sign_in_apple:
+            res = self.sign_in_apple(id_token=id_token)
 
         return Response(res, status=status.HTTP_200_OK)

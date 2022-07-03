@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
-class RefreshToken(GenericAPIView):
+class MyRefreshToken(GenericAPIView):
     def post(self, request):
         refreshToken = request.data['refresh']
         try:
