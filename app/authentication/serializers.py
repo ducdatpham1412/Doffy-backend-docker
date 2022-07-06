@@ -7,6 +7,8 @@ from utilities.exception.exception_handler import CustomError
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q
 from findme.mongo import mongoDb
+from findme.mysql import mysql_select, mysql_insert, mysql_update
+from authentication.query import verify_code
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -26,15 +28,13 @@ class RequestOTPSerializer(serializers.ModelSerializer):
         username = validated_data['username']
         code = validated_data['code']
 
-        try:
-            code_find = models.VerifyCode.objects.get(username=username)
+        code_find = mysql_select(verify_code.SEARCH_OTP(username=username))
+        if code_find:
+            mysql_update(verify_code.UPDATE_OTP(username=username, code=code))
+        else:
+            mysql_insert(verify_code.INSERT_OTP(username=username, code=code))
 
-            code_find.username = username
-            code_find.code = code
-            code_find.save()
-            return code_find
-        except models.VerifyCode.DoesNotExist:
-            return models.VerifyCode.objects.create(**validated_data)
+        return {}
 
 
 # REGISTER

@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from authentication.views import request_otp, check_otp, register, login, social_login, log_out, refresh_token, reset_password, verify_token, get_id_enjoy_mode, lock_account, open_account, request_delete_acc
+from authentication.views import request_otp, check_otp, register, login, social_login, log_out, refresh_token, reset_password, verify_token, get_id_enjoy_mode, lock_account, open_account, request_delete_acc, _test
 
 
 urlpatterns = [
@@ -15,5 +15,6 @@ urlpatterns = [
     path('get-id-enjoy-mode', get_id_enjoy_mode.GetIdEnjoyMode.as_view()),
     path('lock-account', lock_account.LockAccount.as_view()),
     path('open-account', open_account.OpenAccount.as_view()),
-    path('delete-account', request_delete_acc.RequestDeleteAccount.as_view())
+    path('delete-account', request_delete_acc.RequestDeleteAccount.as_view()),
+    # path('check', _test.Check.as_view())
 ]
