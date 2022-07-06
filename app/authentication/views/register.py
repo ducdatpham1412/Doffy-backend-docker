@@ -6,6 +6,8 @@ from utilities.exception import error_message, error_key
 from rest_framework import status
 from utilities import validate
 from authentication import serializers
+from findme.mysql import mysql_select, mysql_update
+from authentication.query import verify_code
 
 
 class Register(GenericAPIView):
@@ -21,13 +23,11 @@ class Register(GenericAPIView):
             pass
 
     def check_otp(self, username, code):
-        try:
-            verify_code = models.VerifyCode.objects.get(
-                username=username, code=code)
-            verify_code.code = 0
-            verify_code.save()
-        except models.VerifyCode.DoesNotExist:
+        otp_code = mysql_select(
+            verify_code.SEARCH_OTP(username=username, code=code))
+        if not otp_code:
             raise CustomError(error_message.otp_invalid, error_key.otp_invalid)
+        mysql_update(verify_code.UPDATE_OTP(username=username, code=0))
 
     def post(self, request):
         email = request.data['email']
