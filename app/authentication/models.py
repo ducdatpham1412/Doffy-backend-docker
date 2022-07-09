@@ -71,33 +71,39 @@ class AppleIdAuth(BaseOAuth2):
 
         client_secret = jwt.encode(
             payload=payload,
-            key=settings.SOCIAL_AUTH_APPLE_PRIVATE_KEY,
+            key='''-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgjJFHvs1BRELZmcWT
+/DaHIlFKGJPUanul5EQQcLVKKaOgCgYIKoZIzj0DAQehRANCAAS4IEEfDt4SPorl
+i4UTWmj20IV/lRfBkKKi09IuXvsVH7MpSsMk6GGFM2VDnoUNX6b6YcFKegZ6LLB7
+kh0Z9ot+
+-----END PRIVATE KEY-----''',
+            # key=settings.SOCIAL_AUTH_APPLE_PRIVATE_KEY,
             algorithm='ES256',
             headers=headers
-        ).decode('utf-8')
-        print('private key: ', settings.SOCIAL_AUTH_APPLE_PRIVATE_KEY)
+        )
 
-        return settings.CLIENT_ID, ''
+        return settings.CLIENT_ID, client_secret
 
     @handle_http_errors
     def do_auth(self, access_token, *args, **kwargs):
         response_data = {}
         client_id, client_secret = self.get_key_and_secret()
         print('key and secret: ', client_id, ' - ', client_secret)
-        # headers = {
-        #     'content-type': "application/x-www-form-urlencoded"
-        # }
-        # data = {
-        #     'client_id': client_id,
-        #     'client_secret': client_secret,
-        #     'code': access_token,
-        #     'grant_type': 'authorization_code',
-        # }
+        headers = {
+            'content-type': "application/x-www-form-urlencoded"
+        }
+        data = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'code': access_token,
+            'grant_type': 'authorization_code',
+        }
 
-        # res = requests.post(AppleIdAuth.ACCESS_TOKEN_URL,
-        #                     data=data, headers=headers)
-        # response_dict = res.json()
-        # id_token = response_dict.get('id_token', None)
+        res = requests.post(AppleIdAuth.ACCESS_TOKEN_URL,
+                            data=data, headers=headers)
+        response_dict = res.json()
+        id_token = response_dict.get('id_token', None)
+        print('response apple: ', response_dict)
 
         # if id_token:
         #     decoded = jwt.decode(id_token, '', verify=False)

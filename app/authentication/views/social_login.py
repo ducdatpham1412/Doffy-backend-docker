@@ -30,7 +30,7 @@ class SocialLogin(GenericAPIView):
 
         if audience == check_audience:
             try:
-                user = models.User.objects.get(google_acc=res['email'])
+                user = models.User.objects.get(email=res['email'])
                 return {
                     'isNewUser': False,
                     **user.tokens()
@@ -38,7 +38,7 @@ class SocialLogin(GenericAPIView):
             # If not exist, register
             except models.User.DoesNotExist:
                 register_data = {
-                    'google_acc': res['email'],
+                    'email': res['email'],
                 }
                 serializer = serializers.RegisterSerializer(data=register_data)
                 serializer.is_valid(raise_exception=True)
