@@ -1,103 +1,132 @@
-from authentication import models
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
-from utilities.exception.exception_handler import CustomError
-from utilities.exception import error_message, error_key
 from utilities import enums
 from authentication import serializers
 from rest_framework.permissions import AllowAny
-from utilities import services
-from django.conf import settings
-from social_django.utils import load_backend, load_strategy
-from social_core.exceptions import MissingBackend, AuthTokenError, AuthForbidden, AuthAlreadyAssociated
-from requests.exceptions import HTTPError
-from social_core.backends.oauth import BaseOAuth2
 from rest_framework.response import Response
+from authentication.models import User
+import requests
+from utilities.exception.exception_handler import CustomError
+from utilities.exception import error_message, error_key
+from django.conf import settings
+from jwt.exceptions import PyJWTError
+import jwt
+import time
 
 
-class SocialLogin(GenericAPIView):
-    serializer_class = serializers.SocialSerializer
-    permission_classes = [AllowAny]
+def check_and_sign_in(email: str):
+    try:
+        user = User.objects.get(email=email)
+        return {
+            'isNewUser': False,
+            **user.tokens()
+        }
+    except User.DoesNotExist:
+        register_data = {
+            email,
+        }
+        serializer = serializers.RegisterSerializer(data=register_data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return {
+            'isNewUser': True,
+            **user.tokens()
+        }
 
-    def sign_in_google(self, id_token: str, os: int):
-        res = services.google_validate_id_token(id_token)
-        audience = res['aud']
+
+class GoogleTokenAuthentication():
+    GOOGLE_ID_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
+
+    def do_auth(self, id_token: str, os: int):
+        res = requests.get(self.GOOGLE_ID_TOKEN_INFO_URL, params={
+            'id_token': id_token
+        })
+
+        if not res.ok:
+            raise CustomError()
+        res = res.json()
+
         check_audience = ''
         if os == enums.os_iOS:
             check_audience = settings.IOS_GOOGLE_OAUTH2_CLIENT_ID
         elif os == enums.os_android:
             check_audience = settings.ANDROID_GOOGLE_OAUTH2_CLIENT_ID
 
-        if audience == check_audience:
-            try:
-                user = models.User.objects.get(email=res['email'])
-                return {
-                    'isNewUser': False,
-                    **user.tokens()
-                }
-            # If not exist, register
-            except models.User.DoesNotExist:
-                register_data = {
-                    'email': res['email'],
-                }
-                serializer = serializers.RegisterSerializer(data=register_data)
-                serializer.is_valid(raise_exception=True)
-                user = serializer.save()
-                return {
-                    'isNewUser': True,
-                    **user.tokens()
-                }
-        else:
+        if res['aud'] != check_audience:
             raise CustomError(error_message.login_fail, error_key.login_fail)
 
-    def sign_in_facebook_google(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        provider = serializer.data.get('provider', None)
-        strategy = load_strategy(request)
+        return check_and_sign_in(email=res['email'])
 
-        # Load backend
+
+class AppleIdAuthentication():
+    ACCESS_TOKEN_URL = 'https://appleid.apple.com/auth/token'
+    JWK_URL = 'https://appleid.apple.com/auth/keys'
+    AUD_URL = 'https://appleid.apple.com'
+    TOKEN_TTL_SEC = 5 * 60
+
+    def get_key_and_secret(self):
+        headers = {
+            'kid': settings.SOCIAL_AUTH_APPLE_KEY_ID
+        }
+        time_now = int(time.time())
+        payload = {
+            'iss': settings.SOCIAL_AUTH_APPLE_TEAM_ID,
+            'iat': time_now,
+            'exp': time_now + self.TOKEN_TTL_SEC,
+            'aud': self.AUD_URL,
+            'sub': settings.CLIENT_ID,
+        }
+
+        client_secret = jwt.encode(
+            payload=payload,
+            key=settings.SOCIAL_AUTH_APPLE_PRIVATE_KEY,
+            algorithm='ES256',
+            headers=headers
+        )
+
+        return settings.CLIENT_ID, client_secret
+
+    def decode_id_token(self, id_token: str):
         try:
-            backend = load_backend(
-                strategy=strategy, name=provider, redirect_uri=None)
-        except MissingBackend:
-            raise CustomError(error_message.login_facebook_failed,
-                              error_key.login_facebook_failed)
+            decoded = jwt.decode(
+                id_token,
+                audience=settings.CLIENT_ID,
+                options={
+                    'verify_signature': False
+                }
+            )
+            return decoded
+        except PyJWTError:
+            raise CustomError()
 
-        # Get user
-        try:
-            if isinstance(backend, BaseOAuth2):
-                access_token = serializer.data.get('access_token', None)
-            user = backend.do_auth(access_token=access_token)
-        except HTTPError:
-            raise CustomError(error_message.login_facebook_failed,
-                              error_key.login_facebook_failed)
-        except AuthTokenError:
-            raise CustomError(error_message.login_facebook_failed,
-                              error_key.login_facebook_failed)
+    def do_auth(self, authorization_code: str):
+        client_id, client_secret = self.get_key_and_secret()
+        headers = {
+            'content-type': "application/x-www-form-urlencoded"
+        }
+        data = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'code': authorization_code,
+            'grant_type': 'authorization_code',
+        }
 
-        # Authenticate user
-        try:
-            authenticated_user = backend.do_auth(
-                access_token=access_token, user=user)
-        except HTTPError:
-            raise CustomError(error_message.login_facebook_failed,
-                              error_key.login_facebook_failed)
-        except AuthForbidden:
-            raise CustomError(error_message.login_facebook_failed,
-                              error_key.login_facebook_failed)
-        except AuthAlreadyAssociated:
-            print('continue login')
+        res = requests.post(self.ACCESS_TOKEN_URL,
+                            data=data, headers=headers)
+        response_dict = res.json()
+        id_token = response_dict.get('id_token', None)
+        if not id_token:
+            raise CustomError()
 
-        if authenticated_user and authenticated_user.is_active:
-            print('login successfully: ', authenticated_user)
+        email = self.decode_id_token(id_token=id_token).get('email', None)
+        if not email:
+            raise CustomError()
 
-        return Response('Hello, ', status=status.HTTP_200_OK)
+        return check_and_sign_in(email=email)
 
-    def sign_in_apple(self, id_token: str):
-        apple_authenticated = models.AppleIdAuth()
-        check = apple_authenticated.do_auth(access_token=id_token)
-        print('check is: ', check)
+
+class SocialLogin(GenericAPIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         id_token = request.headers.get('Authorization')
@@ -105,9 +134,12 @@ class SocialLogin(GenericAPIView):
         os = request.data['os']
 
         if provider == enums.sign_in_google:
-            res = self.sign_in_google(id_token=id_token, os=os)
+            res = GoogleTokenAuthentication().do_auth(id_token=id_token, os=os)
 
         if provider == enums.sign_in_apple:
-            res = self.sign_in_apple(id_token=id_token)
+            res = AppleIdAuthentication().do_auth(authorization_code=id_token)
+
+        else:
+            raise CustomError(error_message.login_fail, error_key.login_fail)
 
         return Response(res, status=status.HTTP_200_OK)
