@@ -1,12 +1,13 @@
-import { ObjectId } from "mongodb";
-import { MESSAGE_TYPE } from "../enum.js";
-import mongoDb from "../mongoDb.js";
-import Notification from "../notification.js";
-import Static from "../static.js";
-import { getDateTimeNow, createLinkImage } from "./assistant.js";
+import { Document, ObjectId, PushOperator } from "mongodb";
+import { MESSAGE_TYPE } from "../enum";
+import { TypeSendMessageRequest } from "../interface/message";
+import mongoDb from "../mongoDb";
+import Notification from "../notification";
+import Static from "../static";
+import { getDateTimeNow, createLinkImage } from "./assistant";
 
-export const handleSendMessage = async (newMessage) => {
-    const newMessageId = ObjectId();
+export const handleSendMessage = async (newMessage: TypeSendMessageRequest) => {
+    const newMessageId = new ObjectId();
 
     const insertMessage = {
         _id: newMessageId,
@@ -21,7 +22,7 @@ export const handleSendMessage = async (newMessage) => {
             ? newMessage.listUser[0]
             : newMessage.listUser[1];
 
-    const setUpdate = {};
+    const setUpdate: any = {};
     newMessage.listUser.forEach((userId) => {
         if (userId !== insertMessage.senderId) {
             setUpdate[`userSeenMessage.${userId}.istLatest`] = false;
@@ -30,7 +31,7 @@ export const handleSendMessage = async (newMessage) => {
 
     await mongoDb.collection("chatTag").findOneAndUpdate(
         {
-            _id: ObjectId(newMessage.chatTag),
+            _id: new ObjectId(newMessage.chatTag),
         },
         {
             $set: {
@@ -42,7 +43,7 @@ export const handleSendMessage = async (newMessage) => {
                     $each: [insertMessage],
                     $position: 0,
                 },
-            },
+            } as unknown as PushOperator<Document>,
             $inc: {
                 totalMessages: 1,
             },
@@ -50,7 +51,10 @@ export const handleSendMessage = async (newMessage) => {
     );
 
     // remake link image
-    if (insertMessage.type === MESSAGE_TYPE.image) {
+    if (
+        insertMessage.type === MESSAGE_TYPE.image &&
+        Array.isArray(insertMessage.content)
+    ) {
         const contentRemake = insertMessage.content.map((item) =>
             createLinkImage(item)
         );
@@ -76,17 +80,9 @@ export const handleSendMessage = async (newMessage) => {
             senderName: newMessage.groupName,
             message: newMessage.content,
             receiver: partnerId,
-            chatTagId: insertMessage.chatTag,
+            chatTagId: newMessage.chatTag,
         });
     }
 
     return res;
-};
-
-export const handleSendMessageEnjoy = (newMessage) => {
-    return {
-        id: String(ObjectId()),
-        ...newMessage,
-        createdTime: String(getDateTimeNow()),
-    };
 };

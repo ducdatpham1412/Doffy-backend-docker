@@ -1,6 +1,10 @@
 import axios from "axios";
-import { TYPE_NOTIFICATION } from "./enum.js";
-import env from "./env.js";
+import { TYPE_NOTIFICATION } from "./enum";
+import env from "./env";
+import {
+    TypeMessageParams,
+    TypeStartNewChatTagParams,
+} from "./interface/notification";
 
 const requestOneSignal = axios.create({
     baseURL: "https://onesignal.com",
@@ -11,7 +15,7 @@ const requestOneSignal = axios.create({
     },
 });
 
-const sendNotification = async (body) => {
+const sendNotification = async (body: any) => {
     return requestOneSignal.post("/api/v1/notifications", {
         app_id: env.ONESIGNAL_APP_ID,
         ...body,
@@ -19,7 +23,7 @@ const sendNotification = async (body) => {
 };
 
 export default class Notification {
-    static message = async (params) => {
+    static message = async (params: TypeMessageParams) => {
         const { senderName, message, receiver, chatTagId } = params;
         try {
             await sendNotification({
@@ -46,7 +50,7 @@ export default class Notification {
         }
     };
 
-    static startNewChatTag = async (params) => {
+    static startNewChatTag = async (params: TypeStartNewChatTagParams) => {
         const { message, receiver, chatTagId } = params;
         try {
             await sendNotification({

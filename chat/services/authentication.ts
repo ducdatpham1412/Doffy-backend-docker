@@ -1,7 +1,7 @@
-import { request } from "../request.js";
-import mongoDb from "../mongoDb.js";
+import { request } from "../request";
+import mongoDb from "../mongoDb";
 
-export const getMyListChatTagsAndMyId = async (token) => {
+export const getMyListChatTagsAndMyId = async (token: string) => {
     const res = await request.get("/auth/verify-token", {
         headers: {
             Authorization: `Bearer ${token}`,

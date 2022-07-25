@@ -1,16 +1,22 @@
-import mongoDb from "../mongoDb.js";
-import { request } from "../request.js";
-import env from "../env.js";
-import { GENDER } from "../enum.js";
+import mongoDb from "../mongoDb";
+import { request } from "../request";
+import env from "../env";
+import { GENDER } from "../enum";
+import {
+    TypeGetListInfoUserRequest,
+    TypeGetListInfoUserResponse,
+} from "../interface/chatTag";
 
-const filterTheSame = (originArray) => {
+const filterTheSame = (originArray: Array<any>) => {
     const res = originArray.filter((item, index, self) => {
         return self.indexOf(item) === index;
     });
     return Array.from(res);
 };
 
-export const getSocketIdOfListUserActive = async (listUserId) => {
+export const getSocketIdOfListUserActive = async (
+    listUserId: Array<number>
+) => {
     const result = [];
     const listUniqueId = filterTheSame(listUserId);
     for (let i = 0; i < listUniqueId.length; i++) {
@@ -22,30 +28,32 @@ export const getSocketIdOfListUserActive = async (listUserId) => {
     return result;
 };
 
-export const getSocketIdOfUserId = async (userId) => {
+export const getSocketIdOfUserId = async (userId: number) => {
     const result = await mongoDb.collection("userActive").findOne({
         userId,
     });
     return result?.socketId || "";
 };
 
-export const getListInfoUser = async ({ listUserId, displayAvatar, token }) => {
+export const getListInfoUser = async (
+    params: TypeGetListInfoUserRequest
+): Promise<Array<TypeGetListInfoUserResponse>> => {
     const res = await request.post(
         "/chat/list-info-user",
         {
-            listUserId,
-            displayAvatar,
+            listUserId: params.listUserId,
+            displayAvatar: params.displayAvatar,
         },
         {
             headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${params.token}`,
             },
         }
     );
     return res.data;
 };
 
-export const getUserIdFromToken = async (token) => {
+export const getUserIdFromToken = async (token: string) => {
     const res = await request.get("auth/verify-token", {
         headers: {
             Authorization: `Bearer ${token}`,
@@ -58,11 +66,11 @@ export const getDateTimeNow = () => {
     return new Date();
 };
 
-export const createLinkImage = (imageName) => {
+export const createLinkImage = (imageName: string) => {
     return `${env.AWS_IMAGE_URL}/${imageName}`;
 };
 
-export const choosePrivateAvatar = (gender) => {
+export const choosePrivateAvatar = (gender: number) => {
     switch (gender) {
         case GENDER.male:
             return createLinkImage("__admin_girl.png");
