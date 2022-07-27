@@ -9,6 +9,7 @@ from django.db.models import Q
 from findme.mongo import mongoDb
 from findme.mysql import mysql_select, mysql_insert, mysql_update
 from authentication.query import verify_code
+from utilities.exception import error_message, error_key
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -116,9 +117,3 @@ class LoginSerializer(serializers.ModelSerializer):
         self.get_object(username, password)
 
         return attrs
-
-
-class SocialSerializer(serializers.Serializer):
-    provider = serializers.CharField(max_length=255, required=True)
-    access_token = serializers.CharField(
-        max_length=4096, required=True, trim_whitespace=True)
