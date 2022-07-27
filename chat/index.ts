@@ -1,13 +1,13 @@
 import http from "http";
 import { Server } from "socket.io";
-import { SOCKET_EVENT } from "./enum.js";
-import mongoDb from "./mongoDb.js";
+import { SOCKET_EVENT } from "./enum";
+import mongoDb from "./mongoDb";
 import {
     getSocketIdOfListUserActive,
     getSocketIdOfUserId,
-} from "./services/assistant.js";
-import { getMyListChatTagsAndMyId } from "./services/authentication.js";
-import { addComment, joinCommunity } from "./services/bubble.js";
+} from "./services/assistant";
+import { getMyListChatTagsAndMyId } from "./services/authentication";
+import { addComment, joinCommunity } from "./services/bubble";
 import {
     changeGroupName,
     getLatestMessage,
@@ -15,13 +15,10 @@ import {
     handleChangeChatColor,
     handleRequestPublicChat,
     handleStartNewChatTag,
-} from "./services/chatTag.js";
-import {
-    handleSendMessage,
-    handleSendMessageEnjoy,
-} from "./services/message.js";
-import Static from "./static.js";
-import { startBotDiscord } from "./services/discord.js";
+} from "./services/chatTag";
+import { startBotDiscord } from "./services/discord";
+import { handleSendMessage } from "./services/message";
+import Static from "./static";
 
 const httpServer = http.createServer();
 const io = new Server(httpServer, {
@@ -129,24 +126,29 @@ io.on("connection", (socket) => {
         try {
             const res = await handleStartNewChatTag(params);
             // If chat tag existed, only send message to user
-            if (res.isChatTagExisted) {
-                io.to(res.response.chatTag).emit(
+            if (res?.isChatTagExisted) {
+                io.to(res?.response?.chatTag).emit(
                     SOCKET_EVENT.message,
                     res.response
                 );
                 return;
             }
 
-            const listSocketId = await getSocketIdOfListUserActive(
-                res.response.listUser.map((item) => item.id)
-            );
+            if (res?.response?.listUser && res.dataNotification) {
+                const listSocketId = await getSocketIdOfListUserActive(
+                    res?.response?.listUser?.map((item: any) => item.id)
+                );
 
-            listSocketId.forEach((socketId) => {
-                io.to(socketId).emit(SOCKET_EVENT.createChatTag, res.response);
-                socket
-                    .to(socketId)
-                    .emit(SOCKET_EVENT.notification, res.dataNotification);
-            });
+                listSocketId.forEach((socketId) => {
+                    io.to(socketId).emit(
+                        SOCKET_EVENT.createChatTag,
+                        res.response
+                    );
+                    socket
+                        .to(socketId)
+                        .emit(SOCKET_EVENT.notification, res.dataNotification);
+                });
+            }
         } catch (err) {
             console.log("Error when create chat tag: ", socket.id);
         }
@@ -159,7 +161,7 @@ io.on("connection", (socket) => {
 
     socket.on(SOCKET_EVENT.seenMessage, async (params) => {
         try {
-            let res = undefined;
+            let res: any = undefined;
 
             // enjoy mode
             if (params?.isEnjoy) {
@@ -272,10 +274,6 @@ io.on("connection", (socket) => {
         const res = await handleSendMessage(params);
         io.to(res.chatTag).emit(SOCKET_EVENT.message, res);
     });
-    socket.on(SOCKET_EVENT.messageEnjoy, (params) => {
-        const res = handleSendMessageEnjoy(params);
-        io.to(res.chatTag).emit(SOCKET_EVENT.messageEnjoy, res);
-    });
     socket.on(SOCKET_EVENT.deleteMessage, (params) => {
         const { chatTagId, messageId } = params;
         io.to(chatTagId).emit(SOCKET_EVENT.deleteMessage, params);
@@ -318,13 +316,13 @@ const listenAppServer = http.createServer(async (req, res) => {
     const url = req.url;
 
     if (req.method === "POST") {
-        let data = "";
+        let dataString = "";
         req.on("data", (chunk) => {
-            data += chunk;
+            dataString += chunk;
         });
 
         req.on("end", async () => {
-            data = JSON.parse(data);
+            const data = JSON.parse(dataString);
 
             /**
              * NOTIFICATION
@@ -374,3 +372,5 @@ listenAppServer.listen(1412);
  * This is for discord bot
  */
 startBotDiscord();
+
+console.log("Start node success");

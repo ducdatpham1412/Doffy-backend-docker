@@ -1,6 +1,8 @@
+import { TypeUserActive } from "./interface/static";
+
 export default class Static {
-    static listUserActives = [];
-    static listUserInBackground = [];
+    static listUserActives: Array<TypeUserActive> = [];
+    static listUserInBackground: Array<TypeUserActive> = [];
 
     static getListUserActives = () => {
         return this.listUserActives;
@@ -9,12 +11,12 @@ export default class Static {
         return this.listUserInBackground;
     };
 
-    static addUserActive = (params) => {
+    static addUserActive = (params: TypeUserActive) => {
         this.listUserActives.push(params);
     };
 
     // check include
-    static checkIncludeUserId = (userId) => {
+    static checkIncludeUserId = (userId: number) => {
         const check = this.listUserActives.findIndex(
             (item) => item.userId === userId
         );
@@ -22,7 +24,7 @@ export default class Static {
     };
 
     // active user
-    static removeUserActive = (socketId) => {
+    static removeUserActive = (socketId: string) => {
         this.listUserActives = this.listUserActives.filter(
             (item) => item.socketId !== socketId
         );
@@ -32,7 +34,7 @@ export default class Static {
     };
 
     // switch between background and active
-    static putInBackground = (socketId) => {
+    static putInBackground = (socketId: string) => {
         const index = this.listUserActives.findIndex(
             (item) => item.socketId === socketId
         );
@@ -41,7 +43,7 @@ export default class Static {
             this.listUserActives.splice(index, 1);
         }
     };
-    static putBackActive = (socketId) => {
+    static putBackActive = (socketId: string) => {
         const index = this.listUserInBackground.findIndex(
             (item) => item.socketId === socketId
         );
@@ -52,7 +54,7 @@ export default class Static {
     };
 
     // get user id from their socket id
-    static getUserIdFromSocketId = (socketId) => {
+    static getUserIdFromSocketId = (socketId: string) => {
         return this.listUserActives.find((item) => item.socketId === socketId)
             ?.userId;
     };

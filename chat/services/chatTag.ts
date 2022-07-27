@@ -1,18 +1,27 @@
-import { ObjectId } from "mongodb";
-import { CHAT_TAG, MESSAGE_TYPE, TYPE_NOTIFICATION } from "../enum.js";
-import mongoDb from "../mongoDb.js";
-import Notification from "../notification.js";
-import { request } from "../request.js";
-import Static from "../static.js";
+import { Document, ObjectId, PushOperator } from "mongodb";
+import { CHAT_TAG, MESSAGE_TYPE, TYPE_NOTIFICATION } from "../enum";
+import mongoDb from "../mongoDb";
+import Notification from "../notification";
+import { request } from "../request";
+import Static from "../static";
 import {
     getListInfoUser,
     getUserIdFromToken,
     getDateTimeNow,
     createLinkImage,
-} from "./assistant.js";
-import { executiveQuery } from "../mysqlDb.js";
+} from "./assistant";
+import { executiveQuery } from "../mysqlDb";
+import {
+    TypeAgreePublicChatParams,
+    TypeChangeColorParams,
+    TypeChangeGroupNameParams,
+    TypeParamsGetLatestMessage,
+    TypeParamStartNewChatTag,
+} from "../interface/chatTag";
 
-export const handleStartNewChatTag = async (params) => {
+export const handleStartNewChatTag = async (
+    params: TypeParamStartNewChatTag
+) => {
     const { token, newChatTag } = params;
     const type = newChatTag.type;
     const isInteractBubble = type === CHAT_TAG.newFromBubble;
@@ -30,7 +39,7 @@ export const handleStartNewChatTag = async (params) => {
 
         // group name
         let groupName = "";
-        if (isInteractBubble) groupName = newChatTag.nameBubble;
+        if (isInteractBubble) groupName = newChatTag?.nameBubble || "";
         else if (isMessageFromProfile) {
             const name1 = String(listInfoUser[0].name);
             const name2 = String(listInfoUser[1].name);
@@ -39,8 +48,8 @@ export const handleStartNewChatTag = async (params) => {
 
         const isPrivate = isInteractBubble;
         const updateTime = new Date();
-        const userSeenMessage = {};
-        listUserId.forEach((item) => {
+        const userSeenMessage: any = {};
+        listUserId.forEach((item: number) => {
             userSeenMessage[String(item)] = {
                 latestMessage: "",
                 isLatest: false,
@@ -58,7 +67,7 @@ export const handleStartNewChatTag = async (params) => {
         };
 
         // chat tag and message insert to mongo
-        const insertChatTag = {
+        const insertChatTag: any = {
             listUser: listUserId,
             groupName,
             isPrivate,
@@ -68,7 +77,7 @@ export const handleStartNewChatTag = async (params) => {
             color: newChatTag.color,
             listMessages: [
                 {
-                    _id: ObjectId(),
+                    _id: new ObjectId(),
                     type: MESSAGE_TYPE.text,
                     content: newChatTag.content,
                     senderId: newChatTag.senderId,
@@ -82,80 +91,23 @@ export const handleStartNewChatTag = async (params) => {
         // If this is chat from bubble, decrease the priority of profilePost
         if (isInteractBubble) {
             const idBubble = newChatTag.idBubble;
-            const profilePost = await mongoDb
-                .collection("profilePost")
-                .findOneAndUpdate(
-                    {
-                        _id: ObjectId(idBubble),
+            await mongoDb.collection("profilePost").findOneAndUpdate(
+                {
+                    _id: new ObjectId(idBubble),
+                },
+                {
+                    $inc: {
+                        priority: 1,
                     },
-                    {
-                        $inc: {
-                            priority: 1,
-                        },
-                    }
-                );
-            const priority = profilePost.value.priority;
-            if (priority === 1) {
-                await mongoDb.collection("analysis").findOneAndUpdate(
-                    {
-                        type: "priority",
-                    },
-                    {
-                        $pull: {
-                            one: idBubble,
-                        },
-                        $push: {
-                            two: idBubble,
-                        },
-                        $inc: {
-                            oneLength: -1,
-                            twoLength: 1,
-                        },
-                    }
-                );
-            } else if (priority === 2) {
-                await mongoDb.collection("analysis").findOneAndUpdate(
-                    {
-                        type: "priority",
-                    },
-                    {
-                        $pull: {
-                            two: idBubble,
-                        },
-                        $push: {
-                            three: idBubble,
-                        },
-                        $inc: {
-                            twoLength: -1,
-                            threeLength: 1,
-                        },
-                    }
-                );
-            } else if (priority === 3) {
-                await mongoDb.collection("analysis").findOneAndUpdate(
-                    {
-                        type: "priority",
-                    },
-                    {
-                        $pull: {
-                            three: idBubble,
-                        },
-                        $push: {
-                            four: idBubble,
-                        },
-                        $inc: {
-                            threeLength: -1,
-                            fourLength: 1,
-                        },
-                    }
-                );
-            }
+                }
+            );
         }
 
         // Notification to receiverId
         const receiverId =
-            listUserId.filter((item) => item != newChatTag.senderId)[0] ||
-            listUserId[0]; // if not found id different senderId, get senderId
+            listUserId.filter(
+                (item: number) => item != newChatTag.senderId
+            )[0] || listUserId[0]; // if not found id different senderId, get senderId
         await Notification.startNewChatTag({
             message: newChatTag.content,
             receiver: receiverId,
@@ -173,13 +125,13 @@ export const handleStartNewChatTag = async (params) => {
             const temp = listInfoUser.find(
                 (item) => item.id === newChatTag.senderId
             );
-            senderAvatar = temp.avatar || "";
+            senderAvatar = temp?.avatar || "";
         } else {
             senderAvatar = createLinkImage(profileSender.avatar || "");
         }
 
         const dataNotification = {
-            id: String(ObjectId()),
+            id: String(new ObjectId()),
             type: TYPE_NOTIFICATION.newChatTag,
             content,
             image: senderAvatar,
@@ -196,13 +148,14 @@ export const handleStartNewChatTag = async (params) => {
                         $each: [dataNotification],
                         $position: 0,
                     },
-                },
+                } as unknown as PushOperator<Document>,
             }
         );
 
         // Response
         const socketChatTag = {
             id: String(insertChatTag._id),
+            chatTag: String(insertChatTag._id),
             ...chatTag,
             updateTime: String(chatTag.updateTime),
         };
@@ -215,7 +168,7 @@ export const handleStartNewChatTag = async (params) => {
     };
 
     const handleSendFromProfile = async () => {
-        const newMessageId = ObjectId();
+        const newMessageId = new ObjectId();
         const currentTime = getDateTimeNow();
         const check = (
             await mongoDb.collection("chatTag").findOneAndUpdate(
@@ -238,7 +191,7 @@ export const handleStartNewChatTag = async (params) => {
                             ],
                             $position: 0,
                         },
-                    },
+                    } as unknown as PushOperator<Document>,
                     $inc: {
                         totalMessages: 1,
                     },
@@ -254,6 +207,7 @@ export const handleStartNewChatTag = async (params) => {
         const responseMessage = {
             id: String(newMessageId),
             chatTag: String(check._id),
+            listUser: undefined,
             type: MESSAGE_TYPE.text,
             content: newChatTag.content,
             senderId: newChatTag.senderId,
@@ -265,6 +219,7 @@ export const handleStartNewChatTag = async (params) => {
         return {
             isChatTagExisted: true,
             response: responseMessage,
+            dataNotification: undefined,
         };
     };
 
@@ -276,60 +231,13 @@ export const handleStartNewChatTag = async (params) => {
     }
 };
 
-export const handleStartNewChatTagEnjoy = (params) => {
-    const { myId, newChatTag } = params;
-
-    const listUserId = newChatTag.listUser.sort();
-    const listUserInfo = listUserId.map((userId) => ({
-        id: userId,
-        avatar: createLinkImage("__admin_girl.png"),
-        name: "Name",
-        gender: 1,
-    }));
-    const groupName = newChatTag.nameBubble;
-    const isPrivate = true;
-    const updateTime = getDateTimeNow();
-    const userSeenMessage = {};
-    listUserId.forEach((userId) => {
-        userSeenMessage[String(userId)] = {
-            latestMessage: "",
-            isLatest: false,
-        };
-    });
-
-    const responseChatTag = {
-        id: String(ObjectId()),
-        listUser: listUserInfo,
-        groupName,
-        isPrivate,
-        userSeenMessage,
-        updateTime: String(updateTime),
-        color: newChatTag.color,
-    };
-
-    const responseMessage = {
-        id: String(ObjectId()),
-        chatTag: responseChatTag.id,
-        type: MESSAGE_TYPE.text,
-        content: newChatTag.content,
-        senderId: myId,
-        senderAvatar: createLinkImage("__admin_girl.png"),
-        updateTime: String(updateTime),
-    };
-
-    return {
-        newChatTag: responseChatTag,
-        newMessage: responseMessage,
-    };
-};
-
-export const getLatestMessage = async (params) => {
+export const getLatestMessage = async (params: TypeParamsGetLatestMessage) => {
     const { myId, chatTagId } = params;
 
     // Find latest message
     // let latestMessage = undefined;
     const chatTag = await mongoDb.collection("chatTag").findOne({
-        _id: ObjectId(chatTagId),
+        _id: new ObjectId(chatTagId),
     });
 
     if (!chatTag) {
@@ -337,7 +245,7 @@ export const getLatestMessage = async (params) => {
     }
 
     const isMyChatTag = chatTag.listUser[0] === chatTag.listUser[1];
-    const latestMessage = chatTag.listMessages.find((message) => {
+    const latestMessage = chatTag.listMessages.find((message: any) => {
         return isMyChatTag
             ? message.senderId === myId
             : message.senderId !== myId;
@@ -347,7 +255,7 @@ export const getLatestMessage = async (params) => {
     if (latestMessage) {
         await mongoDb.collection("chatTag").findOneAndUpdate(
             {
-                _id: ObjectId(chatTagId),
+                _id: new ObjectId(chatTagId),
             },
             {
                 $set: {
@@ -373,7 +281,7 @@ export const getLatestMessage = async (params) => {
     return res;
 };
 
-export const handleRequestPublicChat = async (chatTagId) => {
+export const handleRequestPublicChat = async (chatTagId: string) => {
     // save request to mongo
     await mongoDb.collection("requestPublicChat").findOneAndUpdate(
         {
@@ -390,7 +298,7 @@ export const handleRequestPublicChat = async (chatTagId) => {
     // update time of chat tag
     await mongoDb.collection("chatTag").findOneAndUpdate(
         {
-            _id: ObjectId(chatTagId),
+            _id: new ObjectId(chatTagId),
         },
         {
             $set: { updateTime: getDateTimeNow() },
@@ -398,13 +306,15 @@ export const handleRequestPublicChat = async (chatTagId) => {
     );
 };
 
-export const handleAgreePublicChat = async (params) => {
+export const handleAgreePublicChat = async (
+    params: TypeAgreePublicChatParams
+) => {
     const { token, chatTagId } = params;
     const userId = await getUserIdFromToken(token);
 
     // check all agree
     const infoChatTag = await mongoDb.collection("chatTag").findOne({
-        _id: ObjectId(chatTagId),
+        _id: new ObjectId(chatTagId),
     });
     if (!infoChatTag) return;
 
@@ -431,7 +341,7 @@ export const handleAgreePublicChat = async (params) => {
 
     await mongoDb.collection("chatTag").findOneAndUpdate(
         {
-            _id: ObjectId(chatTagId),
+            _id: new ObjectId(chatTagId),
         },
         {
             $set: {
@@ -462,7 +372,7 @@ export const handleAgreePublicChat = async (params) => {
     return updateChatTag;
 };
 
-export const changeGroupName = async (params) => {
+export const changeGroupName = async (params: TypeChangeGroupNameParams) => {
     const { token, chatTagId, newName } = params;
 
     await request.put(
@@ -479,7 +389,7 @@ export const changeGroupName = async (params) => {
     return true;
 };
 
-export const handleChangeChatColor = async (params) => {
+export const handleChangeChatColor = async (params: TypeChangeColorParams) => {
     const { token, newColor, chatTagId, socketId } = params;
     const userId = Static.getUserIdFromSocketId(socketId);
     if (!userId) return false;

@@ -65,8 +65,11 @@ services:
     container_name: chat
     volumes:
       - ./chat:/usr/src/chat
+      - ./package.json:/usr/src/package.json
+      - ./tsconfig.json:/usr/src/tsconfig.json
     ports:
       - 3000:3000
+      
     networks:
       - doffy-app
     depends_on:

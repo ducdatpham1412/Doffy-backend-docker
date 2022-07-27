@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 
-const env = dotenv.config({
+const env: any = dotenv.config({
     path: `chat/env/.env.${process.env.ENVIRONMENT_TYPE}`,
 }).parsed;
 

@@ -1,7 +1,7 @@
 import mysql from "mysql2";
-import env from "./env.js";
+import env from "./env";
 
-const connectionObject = {
+const connectionObject: any = {
     host: env.DATABASE_HOST,
     user: env.DATABASE_USER,
     password: env.DATABASE_PASSWORD,
@@ -9,7 +9,7 @@ const connectionObject = {
     database: env.DATABASE_NAME,
 };
 
-export const executiveQuery = (query) => {
+export const executiveQuery = (query: string): Promise<any> => {
     const con = mysql.createConnection(connectionObject);
 
     return new Promise((resolve, reject) => {

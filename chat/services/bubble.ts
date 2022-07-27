@@ -1,8 +1,12 @@
-import { ObjectId } from "mongodb";
-import { CHAT_TAG, MESSAGE_TYPE } from "../enum.js";
-import mongoDb from "../mongoDb.js";
-import { request } from "../request.js";
-import { getDateTimeNow, getUserIdFromToken } from "./assistant.js";
+import { Document, ObjectId, PullOperator } from "mongodb";
+import { CHAT_TAG, MESSAGE_TYPE } from "../enum";
+import {
+    TypeParamsAddComment,
+    TypeParamsJoinCommunity,
+} from "../interface/bubble";
+import mongoDb from "../mongoDb";
+import { request } from "../request";
+import { getDateTimeNow, getUserIdFromToken } from "./assistant";
 
 export const getListSocketIdOfUserEnjoy = async () => {
     const res = await mongoDb
@@ -16,7 +20,7 @@ export const getListSocketIdOfUserEnjoy = async () => {
     return res.map((item) => item.socketId);
 };
 
-export const addComment = async (params) => {
+export const addComment = async (params: TypeParamsAddComment) => {
     const { token, bubbleId, content, commentReplied } = params;
 
     const res = await request.post(
@@ -35,7 +39,7 @@ export const addComment = async (params) => {
     return res;
 };
 
-export const joinCommunity = async (params) => {
+export const joinCommunity = async (params: TypeParamsJoinCommunity) => {
     const { token, profilePostGroupId } = params;
 
     const myId = await getUserIdFromToken(token);
@@ -43,7 +47,7 @@ export const joinCommunity = async (params) => {
     // Add new member is profilePostGroup
     const group = await mongoDb.collection("profilePostGroup").findOneAndUpdate(
         {
-            _id: ObjectId(profilePostGroupId),
+            _id: new ObjectId(profilePostGroupId),
             listMembers: {
                 $ne: myId,
             },
@@ -61,7 +65,7 @@ export const joinCommunity = async (params) => {
     // Update in list chat tag
     const timeNow = getDateTimeNow();
     const insertMessage = {
-        _id: ObjectId(),
+        _id: new ObjectId(),
         type: MESSAGE_TYPE.joinCommunity,
         content: "",
         senderId: myId,
@@ -69,7 +73,7 @@ export const joinCommunity = async (params) => {
     };
     const chatTag = await mongoDb.collection("chatTag").findOneAndUpdate(
         {
-            _id: ObjectId(group.value.chatTagId),
+            _id: new ObjectId(group.value.chatTagId),
             type: CHAT_TAG.group,
             listUser: {
                 $ne: myId,
@@ -82,7 +86,7 @@ export const joinCommunity = async (params) => {
                     $each: [insertMessage],
                     $position: 0,
                 },
-            },
+            } as unknown as PullOperator<Document>,
             $set: {
                 [`userSeenMessage.${myId}`]: {
                     latestMessage: "",
@@ -100,13 +104,13 @@ export const joinCommunity = async (params) => {
     }
 
     // Set isLatest status of all member is chat tag
-    const setUpdate = {};
-    chatTag.value.listUser.forEach((userId) => {
+    const setUpdate: any = {};
+    chatTag.value.listUser.forEach((userId: any) => {
         setUpdate[`userSeenMessage.${userId}.isLatest`] = false;
     });
     await mongoDb.collection("chatTag").findOneAndUpdate(
         {
-            _id: ObjectId(group.value.chatTagId),
+            _id: new ObjectId(group.value.chatTagId),
         },
         {
             $set: setUpdate,
