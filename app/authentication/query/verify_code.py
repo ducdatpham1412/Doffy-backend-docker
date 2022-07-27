@@ -1,6 +1,6 @@
 def SEARCH_OTP(username: str, code=0):
     if code:
-        return "SELECT * FROM doffy.authentication_verifycode WHERE username='{}' AND code={} LIMIT 1".format(username, code)
+        return "SELECT * FROM doffy.authentication_verifycode WHERE username='{}' AND code={} AND code!=0 LIMIT 1".format(username, code)
 
     return "SELECT * FROM doffy.authentication_verifycode WHERE username='{}' LIMIT 1".format(username)
 

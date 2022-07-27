@@ -251,3 +251,10 @@ def google_validate_id_token(id_token: str) -> bool:
         raise CustomError()
 
     return response.json()
+
+
+def get_index(list: list, index: int, default=None):
+    try:
+        return list[index]
+    except IndexError:
+        return default

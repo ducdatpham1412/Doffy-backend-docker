@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from authentication.views import request_otp, check_otp, register, login, social_login, log_out, refresh_token, reset_password, verify_token, get_id_enjoy_mode, lock_account, open_account, request_delete_acc, _test, tiki_personal, tiki_campaign
+from authentication.views import request_otp, check_otp, register, login, social_login, log_out, refresh_token, reset_password, verify_token, get_id_enjoy_mode, lock_account, open_account, request_delete_acc, _test
 
 
 urlpatterns = [
@@ -16,7 +16,5 @@ urlpatterns = [
     path('lock-account', lock_account.LockAccount.as_view()),
     path('open-account', open_account.OpenAccount.as_view()),
     path('delete-account', request_delete_acc.RequestDeleteAccount.as_view()),
-    # Tiki hackathon api
-    path('tiki-personal', tiki_personal.TikiPersonal.as_view()),
-    path('tiki-campaign', tiki_campaign.TikiCampaign.as_view())
+    # path('test', _test.Check.as_view())
 ]

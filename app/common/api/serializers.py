@@ -13,8 +13,7 @@ class GetPassportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['information', 'profile',
-                  'setting_extend', 'facebook_acc', 'email']
+        fields = ['information', 'profile', 'setting_extend', 'email']
 
     def to_representation(self, instance):
         information = InformationSerializer(
@@ -26,9 +25,6 @@ class GetPassportSerializer(serializers.ModelSerializer):
 
         res = {
             'information': {
-                'facebook_acc': instance.facebook_acc,
-                'google_acc': instance.google_acc,
-                'apple_acc': instance.apple_acc,
                 'email': instance.email,
                 'phone': instance.phone,
                 **information

@@ -40,17 +40,13 @@ class RequestOTPSerializer(serializers.ModelSerializer):
 
 # REGISTER
 class RegisterSerializer(serializers.ModelSerializer):
-    facebook_acc = serializers.CharField(required=False, allow_blank=True)
-    google_acc = serializers.CharField(required=False, allow_blank=True)
-    apple_acc = serializers.CharField(required=False, allow_blank=True)
     email = serializers.EmailField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = models.User
-        fields = ['facebook_acc', 'google_acc',
-                  'apple_acc', 'email', 'phone', 'password']
+        fields = ['email', 'phone', 'password']
 
     def create(self, validated_data):
         encrypt_password = make_password(validated_data.pop(

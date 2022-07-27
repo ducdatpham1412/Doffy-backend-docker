@@ -4,10 +4,12 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from utilities.exception.exception_handler import CustomError
 from utilities.exception import error_message, error_key
-from utilities import enums
+from utilities import enums, services
 from django.db.models import Q
 from django.contrib.auth.hashers import check_password
-from utilities.disableObject import DisableObject
+from findme.mysql import mysql_select, mysql_update
+from authentication.query.user_request import CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT
+from authentication.query.user import UN_ACTIVE_ACCOUNT
 
 
 class Login(GenericAPIView):
@@ -15,7 +17,7 @@ class Login(GenericAPIView):
         username = request.data['username']
         password = request.data['password']
 
-        # get object
+        # Get object
         try:
             user = models.User.objects.get(
                 Q(email=username) | Q(phone=username), is_active=1)
@@ -26,28 +28,28 @@ class Login(GenericAPIView):
         except models.User.DoesNotExist:
             raise CustomError(error_message.login_fail, error_key.login_fail)
 
-        # check is this user is temporary block
-        try:
-            # user temporary locking
-            list_user_temporary_lock: list = DisableObject.get_disable_object(
-                enums.disable_user)['list']
-            list_user_temporary_lock.index(user.id)
-            res = {
-                'username': username,
-                'isLocking': True,
-            }
-            return Response(res, status=status.HTTP_200_OK)
-        except ValueError:
-            # user is requesting delete account
-            list_user_requesting_delete: list = DisableObject.get_disable_object(
-                enums.disable_request_delete_account)['list']
-            for request in list_user_requesting_delete:
-                if request['userId'] == user.id and request['isActive'] == True:
+        # Check is user requesting delete or block account
+        user_request = mysql_select(
+            CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT(user_id=user.id))
+        if user_request:
+            for request in user_request:
+                if request['type'] == enums.request_user_lock_account:
                     res = {
                         'username': username,
-                        'isLocking': True,
+                        'isLocking': True
                     }
                     return Response(res, status=status.HTTP_200_OK)
+                elif request['type'] == enums.request_user_delete_account:
+                    if request['expired'] > services.get_datetime_now():
+                        res = {
+                            'username': username,
+                            'isLocking': True
+                        }
+                        return Response(res, status=status.HTTP_200_OK)
+                    elif request['expired'] < services.get_datetime_now():
+                        mysql_update(UN_ACTIVE_ACCOUNT(user_id=user.id))
+                        raise CustomError(error_message.login_fail,
+                                          error_key.login_fail)
 
-        # login success
+        # Login success
         return Response(user.tokens(), status=status.HTTP_200_OK)
