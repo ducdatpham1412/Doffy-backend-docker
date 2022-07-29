@@ -115,11 +115,8 @@ color_other = 8
 
 
 # disable object
-disable_user = 'user'
-disable_follow = 'follow'
 disable_profile_post = 'profilePost'
 disable_message = 'message'
-disable_request_delete_account = 'requestDeleteAccount'
 
 # notification
 notification_new_chat_tag = 0
@@ -141,3 +138,7 @@ os_iOS = 1
 # status
 status_not_active = 0
 status_active = 1
+
+# request_user
+request_user_lock_account = 0
+request_user_delete_account = 1

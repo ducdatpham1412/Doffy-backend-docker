@@ -17,6 +17,8 @@ import pymongo
 from utilities.disableObject import DisableObject
 from myprofile.models import Profile
 import requests
+from authentication.query.user_request import CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT
+from findme.mysql import mysql_select
 
 
 class GetProfile(GenericAPIView):
@@ -41,19 +43,19 @@ class GetProfile(GenericAPIView):
                 return False
 
     def check_is_locking_account(self, your_id):
-        try:
-            list_user_temporary_lock: list = DisableObject.get_disable_object(
-                enums.disable_user)['list']
-            list_user_temporary_lock.index(your_id)
-            return True
-        except ValueError:
-            list_user_request_delete: list = DisableObject.get_disable_object(
-                enums.disable_request_delete_account)['list']
-            for request in list_user_request_delete:
-                if request['userId'] == your_id and request['isActive'] == True:
-                    return True
+        user_requests = mysql_select(
+            CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT(user_id=your_id))
 
+        if not user_requests:
             return False
+
+        for request in user_requests:
+            if request['type'] == enums.request_user_lock_account:
+                return True
+            elif request['type'] == enums.request_user_delete_account and request['expired'] > services.get_datetime_now():
+                return True
+
+        return False
 
     def get_relationship(self, my_id, your_id):
         if (my_id == your_id):
