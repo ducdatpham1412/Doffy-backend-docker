@@ -258,3 +258,10 @@ def get_index(list: list, index: int, default=None):
         return list[index]
     except IndexError:
         return default
+
+
+def get_object(object: dict, key: str, default=None):
+    try:
+        return object[key]
+    except KeyError and TypeError:
+        return default

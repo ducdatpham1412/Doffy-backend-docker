@@ -1,54 +1,45 @@
-import { Document, ObjectId, PushOperator } from "mongodb";
-import { MESSAGE_TYPE } from "../enum";
-import { TypeSendMessageRequest } from "../interface/message";
+import { ObjectId } from "mongodb";
+import { MESSAGE_TYPE, STATUS } from "../enum";
+import {
+    TypeSendMessageRequest,
+    TypeSendMessageResponse,
+} from "../interface/message";
 import mongoDb from "../mongoDb";
 import Notification from "../notification";
 import Static from "../static";
-import { getDateTimeNow, createLinkImage } from "./assistant";
+import { createLinkImage, getDateTimeNow } from "./assistant";
 
 export const handleSendMessage = async (newMessage: TypeSendMessageRequest) => {
     const newMessageId = new ObjectId();
+
+    const conversation = await mongoDb
+        .collection("chat_conversation")
+        .findOneAndUpdate(
+            {
+                _id: new ObjectId(newMessage.conversationId),
+            },
+            {
+                $set: {
+                    modified: getDateTimeNow(),
+                    latest_message: newMessage.content,
+                },
+                $inc: {
+                    total_messages: 1,
+                },
+            }
+        );
 
     const insertMessage = {
         _id: newMessageId,
         type: newMessage.type,
         content: newMessage.content,
-        senderId: newMessage.senderId,
-        createdTime: getDateTimeNow(),
+        creator: newMessage.creator,
+        created: getDateTimeNow(),
+        conversation_id: String(conversation.value?._id),
+        status: STATUS.active,
     };
 
-    const partnerId =
-        newMessage.listUser[0] !== insertMessage.senderId
-            ? newMessage.listUser[0]
-            : newMessage.listUser[1];
-
-    const setUpdate: any = {};
-    newMessage.listUser.forEach((userId) => {
-        if (userId !== insertMessage.senderId) {
-            setUpdate[`userSeenMessage.${userId}.istLatest`] = false;
-        }
-    });
-
-    await mongoDb.collection("chatTag").findOneAndUpdate(
-        {
-            _id: new ObjectId(newMessage.chatTag),
-        },
-        {
-            $set: {
-                ...setUpdate,
-                updateTime: getDateTimeNow(),
-            },
-            $push: {
-                listMessages: {
-                    $each: [insertMessage],
-                    $position: 0,
-                },
-            } as unknown as PushOperator<Document>,
-            $inc: {
-                totalMessages: 1,
-            },
-        }
-    );
+    await mongoDb.collection("chat_message").insertOne(insertMessage);
 
     // remake link image
     if (
@@ -61,27 +52,35 @@ export const handleSendMessage = async (newMessage: TypeSendMessageRequest) => {
         insertMessage.content = contentRemake;
     }
 
-    const res = {
-        id: newMessageId,
-        chatTag: newMessage.chatTag,
+    const res: TypeSendMessageResponse = {
+        id: String(newMessageId),
+        conversationId: newMessage.conversationId,
         type: insertMessage.type,
         content: insertMessage.content,
-        senderId: insertMessage.senderId,
-        senderName: newMessage.senderName,
-        senderAvatar: newMessage.senderAvatar,
+        creator: insertMessage.creator,
+        creatorName: newMessage.creatorName,
+        creatorAvatar: newMessage.creatorAvatar,
         tag: newMessage.tag,
-        createdTime: String(insertMessage.createdTime),
+        created: String(insertMessage.created),
     };
 
     // Notification to partner if they not active
-    const isPartnerNotActive = !Static.checkIncludeUserId(partnerId);
-    if (isPartnerNotActive) {
-        Notification.message({
-            senderName: newMessage.groupName,
-            message: newMessage.content,
-            receiver: partnerId,
-            chatTagId: newMessage.chatTag,
-        });
+    const listUsers = conversation.value?.list_users;
+    if (listUsers) {
+        const partnerId = listUsers.find(
+            (userId: number) => userId !== insertMessage.creator
+        );
+        if (partnerId) {
+            const isPartnerNotActive = !Static.checkIncludeUserId(partnerId);
+            if (isPartnerNotActive) {
+                Notification.message({
+                    creatorName: newMessage.creatorName,
+                    message: newMessage.content,
+                    receiver: partnerId,
+                    conversationId: newMessage.conversationId,
+                });
+            }
+        }
     }
 
     return res;

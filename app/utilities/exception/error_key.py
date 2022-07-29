@@ -31,7 +31,7 @@ post_not_existed = 20
 
 # chat
 not_have_permission_delete_message = 17
-you_can_not_open_this_conversation = 18
+conversation_not_existed = 18
 
 
 # lock account

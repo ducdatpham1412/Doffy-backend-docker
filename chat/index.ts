@@ -1,19 +1,20 @@
 import http from "http";
 import { Server } from "socket.io";
 import { SOCKET_EVENT } from "./enum";
+import { TypeAuthenticate } from "./interface";
+import { TypeHandleSeenMessage } from "./interface/chatTag";
+import { TypeSendMessageRequest, TypeTyping } from "./interface/message";
 import mongoDb from "./mongoDb";
 import {
     getSocketIdOfListUserActive,
     getSocketIdOfUserId,
 } from "./services/assistant";
 import { getMyListChatTagsAndMyId } from "./services/authentication";
-import { addComment, joinCommunity } from "./services/bubble";
+import { addComment } from "./services/bubble";
 import {
-    changeGroupName,
-    getLatestMessage,
     handleAgreePublicChat,
-    handleChangeChatColor,
     handleRequestPublicChat,
+    handleSeenMessage,
     handleStartNewChatTag,
 } from "./services/chatTag";
 import { startBotDiscord } from "./services/discord";
@@ -26,7 +27,7 @@ const io = new Server(httpServer, {
     pingInterval: 25000,
 });
 
-const enjoyModeRoom = "enjoy-mode-room";
+// const enjoyModeRoom = "enjoy-mode-room";
 
 io.on("connection", (socket) => {
     console.log("\n\nSocket connect with: ", socket.id);
@@ -34,47 +35,24 @@ io.on("connection", (socket) => {
     /**
      * Authenticate
      */
-    socket.on(SOCKET_EVENT.authenticate, async (params) => {
+    socket.on(SOCKET_EVENT.authenticate, async (params: TypeAuthenticate) => {
         try {
-            // user have account
-            if (params?.token) {
-                const { listMyChatTag, myId } = await getMyListChatTagsAndMyId(
-                    params.token
-                );
-                // save to user active
-                await mongoDb
-                    .collection("userActive")
-                    .deleteMany({ userId: myId });
-                await mongoDb.collection("userActive").insertOne({
-                    userId: myId,
-                    socketId: socket.id,
-                });
-                Static.addUserActive({
-                    userId: myId,
-                    socketId: socket.id,
-                });
-                // join all room of chat tag have in
-                listMyChatTag.forEach((item) => {
-                    socket.join(String(item._id));
-                });
-            }
-
-            // use enjoy mode
-            else if (params?.myId) {
-                await mongoDb
-                    .collection("userActive")
-                    .deleteMany({ userId: params.myId });
-                await mongoDb.collection("userActive").insertOne({
-                    userId: params.myId,
-                    socketId: socket.id,
-                });
-                Static.addUserActive({
-                    userId: params.myId,
-                    socketId: socket.id,
-                });
-                // join room for only enjoy user
-                socket.join(enjoyModeRoom);
-            }
+            const { listMyConversations, myId } =
+                await getMyListChatTagsAndMyId(params.token);
+            // save to user active
+            await mongoDb.collection("userActive").deleteMany({ userId: myId });
+            await mongoDb.collection("userActive").insertOne({
+                userId: myId,
+                socketId: socket.id,
+            });
+            Static.addUserActive({
+                userId: myId,
+                socketId: socket.id,
+            });
+            // join all room of chat tag have in
+            listMyConversations.forEach((item) => {
+                socket.join(String(item._id));
+            });
         } catch (err) {
             console.log("Error authenticate: ", socket.id);
             socket.emit(SOCKET_EVENT.unauthorized);
@@ -103,20 +81,6 @@ io.on("connection", (socket) => {
     socket.on(SOCKET_EVENT.leaveRoom, (bubbleId) => {
         console.log("Leave room: ", bubbleId);
         socket.leave(bubbleId);
-    });
-
-    socket.on(SOCKET_EVENT.joinCommunity, async (params) => {
-        try {
-            const chatTagId = await joinCommunity(params);
-            io.to(socket.id).emit(SOCKET_EVENT.joinCommunity, chatTagId);
-            io.to(chatTagId).emit(
-                SOCKET_EVENT.hadNewUserJoinCommunity,
-                chatTagId
-            );
-            socket.join(chatTagId);
-        } catch (err) {
-            console.log("Err join community: ", err);
-        }
     });
 
     /**
@@ -154,34 +118,27 @@ io.on("connection", (socket) => {
         }
     });
     // after receive socket "createChatTag" in client, join room of that chat tag
-    socket.on(SOCKET_EVENT.joinRoom, (chatTagId) => {
-        console.log("join room: ", chatTagId);
-        socket.join(chatTagId);
+    socket.on(SOCKET_EVENT.joinRoom, (conversationId: string) => {
+        console.log("join room: ", conversationId);
+        socket.join(conversationId);
     });
 
-    socket.on(SOCKET_EVENT.seenMessage, async (params) => {
-        try {
-            let res: any = undefined;
-
-            // enjoy mode
-            if (params?.isEnjoy) {
-                res = {
-                    chatTagId: params.chatTagId,
-                    userSeen: params.myId,
-                };
+    socket.on(
+        SOCKET_EVENT.seenMessage,
+        async (params: TypeHandleSeenMessage) => {
+            try {
+                const res = await handleSeenMessage(params);
+                if (res) {
+                    io.to(params.conversationId).emit(
+                        SOCKET_EVENT.seenMessage,
+                        res
+                    );
+                }
+            } catch (err) {
+                console.log("Error seen message: ", socket.id);
             }
-            // user have account
-            else {
-                res = await getLatestMessage(params);
-            }
-
-            if (res) {
-                io.to(params.chatTagId).emit(SOCKET_EVENT.seenMessage, res);
-            }
-        } catch (err) {
-            console.log("Error seen message: ", socket.id);
         }
-    });
+    );
 
     socket.on(SOCKET_EVENT.requestPublicChat, async (chatTagId) => {
         try {
@@ -205,86 +162,18 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on(SOCKET_EVENT.changeGroupName, async (params) => {
-        try {
-            const check = await changeGroupName(params);
-            if (check) {
-                io.to(params.chatTagId).emit(SOCKET_EVENT.changeGroupName, {
-                    chatTagId: params.chatTagId,
-                    newName: params.newName,
-                });
-            }
-        } catch (err) {
-            console.log("Error change group name: ", socket.id);
-        }
-    });
-
-    socket.on(SOCKET_EVENT.changeChatColor, async (params) => {
-        try {
-            const check = await handleChangeChatColor({
-                socketId: socket.id,
-                ...params,
-            });
-            if (check) {
-                io.to(params.chatTagId).emit(SOCKET_EVENT.changeChatColor, {
-                    chatTagId: params.chatTagId,
-                    newColor: params.newColor,
-                });
-            }
-        } catch (err) {
-            console.log("Error change chat color: ", socket.id);
-        }
-    });
-
-    /**
-     * Block, stop conversation
-     */
-    socket.on(SOCKET_EVENT.isBlocked, async ({ listUserId, listChatTagId }) => {
-        try {
-            const listSocketId = await getSocketIdOfListUserActive(listUserId);
-            listSocketId.forEach((item) => {
-                io.to(item).emit(SOCKET_EVENT.isBlocked, listChatTagId);
-            });
-        } catch (err) {
-            console.log("Error block: ", socket.id);
-        }
-    });
-    socket.on(SOCKET_EVENT.unBlocked, async ({ listUserId, listChatTagId }) => {
-        try {
-            const listSocketId = await getSocketIdOfListUserActive(listUserId);
-            listSocketId.forEach((item) => {
-                io.to(item).emit(SOCKET_EVENT.unBlocked, listChatTagId);
-            });
-        } catch (err) {
-            console.log("Error un-block: ", socket.id);
-        }
-    });
-
-    socket.on(SOCKET_EVENT.stopConversation, (chatTagId) => {
-        io.to(chatTagId).emit(SOCKET_EVENT.stopConversation, chatTagId);
-    });
-    socket.on(SOCKET_EVENT.openConversation, (chatTagId) => {
-        io.to(chatTagId).emit(SOCKET_EVENT.openConversation, chatTagId);
-    });
-
     /**
      * Message
      */
-    socket.on(SOCKET_EVENT.message, async (params) => {
+    socket.on(SOCKET_EVENT.message, async (params: TypeSendMessageRequest) => {
         const res = await handleSendMessage(params);
-        io.to(res.chatTag).emit(SOCKET_EVENT.message, res);
+        io.to(res.conversationId).emit(SOCKET_EVENT.message, res);
     });
-    socket.on(SOCKET_EVENT.deleteMessage, (params) => {
-        const { chatTagId, messageId } = params;
-        io.to(chatTagId).emit(SOCKET_EVENT.deleteMessage, params);
+    socket.on(SOCKET_EVENT.typing, (params: TypeTyping) => {
+        io.to(params.conversationId).emit(SOCKET_EVENT.typing, params);
     });
-    socket.on(SOCKET_EVENT.typing, (params) => {
-        const { chatTagId, userId } = params;
-        io.to(chatTagId).emit(SOCKET_EVENT.typing, params);
-    });
-    socket.on(SOCKET_EVENT.unTyping, (params) => {
-        const { chatTagId, userId } = params;
-        io.to(chatTagId).emit(SOCKET_EVENT.unTyping, params);
+    socket.on(SOCKET_EVENT.unTyping, (params: TypeTyping) => {
+        io.to(params.conversationId).emit(SOCKET_EVENT.unTyping, params);
     });
 
     /**
@@ -360,6 +249,64 @@ const listenAppServer = http.createServer(async (req, res) => {
                 }
             }
 
+            // Block, unblock user
+            else if (url === "/setting/block") {
+                if (data.conversationId) {
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.isBlocked,
+                        data.conversationId
+                    );
+                }
+            } else if (url === "/setting/unblock") {
+                if (data.conversationId) {
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.unBlocked,
+                        data.conversationId
+                    );
+                }
+            }
+
+            // Stop, open conversation
+            else if (url === "/setting/stop-conversation") {
+                if (data.conversationId) {
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.stopConversation,
+                        data.conversationId
+                    );
+                }
+            } else if (url === "/setting/open-conversation") {
+                if (data.conversationId) {
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.stopConversation,
+                        data.conversationId
+                    );
+                }
+            }
+
+            // Change conversation name, color
+            else if (url === "/chat/change-chat-name") {
+                if (data) {
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.changeChatName,
+                        data
+                    );
+                }
+            } else if (url === "/chat/change-chat-color") {
+                if (data) {
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.changeChatColor,
+                        data
+                    );
+                }
+            } else if (url === "/chat/delete-message") {
+                if (data) {
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.deleteMessage,
+                        data
+                    );
+                }
+            }
+
             res.end();
         });
     } else {
@@ -374,3 +321,17 @@ listenAppServer.listen(1412);
 startBotDiscord();
 
 console.log("Start node success");
+
+// socket.on(SOCKET_EVENT.joinCommunity, async (params) => {
+//     try {
+//         const chatTagId = await joinCommunity(params);
+//         io.to(socket.id).emit(SOCKET_EVENT.joinCommunity, chatTagId);
+//         io.to(chatTagId).emit(
+//             SOCKET_EVENT.hadNewUserJoinCommunity,
+//             chatTagId
+//         );
+//         socket.join(chatTagId);
+//     } catch (err) {
+//         console.log("Err join community: ", err);
+//     }
+// });

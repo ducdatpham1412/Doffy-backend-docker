@@ -1,23 +1,19 @@
 import { Document, ObjectId, PushOperator } from "mongodb";
 import { CHAT_TAG, MESSAGE_TYPE, TYPE_NOTIFICATION } from "../enum";
-import mongoDb from "../mongoDb";
-import Notification from "../notification";
-import { request } from "../request";
-import Static from "../static";
-import {
-    getListInfoUser,
-    getUserIdFromToken,
-    getDateTimeNow,
-    createLinkImage,
-} from "./assistant";
-import { executiveQuery } from "../mysqlDb";
 import {
     TypeAgreePublicChatParams,
-    TypeChangeColorParams,
-    TypeChangeGroupNameParams,
-    TypeParamsGetLatestMessage,
+    TypeHandleSeenMessage,
     TypeParamStartNewChatTag,
 } from "../interface/chatTag";
+import mongoDb from "../mongoDb";
+import { executiveQuery } from "../mysqlDb";
+import Notification from "../notification";
+import {
+    createLinkImage,
+    getDateTimeNow,
+    getListInfoUser,
+    getUserIdFromToken,
+} from "./assistant";
 
 export const handleStartNewChatTag = async (
     params: TypeParamStartNewChatTag
@@ -109,9 +105,10 @@ export const handleStartNewChatTag = async (
                 (item: number) => item != newChatTag.senderId
             )[0] || listUserId[0]; // if not found id different senderId, get senderId
         await Notification.startNewChatTag({
+            creatorName: "",
             message: newChatTag.content,
             receiver: receiverId,
-            chatTagId: String(insertChatTag._id),
+            conversationId: String(insertChatTag._id),
         });
 
         // Data and Socket notification
@@ -231,54 +228,36 @@ export const handleStartNewChatTag = async (
     }
 };
 
-export const getLatestMessage = async (params: TypeParamsGetLatestMessage) => {
-    const { myId, chatTagId } = params;
+export const handleSeenMessage = async (params: TypeHandleSeenMessage) => {
+    const { myId, conversationId } = params;
 
-    // Find latest message
-    // let latestMessage = undefined;
-    const chatTag = await mongoDb.collection("chatTag").findOne({
-        _id: new ObjectId(chatTagId),
-    });
-
-    if (!chatTag) {
-        return null;
-    }
-
-    const isMyChatTag = chatTag.listUser[0] === chatTag.listUser[1];
-    const latestMessage = chatTag.listMessages.find((message: any) => {
-        return isMyChatTag
-            ? message.senderId === myId
-            : message.senderId !== myId;
-    });
-
-    // update seen message of chat tag
-    if (latestMessage) {
-        await mongoDb.collection("chatTag").findOneAndUpdate(
+    const now = getDateTimeNow();
+    const updateUserData = {
+        [`user_data.${myId}.modified`]: now,
+    };
+    const conversation = await mongoDb
+        .collection("chat_conversation")
+        .findOneAndUpdate(
             {
-                _id: new ObjectId(chatTagId),
+                _id: new ObjectId(conversationId),
             },
             {
-                $set: {
-                    [`userSeenMessage.${myId}`]: {
-                        latestMessage: String(latestMessage._id),
-                        isLatest: true,
-                    },
-                },
+                $set: updateUserData,
             }
         );
+
+    if (!conversation.value) {
+        return;
     }
 
-    const res = {
-        chatTagId,
+    return {
+        conversationId,
         data: {
             [`${myId}`]: {
-                latestMessage: String(latestMessage?._id || ""),
-                isLatest: true,
+                modified: String(now),
             },
         },
     };
-
-    return res;
 };
 
 export const handleRequestPublicChat = async (chatTagId: string) => {
@@ -370,45 +349,4 @@ export const handleAgreePublicChat = async (
     };
 
     return updateChatTag;
-};
-
-export const changeGroupName = async (params: TypeChangeGroupNameParams) => {
-    const { token, chatTagId, newName } = params;
-
-    await request.put(
-        `chat/change-group-name/${chatTagId}`,
-        {
-            name: newName,
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        }
-    );
-    return true;
-};
-
-export const handleChangeChatColor = async (params: TypeChangeColorParams) => {
-    const { token, newColor, chatTagId, socketId } = params;
-    const userId = Static.getUserIdFromSocketId(socketId);
-    if (!userId) return false;
-    // user enjoy mode
-    if (String(userId).includes("__")) {
-        return true;
-    }
-
-    // user have account
-    await request.put(
-        `chat/change-chat-color/${chatTagId}`,
-        {
-            color: newColor,
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        }
-    );
-    return true;
 };

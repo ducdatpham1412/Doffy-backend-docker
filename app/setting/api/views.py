@@ -11,12 +11,14 @@ from rest_framework.response import Response
 from setting import models
 from setting.api.serializers import (ChangeInformationSerializer,
                                      ExtendSerializer, ListBlockSerializer)
-from utilities import services
+from utilities import services, enums
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
 from utilities.validate import validate_password
 from bson import ObjectId
 from django.contrib.auth.hashers import make_password, check_password
+import requests
+import json
 
 
 class ChangePassword(GenericAPIView):
@@ -193,24 +195,21 @@ class BlockUser(GenericAPIView):
             except Follow.DoesNotExist:
                 return
 
-    def get_list_chat_tag_blocked(self, my_id, your_id):
+    def send_socket_block(self, my_id, your_id):
         list_user_id_sort = [my_id, your_id]
         list_user_id_sort.sort()
-
-        list_chat_tag = mongoDb.chatTag.find({
-            'listUser': list_user_id_sort
+        conversation = mongoDb.chat_conversation.find_one({
+            'list_users': list_user_id_sort
         })
-
-        list_chat_tag_id_blocked = []
-        for chat_tag in list_chat_tag:
-            list_chat_tag_id_blocked.append(str(chat_tag['_id']))
-
-        return list_chat_tag_id_blocked
+        conversation_id = services.get_object(conversation, '_id')
+        if conversation_id:
+            requests.post('http://chat:1412/setting/block', data=json.dumps({
+                'conversationId': str(conversation_id),
+            }))
 
     def post(self, request, id):
         my_id = services.get_user_id_from_request(request)
 
-        # your self
         if my_id == id:
             raise CustomError()
 
@@ -222,9 +221,9 @@ class BlockUser(GenericAPIView):
         temp = models.Block(block=my_profile, blocked=your_profile)
         temp.save()
 
-        res = self.get_list_chat_tag_blocked(my_id, id)
+        self.send_socket_block(my_id=my_id, your_id=id)
 
-        return Response(res, status=status.HTTP_200_OK)
+        return Response(None, status=status.HTTP_200_OK)
 
 
 class UnblockUser(GenericAPIView):
@@ -238,25 +237,17 @@ class UnblockUser(GenericAPIView):
             raise CustomError(error_message.you_not_block_this_person,
                               error_key.you_not_block_this_person)
 
-    def get_user(self, user_id):
-        try:
-            user = User.objects.get(id=user_id)
-            return user
-        except User.DoesNotExist:
-            raise CustomError(error_message.username_not_exist,
-                              error_key.username_not_exist)
-
-    def open_all_chat_tags(self, my_id, your_id):
+    def open_conversation(self, my_id, your_id):
         list_user_id_sort = [my_id, your_id]
         list_user_id_sort.sort()
-
-        list_chat_tag_opened = []
-
-        list_chat_tag = mongoDb.chatTag.find({'listUser': list_user_id_sort})
-        for chat_tag in list_chat_tag:
-            list_chat_tag_opened.append(str(chat_tag['_id']))
-
-        return list_chat_tag_opened
+        conversation = mongoDb.chat_conversation.find_one({
+            'list_users': list_user_id_sort
+        })
+        conversation_id = services.get_object(conversation, '_id')
+        if conversation_id:
+            requests.post('http://chat:1412/setting/unblock', data=json.dumps({
+                'conversationId': str(conversation_id),
+            }))
 
     def post(self, request, id):
         my_id = services.get_user_id_from_request(request)
@@ -264,48 +255,36 @@ class UnblockUser(GenericAPIView):
         block = self.get_object(my_id, id)
         block.delete()
 
-        res = self.open_all_chat_tags(my_id, id)
+        self.open_conversation(my_id, id)
 
-        return Response(res, status=status.HTTP_200_OK)
+        return Response(None, status=status.HTTP_200_OK)
 
 
 class StopConversation(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
 
-    def put(self, request, chat_tag_id):
+    def put(self, request, conversation_id):
         my_id = services.get_user_id_from_request(request)
 
-        chat_tag = mongoDb.chatTag.find_one({'_id': ObjectId(chat_tag_id)})
-
-        if not chat_tag:
-            raise CustomError()
-
-        # check is this my chat tag - chat to your self
-        your_id = None
-        for user_id in chat_tag['listUser']:
-            if user_id != my_id:
-                your_id = user_id
-        if not your_id:
-            raise CustomError()
-
-        # insert chat tag stop
-        check = mongoDb.chatTagStopped.find_one_and_update(
+        conversation = mongoDb.chat_conversation.find_one_and_update(
             {
-                'chatTag': chat_tag_id,
-                'userStop': my_id,
+                '_id': ObjectId(conversation_id),
+                'list_users': my_id,
             },
             {
                 '$set': {
-                    'isActive': True
+                    'status': enums.status_conversation_stop
                 }
             }
         )
-        if not check:
-            mongoDb.chatTagStopped.insert_one({
-                'chatTag': chat_tag_id,
-                'userStop': my_id,
-                'isActive': True
-            })
+
+        if not conversation:
+            raise CustomError(error_message.conversation_not_existed,
+                              error_key.conversation_not_existed)
+        else:
+            requests.post('http://chat:1412/setting/stop-conversation', json.dumps({
+                'conversationId': conversation_id,
+            }))
 
         return Response(None, status=status.HTTP_200_OK)
 
@@ -313,24 +292,27 @@ class StopConversation(GenericAPIView):
 class OpenConversation(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
 
-    def put(self, request, chat_tag_id):
+    def put(self, request, conversation_id):
         my_id = services.get_user_id_from_request(request)
 
-        # set in chatTagStopped
-        check_stop_chat = mongoDb.chatTagStopped.find_one_and_update(
+        conversation = mongoDb.chat_conversation.find_one_and_update(
             {
-                'chatTag': chat_tag_id,
-                'userStop': my_id
+                '_id':  ObjectId(conversation_id),
+                'list_users': my_id
             },
             {
                 '$set': {
-                    'isActive': False
+                    'status': enums.status_conversation_active
                 }
             }
         )
-        if not check_stop_chat:
-            raise CustomError(error_message.you_can_not_open_this_conversation,
-                              error_key.you_can_not_open_this_conversation)
+        if not conversation:
+            raise CustomError(error_message.conversation_not_existed,
+                              error_key.conversation_not_existed)
+        else:
+            requests.post('http://chat:1412/setting/open-conversation', json.dumps({
+                'conversationId': conversation_id,
+            }))
 
         return Response(None, status=status.HTTP_200_OK)
 

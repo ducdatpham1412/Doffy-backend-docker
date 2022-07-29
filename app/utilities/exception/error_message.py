@@ -31,7 +31,7 @@ post_not_existed = 'post_not_existed'
 
 # chat
 not_have_permission_delete_message = 'not_have_permission_delete_message'
-you_can_not_open_this_conversation = 'you_can_not_open_this_conversation'
+conversation_not_existed = 'conversation_not_existed'
 
 # lock account
 you_have_lock_your_account = 'you_have_lock_your_account'

@@ -7,47 +7,47 @@ from rest_framework.response import Response
 from utilities import enums, services
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
-from utilities.disableObject import DisableObject
+import requests
+import json
 
 
 class DeleteMessage(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request):
-        chat_tag_id = request.data['chatTagId']
-        message_id = request.data['messageId']
+    def put(self, request, message_id):
         my_id = services.get_user_id_from_request(request)
 
-        info_chat_tag = mongoDb.chatTag.find_one_and_update(
+        message = mongoDb.chat_message.find_one_and_update(
             {
-                '_id': ObjectId(chat_tag_id)
+                '_id': ObjectId(message_id),
+                'creator': my_id
             },
             {
-                '$pull': {
-                    'listMessages': {
-                        '_id': ObjectId(message_id),
-                        'senderId': my_id,
-                    }
-                },
+                '$set': {
+                    'status': enums.status_not_active
+                }
+            }
+        )
+        if not message:
+            raise CustomError(error_message.not_have_permission_delete_message,
+                              error_key.not_have_permission_delete_message)
+
+        conversation = mongoDb.chat_conversation.find_one_and_update(
+            {
+                '_id': ObjectId(message['conversation_id'])
+            },
+            {
                 '$inc': {
                     'totalMessages': -1
                 }
             }
         )
-
-        # Check can delete or not and Add to Disable object
-        if not info_chat_tag:
+        if not conversation:
             raise CustomError()
-        check_index = -1
-        for index, value in enumerate(info_chat_tag['listMessages']):
-            if value['_id'] == ObjectId(message_id) and value['senderId'] == my_id:
-                check_index = index
-                DisableObject.add_disable_post_or_message(
-                    enums.disable_message, value)
-                break
-        if (check_index == -1):
-            raise CustomError(error_message.not_have_permission_delete_message,
-                              error_key.not_have_permission_delete_message)
 
-        # Response
+        requests.post('http://chat:1412/chat/delete-message', data=json.dumps({
+            'conversationId': message['conversation_id'],
+            'messageId': message_id,
+        }))
+
         return Response(None, status=status.HTTP_200_OK)

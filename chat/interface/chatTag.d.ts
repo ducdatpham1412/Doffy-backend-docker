@@ -23,22 +23,9 @@ export interface TypeGetListInfoUserResponse {
     gender: number;
 }
 
-export interface TypeParamsGetLatestMessage {
+export interface TypeHandleSeenMessage {
     myId: number;
-    chatTagId: string;
-}
-
-export interface TypeChangeGroupNameParams {
-    token: string;
-    chatTagId: string;
-    newName: string;
-}
-
-export interface TypeChangeColorParams {
-    token: string;
-    newColor: number;
-    chatTagId: string;
-    socketId: string;
+    conversationId: string;
 }
 
 export interface TypeAgreePublicChatParams {
