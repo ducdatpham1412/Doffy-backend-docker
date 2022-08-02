@@ -16,7 +16,7 @@ export const SOCKET_EVENT = {
     requestPublicChat: "2.2",
     agreePublicChat: "2.3",
     allAgreePublicChat: "2.4",
-    changeGroupName: "2.5",
+    changeChatName: "2.5",
     changeChatColor: "2.6",
     // message
     message: "3.0",
@@ -60,4 +60,9 @@ export const GENDER = {
     male: 0,
     female: 1,
     notToSay: 2,
+};
+
+export const STATUS = {
+    active: 1,
+    notActive: 0,
 };

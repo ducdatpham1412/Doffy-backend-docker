@@ -7,7 +7,8 @@
         "start": "npx nodemon --exec ts-node ./chat/index.ts",
         "rlc": "docker stop chat && docker start chat && docker logs -f chat",
         "log-app": "docker logs -f app",
-        "log-chat": "docker logs -f chat"
+        "log-chat": "docker logs -f chat",
+        "mongo": "npx ts-node script/__script.ts"
     },
     "dependencies": {
         "@types/cron": "^2.0.0",
@@ -20,6 +21,7 @@
         "mongodb": "^4.3.1",
         "mysql2": "^2.3.3",
         "nodemon": "^2.0.19",
+        "react-fast-compare": "^3.2.0",
         "socket.io": "^4.4.1"
     },
     "optionalDependencies": {

@@ -70,12 +70,6 @@ group_relationship_self = 0
 group_relationship_joined = 1
 group_relationship_not_joined = 2
 
-
-# type_chat_tag
-chat_tag_new_from_bubble = 0
-chat_tag_new_from_profile = 1
-chat_tag_group = 2
-
 # type message
 message_text = 0
 message_image = 1
@@ -138,6 +132,9 @@ os_iOS = 1
 # status
 status_not_active = 0
 status_active = 1
+
+status_conversation_active = 1
+status_conversation_stop = 0
 
 # request_user
 request_user_lock_account = 0

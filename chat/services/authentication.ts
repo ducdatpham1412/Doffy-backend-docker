@@ -8,11 +8,11 @@ export const getMyListChatTagsAndMyId = async (token: string) => {
         },
     });
     const myId = res.data;
-    const listMyChatTag = await mongoDb
-        .collection("chatTag")
+    const listMyConversations = await mongoDb
+        .collection("chat_conversation")
         .find({
-            listUser: myId,
+            list_users: myId,
         })
         .toArray();
-    return { listMyChatTag, myId };
+    return { listMyConversations, myId };
 };

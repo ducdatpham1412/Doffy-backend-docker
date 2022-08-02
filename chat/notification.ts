@@ -1,10 +1,7 @@
 import axios from "axios";
 import { TYPE_NOTIFICATION } from "./enum";
 import env from "./env";
-import {
-    TypeMessageParams,
-    TypeStartNewChatTagParams,
-} from "./interface/notification";
+import { TypeMessageParams } from "./interface/notification";
 
 const requestOneSignal = axios.create({
     baseURL: "https://onesignal.com",
@@ -24,11 +21,11 @@ const sendNotification = async (body: any) => {
 
 export default class Notification {
     static message = async (params: TypeMessageParams) => {
-        const { senderName, message, receiver, chatTagId } = params;
+        const { creatorName, message, receiver, conversationId } = params;
         try {
             await sendNotification({
                 contents: { en: message },
-                headings: { en: senderName },
+                headings: { en: creatorName },
                 filters: [
                     {
                         field: "tag",
@@ -42,7 +39,7 @@ export default class Notification {
                 // included_segments: ["Subscribed Users"],
                 data: {
                     type: TYPE_NOTIFICATION.message,
-                    chatTagId,
+                    conversationId,
                 },
             });
         } catch (err) {
@@ -50,12 +47,12 @@ export default class Notification {
         }
     };
 
-    static startNewChatTag = async (params: TypeStartNewChatTagParams) => {
-        const { message, receiver, chatTagId } = params;
+    static startNewChatTag = async (params: TypeMessageParams) => {
+        const { message, receiver, conversationId, creatorName } = params;
         try {
             await sendNotification({
                 contents: { en: message },
-                headings: { en: "Một người lạ làm quen với bạn này 😇" },
+                headings: { en: creatorName },
                 filters: [
                     {
                         field: "tag",
@@ -66,7 +63,7 @@ export default class Notification {
                 ],
                 data: {
                     type: TYPE_NOTIFICATION.newChatTag,
-                    chatTagId,
+                    conversationId,
                 },
             });
         } catch (err) {
