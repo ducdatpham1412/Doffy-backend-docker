@@ -1,6 +1,6 @@
 import pymongo
 from authentication.models import User
-from common.api.serializers import GetPassportSerializer
+from common.serializers import GetPassportSerializer
 from findme.mongo import mongoDb
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
