@@ -1,3 +1,6 @@
+from json.encoder import ESCAPE_ASCII
+
+
 USERNAME_MIN_LENGTH = 7
 USERNAME_MAX_LENGTH = 20
 
@@ -75,6 +78,8 @@ message_text = 0
 message_image = 1
 message_sticker = 2
 message_join_community = 3
+message_change_color = 4
+message_change_name = 5
 
 
 # socket

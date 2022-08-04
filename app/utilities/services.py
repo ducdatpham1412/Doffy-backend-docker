@@ -8,7 +8,7 @@ import io
 from PIL import Image, ImageOps
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.conf import settings
 import requests
 import json
