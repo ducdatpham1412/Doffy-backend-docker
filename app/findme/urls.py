@@ -9,7 +9,7 @@ from setting.api import views
 urlpatterns = [
     path('auth/', include('authentication.urls')),
     path('profile/', include('myprofile.api.urls')),
-    path('common/', include('common.api.urls')),
+    path('common/', include('common.urls')),
     path('setting/', include('setting.api.urls')),
     path('chat/', include('chat.urls')),
     path('about-us/policy', views.PrivacyPolicy.as_view()),

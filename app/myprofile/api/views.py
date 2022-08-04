@@ -1,5 +1,5 @@
 import json
-from common.api.serializers import GetPassportSerializer
+from common.serializers import GetPassportSerializer
 from authentication.models import User
 from bson.objectid import ObjectId
 from findme.mongo import mongoDb
