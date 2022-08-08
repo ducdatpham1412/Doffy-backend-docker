@@ -52,10 +52,4 @@ export default class Static {
             this.listUserInBackground.splice(index, 1);
         }
     };
-
-    // get user id from their socket id
-    static getUserIdFromSocketId = (socketId: string) => {
-        return this.listUserActives.find((item) => item.socketId === socketId)
-            ?.userId;
-    };
 }

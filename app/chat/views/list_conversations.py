@@ -70,7 +70,6 @@ class GetListConversations(GenericAPIView):
                     'created': str(data['created']),
                     'modified': services.get_local_string_date_time(data['modified'])
                 }
-                # check why it's wrong here
 
             is_blocked = self.check_is_block(
                 my_id=id, list_user_id=conversation['list_users'])
@@ -83,7 +82,7 @@ class GetListConversations(GenericAPIView):
                 'latestMessage': conversation['latest_message'],
                 'userData': user_data,
                 'color': conversation['color'],
-                'modified': str(conversation['modified']),
+                'modified': services.get_local_string_date_time(conversation['modified']),
                 'status': conversation['status'],
                 'isBlocked': is_blocked,
             }

@@ -38,7 +38,7 @@ class DeleteMessage(GenericAPIView):
             },
             {
                 '$inc': {
-                    'totalMessages': -1
+                    'total_messages': -1
                 }
             }
         )

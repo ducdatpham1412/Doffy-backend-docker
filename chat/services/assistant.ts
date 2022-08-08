@@ -1,11 +1,11 @@
-import mongoDb from "../mongoDb";
-import { request } from "../request";
-import env from "../env";
 import { GENDER } from "../enum";
+import env from "../env";
 import {
     TypeGetListInfoUserRequest,
     TypeGetListInfoUserResponse,
 } from "../interface/chatTag";
+import mongoDb from "../mongoDb";
+import { request } from "../request";
 
 const filterTheSame = (originArray: Array<any>) => {
     const res = originArray.filter((item, index, self) => {
@@ -42,7 +42,6 @@ export const getListInfoUser = async (
         "/chat/list-info-user",
         {
             listUserId: params.listUserId,
-            displayAvatar: params.displayAvatar,
         },
         {
             headers: {

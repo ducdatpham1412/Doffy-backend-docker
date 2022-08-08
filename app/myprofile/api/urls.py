@@ -18,5 +18,7 @@ urlpatterns = [
     path('like-post/<str:post_id>', views.LikePost.as_view()),
     path('unlike-post/<str:post_id>', views.UnLikePost.as_view()),
     path('follow/get-list/<int:user_id>', views.GetListFollow.as_view()),
-    path('get-list-notifications', views.GetListNotification.as_view())
+    path('get-list-notifications', views.GetListNotification.as_view()),
+    path('check-block-lock-account/<int:id>',
+         views.CheckIsBlockOrLockAccount.as_view())
 ]
