@@ -11,12 +11,7 @@ import {
 } from "./services/assistant";
 import { getMyListChatTagsAndMyId } from "./services/authentication";
 import { addComment } from "./services/bubble";
-import {
-    handleAgreePublicChat,
-    handleRequestPublicChat,
-    handleSeenMessage,
-    handleStartNewChatTag,
-} from "./services/chatTag";
+import { handleSeenMessage, handleStartNewChatTag } from "./services/chatTag";
 import { startBotDiscord } from "./services/discord";
 import { handleSendMessage } from "./services/message";
 import Static from "./static";
@@ -140,28 +135,6 @@ io.on("connection", (socket) => {
         }
     );
 
-    socket.on(SOCKET_EVENT.requestPublicChat, async (chatTagId) => {
-        try {
-            await handleRequestPublicChat(chatTagId);
-            io.to(chatTagId).emit(SOCKET_EVENT.requestPublicChat, chatTagId);
-        } catch (err) {
-            console.log("Error request public chat: ", socket.id);
-        }
-    });
-    socket.on(SOCKET_EVENT.agreePublicChat, async (params) => {
-        try {
-            const chatTagPublic = await handleAgreePublicChat(params);
-            if (chatTagPublic) {
-                io.to(chatTagPublic.id).emit(
-                    SOCKET_EVENT.allAgreePublicChat,
-                    chatTagPublic
-                );
-            }
-        } catch (err) {
-            console.log("Error agree public chat: ", socket.id);
-        }
-    });
-
     /**
      * Message
      */
@@ -277,7 +250,7 @@ const listenAppServer = http.createServer(async (req, res) => {
             } else if (url === "/setting/open-conversation") {
                 if (data.conversationId) {
                     io.to(data.conversationId).emit(
-                        SOCKET_EVENT.stopConversation,
+                        SOCKET_EVENT.openConversation,
                         data.conversationId
                     );
                 }
@@ -288,14 +261,28 @@ const listenAppServer = http.createServer(async (req, res) => {
                 if (data) {
                     io.to(data.conversationId).emit(
                         SOCKET_EVENT.changeChatName,
-                        data
+                        {
+                            conversationId: data.conversationId,
+                            name: data.name,
+                        }
+                    );
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.message,
+                        data.newMessage
                     );
                 }
             } else if (url === "/chat/change-chat-color") {
                 if (data) {
                     io.to(data.conversationId).emit(
                         SOCKET_EVENT.changeChatColor,
-                        data
+                        {
+                            conversationId: data.conversationId,
+                            color: data.color,
+                        }
+                    );
+                    io.to(data.conversationId).emit(
+                        SOCKET_EVENT.message,
+                        data.newMessage
                     );
                 }
             } else if (url === "/chat/delete-message") {

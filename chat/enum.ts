@@ -45,6 +45,8 @@ export const MESSAGE_TYPE = {
     image: 1,
     sticker: 2,
     joinCommunity: 3,
+    changeColor: 4,
+    changeName: 5,
 };
 
 export const TYPE_NOTIFICATION = {
