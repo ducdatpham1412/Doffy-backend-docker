@@ -2,7 +2,7 @@ import http from "http";
 import { Server } from "socket.io";
 import { SOCKET_EVENT } from "./enum";
 import { TypeAuthenticate } from "./interface";
-import { TypeHandleSeenMessage } from "./interface/chatTag";
+import { TypeCreateChatTag, TypeHandleSeenMessage } from "./interface/chatTag";
 import { TypeSendMessageRequest, TypeTyping } from "./interface/message";
 import mongoDb from "./mongoDb";
 import {
@@ -11,7 +11,7 @@ import {
 } from "./services/assistant";
 import { getMyListChatTagsAndMyId } from "./services/authentication";
 import { addComment } from "./services/bubble";
-import { handleSeenMessage, handleStartNewChatTag } from "./services/chatTag";
+import { handleSeenMessage, handleStartConversation } from "./services/chatTag";
 import { startBotDiscord } from "./services/discord";
 import { handleSendMessage } from "./services/message";
 import Static from "./static";
@@ -49,7 +49,7 @@ io.on("connection", (socket) => {
                 socket.join(String(item._id));
             });
         } catch (err) {
-            console.log("Error authenticate: ", socket.id);
+            console.log("Error authenticate: ", err);
             socket.emit(SOCKET_EVENT.unauthorized);
         }
     });
@@ -69,7 +69,7 @@ io.on("connection", (socket) => {
             const res = await addComment(params);
             io.to(params.bubbleId).emit(SOCKET_EVENT.addComment, res.data);
         } catch (err) {
-            console.log("Err adding comment: ", socket.id);
+            console.log("Err adding comment: ", err);
         }
     });
 
@@ -81,35 +81,25 @@ io.on("connection", (socket) => {
     /**
      * ChatTag
      */
-    socket.on(SOCKET_EVENT.createChatTag, async (params) => {
+    socket.on(SOCKET_EVENT.createChatTag, async (params: TypeCreateChatTag) => {
         try {
-            const res = await handleStartNewChatTag(params);
-            // If chat tag existed, only send message to user
-            if (res?.isChatTagExisted) {
-                io.to(res?.response?.chatTag).emit(
-                    SOCKET_EVENT.message,
-                    res.response
-                );
+            const res = await handleStartConversation(params);
+            if (res === undefined) {
                 return;
             }
-
-            if (res?.response?.listUser && res.dataNotification) {
-                const listSocketId = await getSocketIdOfListUserActive(
-                    res?.response?.listUser?.map((item: any) => item.id)
+            const data: any = res.data;
+            if (res.isExisted) {
+                io.to(data.conversationId).emit(SOCKET_EVENT.message, res.data);
+            } else if (!res.isExisted) {
+                const listSocketIds = await getSocketIdOfListUserActive(
+                    data.listUser.map((item: any) => item.id)
                 );
-
-                listSocketId.forEach((socketId) => {
-                    io.to(socketId).emit(
-                        SOCKET_EVENT.createChatTag,
-                        res.response
-                    );
-                    socket
-                        .to(socketId)
-                        .emit(SOCKET_EVENT.notification, res.dataNotification);
+                listSocketIds.forEach((socketId) => {
+                    io.to(socketId).emit(SOCKET_EVENT.createChatTag, res.data);
                 });
             }
         } catch (err) {
-            console.log("Error when create chat tag: ", socket.id);
+            console.log("Error when create chat tag: ", err);
         }
     });
     // after receive socket "createChatTag" in client, join room of that chat tag
@@ -130,7 +120,7 @@ io.on("connection", (socket) => {
                     );
                 }
             } catch (err) {
-                console.log("Error seen message: ", socket.id);
+                console.log("Error seen message: ", err);
             }
         }
     );

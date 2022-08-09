@@ -1,38 +1,35 @@
-export const SOCKET_EVENT = {
+export enum SOCKET_EVENT {
     // authenticate
-    authenticate: "0.0",
-    authenticateEnjoy: "0.1",
-    unauthorized: "0.2",
-    appActive: "0.3",
-    appBackground: "0.4",
+    authenticate = "0.0",
+    authenticateEnjoy = "0.1",
+    unauthorized = "0.2",
+    appActive = "0.3",
+    appBackground = "0.4",
     // bubble
-    addComment: "1.0",
-    joinCommunity: "1.1",
-    hadNewUserJoinCommunity: "1.2",
+    addComment = "1.0",
+    joinCommunity = "1.1",
+    hadNewUserJoinCommunity = "1.2",
     // chat tag
-    createChatTag: "2.0",
-    joinRoom: "2.1",
-    leaveRoom: "2.1.1",
-    requestPublicChat: "2.2",
-    agreePublicChat: "2.3",
-    allAgreePublicChat: "2.4",
-    changeChatName: "2.5",
-    changeChatColor: "2.6",
+    createChatTag = "2.0",
+    joinRoom = "2.1",
+    leaveRoom = "2.2",
+    changeChatName = "2.3",
+    changeChatColor = "2.4",
     // message
-    message: "3.0",
-    messageEnjoy: "3.1",
-    seenMessage: "3.2",
-    deleteMessage: "3.3",
-    typing: "3.4",
-    unTyping: "3.5",
+    message = "3.0",
+    messageEnjoy = "3.1",
+    seenMessage = "3.2",
+    deleteMessage = "3.3",
+    typing = "3.4",
+    unTyping = "3.5",
     // block or stop conversation
-    isBlocked: "4.0",
-    unBlocked: "4.1",
-    stopConversation: "4.3",
-    openConversation: "4.4",
+    isBlocked = "4.0",
+    unBlocked = "4.1",
+    stopConversation = "4.3",
+    openConversation = "4.4",
     // notification
-    notification: "5.0",
-};
+    notification = "5.0",
+}
 
 export const CHAT_TAG = {
     newFromBubble: 0,
@@ -67,4 +64,20 @@ export const GENDER = {
 export const STATUS = {
     active: 1,
     notActive: 0,
+};
+
+export enum CONVERSATION_STATUS {
+    active = 1,
+    stop = 0,
+}
+
+export const COLOR = {
+    talking: 1,
+    movie: 2,
+    technology: 3,
+    gaming: 4,
+    animal: 5,
+    travel: 6,
+    fashion: 7,
+    other: 8,
 };

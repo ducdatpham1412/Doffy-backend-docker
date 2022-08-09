@@ -13,7 +13,6 @@ export interface TypeParamStartNewChatTag {
 
 export interface TypeGetListInfoUserRequest {
     listUserId: Array<number>;
-    displayAvatar: boolean;
     token: string;
 }
 export interface TypeGetListInfoUserResponse {
@@ -31,4 +30,32 @@ export interface TypeHandleSeenMessage {
 export interface TypeAgreePublicChatParams {
     token: string;
     chatTagId: string;
+}
+
+export interface TypeCreateChatTag {
+    token: string;
+    conversation: {
+        content: string;
+        userId: number;
+    };
+}
+
+export interface TypeChatTagResponse {
+    id: string;
+    listUser: Array<TypeMemberInListChatTag>;
+    conversationName: string;
+    conversationImage: string;
+    userData: {
+        [key: string]: {
+            created: string;
+            modified: string;
+        };
+    };
+    color: number;
+    modified: string;
+    status: number;
+    isBlocked: boolean;
+    latestMessage: string;
+    // in front-end
+    userTyping?: Array<number>;
 }

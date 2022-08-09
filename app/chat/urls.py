@@ -1,5 +1,5 @@
 from chat.views import (detail_conversation, list_conversations,
-                        list_messages, change_chat_color, get_list_user_info, conversation_name, delete_message)
+                        list_messages, change_chat_color, conversation_name, delete_message, get_list_user_info)
 from django.urls import path
 
 
