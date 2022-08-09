@@ -270,10 +270,14 @@ class StopConversation(GenericAPIView):
             {
                 '_id': ObjectId(conversation_id),
                 'list_users': my_id,
+                'status.value': enums.status_active,
             },
             {
                 '$set': {
-                    'status': enums.status_conversation_stop
+                    'status': {
+                        'value': enums.status_conversation_stop,
+                        'user_stop': my_id
+                    }
                 }
             }
         )
@@ -298,17 +302,22 @@ class OpenConversation(GenericAPIView):
         conversation = mongoDb.chat_conversation.find_one_and_update(
             {
                 '_id':  ObjectId(conversation_id),
-                'list_users': my_id
+                'list_users': my_id,
+                'status': {
+                    'value': enums.status_not_active,
+                    'user_stop': my_id
+                }
             },
             {
                 '$set': {
-                    'status': enums.status_conversation_active
+                    'status': {
+                        'value': enums.status_conversation_active
+                    }
                 }
             }
         )
         if not conversation:
-            raise CustomError(error_message.conversation_not_existed,
-                              error_key.conversation_not_existed)
+            raise CustomError()
         else:
             requests.post('http://chat:1412/setting/open-conversation', json.dumps({
                 'conversationId': conversation_id,

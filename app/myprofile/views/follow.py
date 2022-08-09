@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from setting.models import Block, Information
+from setting.models import Block
 from utilities import enums, services
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
@@ -173,24 +173,15 @@ class GetListFollow(GenericAPIView):
             return enums.relationship_not_following
 
     def get_info_user(self, list_id):
-        list_user_i_know = services.get_list_user_id_i_know(self.my_id)
-
         res = []
         for id in list_id:
             profile = models.Profile.objects.get(user=id)
-            had_i_know = True if self.my_id == id else services.check_had_i_know(
-                list_user_id=list_user_i_know, partner_id=id)
-
             avatar = services.create_link_image(profile.avatar)
-            if not had_i_know:
-                information = Information.objects.get(user=id)
-                avatar = services.choose_private_avatar(information.gender)
-
             temp = {
-                'id': profile.user.id if had_i_know else None,
-                'name': profile.name if had_i_know else profile.anonymous_name,
+                'id': id,
+                'name': profile.name,
                 'avatar': avatar,
-                'description': profile.description if had_i_know else '',
+                'description': profile.description,
                 'relationship': self.get_relationship_follower(id)
             }
             res.append(temp)

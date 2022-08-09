@@ -83,7 +83,7 @@ class GetListConversations(GenericAPIView):
                 'userData': user_data,
                 'color': conversation['color'],
                 'modified': services.get_local_string_date_time(conversation['modified']),
-                'status': conversation['status'],
+                'status': conversation['status']['value'],
                 'isBlocked': is_blocked,
             }
 

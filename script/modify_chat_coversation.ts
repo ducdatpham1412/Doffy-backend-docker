@@ -57,7 +57,9 @@ const query = async () => {
                     user_data: userData,
                     total_messages: conversation.listMessages.length,
                     latest_message: "",
-                    status: 1,
+                    status: {
+                        value: 1,
+                    },
                     list_messages: conversation.listMessages || [],
                 };
 
