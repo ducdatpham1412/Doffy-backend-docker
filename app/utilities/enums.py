@@ -1,4 +1,3 @@
-from json.encoder import ESCAPE_ASCII
 
 
 USERNAME_MIN_LENGTH = 7
@@ -115,7 +114,6 @@ color_other = 8
 
 # disable object
 disable_profile_post = 'profilePost'
-disable_message = 'message'
 
 # notification
 notification_new_chat_tag = 0

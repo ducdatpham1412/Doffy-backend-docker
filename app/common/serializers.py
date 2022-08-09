@@ -2,7 +2,7 @@ from common.models import Images, Hobby, MyBubbles
 from authentication.models import User
 from rest_framework import serializers
 from setting.api.serializers import InformationSerializer
-from myprofile.api.serializers import ProfileSerializer
+from myprofile.serializers import ProfileSerializer
 from setting.api.serializers import ExtendSerializer
 
 

@@ -2,7 +2,7 @@ from authentication.serializers import UserSerializer
 from authentication.models import User
 from django.shortcuts import render
 from findme.mongo import mongoDb
-from myprofile.api.serializers import ProfileSerializer
+from myprofile.serializers import ProfileSerializer
 from myprofile.models import Follow, Profile
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
