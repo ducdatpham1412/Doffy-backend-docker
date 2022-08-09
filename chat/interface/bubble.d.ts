@@ -1,8 +1,13 @@
-export interface TypeParamsAddComment {
+export interface TypeAddComment {
     token: string;
-    bubbleId: string;
-    content: string;
-    commentReplied: string;
+    comment: {
+        postId: string;
+        commentReplied: string | null;
+        content: string;
+        images: Array<string>;
+        creatorName: string;
+        creatorAvatar: string;
+    };
 }
 
 export interface TypeParamsJoinCommunity {

@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from utilities import enums, services
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
-from utilities.disableObject import DisableObject
 import requests
 
 
@@ -172,7 +171,7 @@ class DeleteGroup(GenericAPIView):
         if not group:
             raise CustomError(error_message.post_not_existed,
                               error_key.post_not_existed)
-        DisableObject.add_disable_post_or_message(
-            enums.disable_profile_post, group)
+
+        # update status here
 
         return Response(None, status=status.HTTP_200_OK)

@@ -142,3 +142,12 @@ status_conversation_stop = 0
 # request_user
 request_user_lock_account = 0
 request_user_delete_account = 1
+
+# topic discovery post
+topic_travel = 0
+topic_culinary = 1
+
+# reaction
+react_post = 0
+react_comment = 1
+react_message = 2

@@ -2,6 +2,7 @@ import http from "http";
 import { Server } from "socket.io";
 import { SOCKET_EVENT } from "./enum";
 import { TypeAuthenticate } from "./interface";
+import { TypeAddComment } from "./interface/bubble";
 import { TypeCreateChatTag, TypeHandleSeenMessage } from "./interface/chatTag";
 import { TypeSendMessageRequest, TypeTyping } from "./interface/message";
 import mongoDb from "./mongoDb";
@@ -64,10 +65,10 @@ io.on("connection", (socket) => {
     /**
      * Bubble
      */
-    socket.on(SOCKET_EVENT.addComment, async (params) => {
+    socket.on(SOCKET_EVENT.addComment, async (params: TypeAddComment) => {
         try {
             const res = await addComment(params);
-            io.to(params.bubbleId).emit(SOCKET_EVENT.addComment, res.data);
+            io.to(params.comment.postId).emit(SOCKET_EVENT.addComment, res);
         } catch (err) {
             console.log("Err adding comment: ", err);
         }
@@ -197,11 +198,11 @@ const listenAppServer = http.createServer(async (req, res) => {
             }
 
             // Comment
-            else if (url === "/notification/comment") {
-                const socketId = await getSocketIdOfUserId(data.receiver);
-                if (socketId) {
-                    io.to(socketId).emit(SOCKET_EVENT.notification, data.data);
-                }
+            else if (url === "comment/delete-comment") {
+                io.to(data.postId).emit(
+                    SOCKET_EVENT.deleteComment,
+                    data.commentId
+                );
             }
 
             // New chat-tag from create group
