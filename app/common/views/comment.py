@@ -1,263 +1,142 @@
+from utilities.exception.exception_handler import CustomError
 from findme.mongo import mongoDb
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from utilities import services, enums
-from setting.models import Information
-from bson.objectid import ObjectId
 from myprofile.models import Profile
+from bson.objectid import ObjectId
 import requests
 import json
 
 
 class GetListComment(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
-    list_user_i_know = []
-    my_id = 0
 
-    def check_i_have_know(self, user_id):
-        if self.my_id == user_id:
-            return True
-        for id in self.list_user_i_know:
-            if id == user_id:
-                return True
-        return False
+    def filter_list_user_id(self, list_comments: list):
+        result = []
+        for comment in list_comments:
+            try:
+                result.index(comment['creator'])
+            except ValueError:
+                result.append(comment['creator'])
+        return result
 
-    def get_avatar_name(self, user_id: int, had_know: bool):
-        profile = Profile.objects.get(user=user_id)
+    def check_liked_comment(self, comment_id, user_id):
+        check_reaction = mongoDb.reaction.find_one({
+            'type': enums.react_comment,
+            'reacted_id': comment_id,
+            'creator': user_id,
+            'status': enums.status_active,
+        })
+        return bool(check_reaction)
 
-        if had_know:
-            return {
-                'name': profile.name,
-                'avatar': services.create_link_image(profile.avatar)
-            }
-
-        information = Information.objects.get(user=user_id)
-        return {
-            'name': profile.anonymous_name,
-            'avatar': services.choose_private_avatar(information.gender)
-        }
-
-    def get(self, request, bubble_id):
-        self.my_id = services.get_user_id_from_request(request)
-        self.list_user_i_know = services.get_list_user_id_i_know(self.my_id)
-
-        post = mongoDb.profilePost.find_one({
-            '_id': ObjectId(bubble_id)
+    def get_number_liked_comment(self, comment_id):
+        return mongoDb.reaction.count({
+            'type': enums.react_comment,
+            'reacted_id': comment_id,
+            'status': enums.status_active,
         })
 
+    def get_list_comments_reply(self, list_comments: list, str_comment_id):
+        res = []
+        for comment in list_comments:
+            if comment['replied_id'] == str_comment_id:
+                res.append(comment)
+        return res
+
+    def get(self, request, post_id):
+        my_id = services.get_user_id_from_request(request)
+
+        list_comments = mongoDb.discovery_comment.find({
+            'post_id': post_id,
+            'status': enums.status_active
+        })
+        list_comments = list(list_comments)
+
         id_name_avatar_object = {}
-
-        for user_comment in post['listUsersComment']:
-            check_i_had_know = self.check_i_have_know(user_comment)
-
-            if user_comment == self.my_id:
-                avatar_name = self.get_avatar_name(self.my_id, True)
-            else:
-                avatar_name = self.get_avatar_name(
-                    user_comment, check_i_had_know)
-
-            id_name_avatar_object['{}'.format(user_comment)] = {
-                'id': user_comment if check_i_had_know else None,
-                'name': avatar_name['name'],
-                'avatar': avatar_name['avatar'],
+        for user_id_comment in self.filter_list_user_id(list_comments):
+            profile = Profile.objects.get(user=user_id_comment)
+            id_name_avatar_object['{}'.format(user_id_comment)] = {
+                'id': user_id_comment,
+                'name': profile.name,
+                'avatar': services.create_link_image(profile.avatar),
             }
 
+        # Result
         res = []
-        for comment in post['listComments']:
-            is_liked = services.check_include(
-                list=comment['peopleLike'], value=self.my_id)
-            id_name_avatar = id_name_avatar_object['{}'.format(
-                comment['creatorId'])]
+        for comment in list_comments:
+            if comment['replied_id'] == None:
+                str_comment_id = str(comment['_id'])
+                is_liked = self.check_liked_comment(
+                    comment_id=str_comment_id, user_id=my_id)
+                number_likes = self.get_number_liked_comment(
+                    comment_id=str_comment_id)
 
-            list_replies = []
-            for comment_reply in comment['listCommentsReply']:
-                id_name_avatar_reply = id_name_avatar_object['{}'.format(
-                    comment_reply['creatorId'])]
-                is_liked_reply = services.check_include(
-                    list=comment_reply['peopleLike'], value=self.my_id)
+                id_name_avatar = id_name_avatar_object['{}'.format(
+                    comment['creator'])]
 
-                list_replies.append({
-                    'id': comment_reply['id'],
-                    'content': comment_reply['content'],
-                    'numberLikes': len(comment_reply['peopleLike']),
-                    'isLiked': is_liked_reply,
-                    'creatorId': id_name_avatar_reply['id'],
-                    'creatorName': id_name_avatar_reply['name'],
-                    'creatorAvatar': id_name_avatar_reply['avatar'],
-                    'createdTime': services.get_local_string_date_time(comment_reply['createdTime']),
+                # Comments reply
+                list_replies = []
+                for comment_reply in self.get_list_comments_reply(list_comments, str_comment_id):
+                    id_name_avatar_reply = id_name_avatar_object['{}'.format(
+                        comment_reply['creator'])]
+                    is_liked_reply = self.check_liked_comment(
+                        comment_id=str(comment_reply['_id']), user_id=my_id)
+                    number_likes_reply = self.get_number_liked_comment(
+                        comment_id=str(comment_reply['_id']))
+
+                    list_replies.append({
+                        'id': str(comment_reply['_id']),
+                        'content': comment_reply['content'],
+                        'numberLikes': number_likes_reply,
+                        'isLiked': is_liked_reply,
+                        'creator': id_name_avatar_reply['id'],
+                        'creatorName': id_name_avatar_reply['name'],
+                        'creatorAvatar': id_name_avatar_reply['avatar'],
+                        'created': services.get_local_string_date_time(comment_reply['created']),
+                    })
+
+                # Result
+                res.append({
+                    'id': str(comment['_id']),
+                    'content': comment['content'],
+                    'numberLikes': number_likes,
+                    'isLiked': is_liked,
+                    'creator': id_name_avatar['id'],
+                    'creatorName': id_name_avatar['name'],
+                    'creatorAvatar': id_name_avatar['avatar'],
+                    'created': services.get_local_string_date_time(comment['created']),
+                    'listCommentsReply': list_replies,
                 })
-
-            res.append({
-                'id': comment['id'],
-                'content': comment['content'],
-                'numberLikes': len(comment['peopleLike']),
-                'isLiked': is_liked,
-                'creatorId': id_name_avatar['id'],
-                'creatorName': id_name_avatar['name'],
-                'creatorAvatar': id_name_avatar['avatar'],
-                'createdTime': services.get_local_string_date_time(comment['createdTime']),
-                'listCommentsReply': list_replies,
-            })
 
         return Response(res, status=status.HTTP_200_OK)
 
 
-class AddComment(GenericAPIView):
+class DeleteComment(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
 
-    def comment_replied(self, data):
-        try:
-            return data['commentReplied']
-        except KeyError:
-            return ''
-
-    def get_name_avatar(self, your_id):
-        profile = Profile.objects.get(user=your_id)
-        information = Information.objects.get(user=your_id)
-
-        return {
-            'name': profile.anonymous_name,
-            'avatar': services.choose_private_avatar(information.gender)
-        }
-
-    def post(self, request, bubble_id):
+    def put(self, request, comment_id):
         my_id = services.get_user_id_from_request(request)
 
-        new_comment = {
-            'id': str(ObjectId()),
-            'content': request.data['content'],
-            'creatorId': my_id,
-            'createdTime': str(services.get_datetime_now()),
-            'peopleLike': []
-        }
-
-        comment_replied_id = self.comment_replied(request.data)
-        name_avatar = self.get_name_avatar(my_id)
-
-        if comment_replied_id:
-            profile_post = mongoDb.profilePost.find_one_and_update(
-                {
-                    '_id': ObjectId(bubble_id),
-                    'listComments.id': comment_replied_id,
-                },
-                {
-                    '$addToSet': {
-                        'listUsersComment': my_id
-                    },
-                    '$push': {
-                        'listComments.$.listCommentsReply': new_comment
-                    },
-                    '$inc': {
-                        'totalComments': 1,
-                    }
-                }
-            )
-            new_comment = {
-                'id': new_comment['id'],
-                'content': new_comment['content'],
-                'numberLikes': 0,
-                'isLiked': False,
-                'creatorId': new_comment['creatorId'],
-                'creatorName': name_avatar['name'],
-                'creatorAvatar': name_avatar['avatar'],
-                'createdTime': services.get_local_string_date_time(new_comment['createdTime']),
-                'replyOf': comment_replied_id,
-            }
-
-        else:
-            new_comment = {
-                **new_comment,
-                'listCommentsReply': []
-            }
-            profile_post = mongoDb.profilePost.find_one_and_update(
-                {
-                    '_id': ObjectId(bubble_id)
-                },
-                {
-                    '$addToSet': {
-                        'listUsersComment': my_id
-                    },
-                    '$push': {
-                        'listComments': new_comment
-                    },
-                    '$inc': {
-                        'totalComments': 1
-                    }
-                }
-            )
-
-            new_comment = {
-                'id': new_comment['id'],
-                'content': new_comment['content'],
-                'numberLikes': 0,
-                'isLiked': False,
-                'creatorId': new_comment['creatorId'],
-                'creatorName': name_avatar['name'],
-                'creatorAvatar': name_avatar['avatar'],
-                'createdTime': services.get_local_string_date_time(new_comment['createdTime']),
-                'listCommentsReply': new_comment['listCommentsReply'],
-            }
-
-        # Notification
-        image_notification = name_avatar['avatar']
-        try:
-            temp = services.create_link_image(
-                profile_post['images'][0])
-            image_notification = temp
-        except IndexError:
-            pass
-        content_notification = '{} đã bình luận về bài đăng của bạn'.format(
-            name_avatar['name'])
-
-        data_notification = {
-            'id': new_comment['id'],
-            'type': enums.notification_comment,
-            'content': content_notification,
-            'image': image_notification,
-            'creatorId': my_id,
-            'bubbleId': bubble_id,
-            'hadRead': False,
-        }
-        mongoDb.notification.find_one_and_update(
+        check_comment = mongoDb.discovery_comment.find_one_and_update(
             {
-                'userId': profile_post['creatorId']
+                '_id': ObjectId(comment_id),
+                'creator': my_id
             },
             {
-                '$push': {
-                    'list': {
-                        '$each': [data_notification],
-                        '$position': 0
-                    }
+                '$set': {
+                    'status': enums.status_not_active
                 }
             }
         )
+        if not check_comment:
+            raise CustomError()
 
-        # send onesignal
-        services.send_notification({
-            'contents': {
-                'vi': content_notification,
-                'en': '{} commented on your post'.format(name_avatar['name'])
-            },
-            'filters': [
-                {
-                    'field': 'tag',
-                    'key': 'userId',
-                    'relation': '=',
-                    'value': profile_post['creatorId']
-                }
-            ],
-            'data': {
-                'type': enums.notification_comment,
-                'bubbleId': bubble_id,
-            }
-        })
-
-        # socket notification
-        requests.post('http://chat:1412/notification/comment', data=json.dumps({
-            'receiver': profile_post['creatorId'],
-            'data': data_notification,
+        requests.post('http://chat:1412/comment/delete-comment', data=json.dumps({
+            'postId': check_comment['post_id'],
+            'commentId': comment_id
         }))
 
-        return Response(new_comment, status=status.HTTP_200_OK)
+        return Response(None, status=status.HTTP_200_OK)

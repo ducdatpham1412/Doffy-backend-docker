@@ -7,6 +7,7 @@ export enum SOCKET_EVENT {
     appBackground = "0.4",
     // bubble
     addComment = "1.0",
+    deleteComment = "1.0.1",
     joinCommunity = "1.1",
     hadNewUserJoinCommunity = "1.2",
     // chat tag

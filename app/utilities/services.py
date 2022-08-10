@@ -216,17 +216,6 @@ def init_name_profile():
     return '{}{}'.format(random.choice(data_anonymous_name), 'ẩndanh')
 
 
-def get_list_user_id_i_know(my_id: int) -> list:
-    res = mongoDb.analysis.find_one({
-        'type': 'checkHadKnowEachOther'
-    })
-    try:
-        temp = res['data']['{}'.format(my_id)]
-        return temp
-    except KeyError:
-        raise CustomError()
-
-
 def check_had_i_know(list_user_id: list, partner_id: int):
     for user_id in list_user_id:
         if user_id == partner_id:

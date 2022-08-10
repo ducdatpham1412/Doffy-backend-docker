@@ -1,11 +1,9 @@
 import { Document, ObjectId, PullOperator } from "mongodb";
-import { CHAT_TAG, MESSAGE_TYPE } from "../enum";
-import {
-    TypeParamsAddComment,
-    TypeParamsJoinCommunity,
-} from "../interface/bubble";
+import { CHAT_TAG, MESSAGE_TYPE, STATUS } from "../enum";
+import { TypeAddComment, TypeParamsJoinCommunity } from "../interface/bubble";
+import { TypeNotificationComment } from "../interface/notification";
 import mongoDb from "../mongoDb";
-import { request } from "../request";
+import Notification from "../notification";
 import { getDateTimeNow, getUserIdFromToken } from "./assistant";
 
 export const getListSocketIdOfUserEnjoy = async () => {
@@ -20,23 +18,60 @@ export const getListSocketIdOfUserEnjoy = async () => {
     return res.map((item) => item.socketId);
 };
 
-export const addComment = async (params: TypeParamsAddComment) => {
-    const { token, bubbleId, content, commentReplied } = params;
+export const addComment = async (params: TypeAddComment) => {
+    const { token, comment } = params;
+    const myId = await getUserIdFromToken(token);
+    const now = getDateTimeNow();
 
-    const res = await request.post(
-        `/common/add-comment/${bubbleId}`,
-        {
-            content,
-            commentReplied,
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
+    const insert_comment = {
+        _id: new ObjectId(),
+        post_id: comment.postId,
+        replied_id: comment?.commentReplied || null,
+        content: comment.content,
+        images: [],
+        creator: myId,
+        created: now,
+        modified: now,
+        status: STATUS.active,
+    };
+    await mongoDb.collection("discovery_comment").insertOne(insert_comment);
+
+    // Do insert collection "notification" later
+    const insert_notification = {};
+
+    // Notification OneSignal
+    const post = await mongoDb.collection("discovery_post").findOne({
+        _id: new ObjectId(comment.postId),
+    });
+    if (post) {
+        const dataNotification: TypeNotificationComment = {
+            title: {
+                vi: `${comment.creatorName} đã bình luận`,
+                en: `${comment.creatorName} commented`,
             },
-        }
-    );
+            content: {
+                vi: comment.content,
+                en: comment.content,
+            },
+            receiver: post.creator,
+            postId: comment.postId,
+        };
+        Notification.comment(dataNotification);
+    }
 
-    return res;
+    // Socket send back front-end
+    const socketNotification = {
+        id: String(insert_comment._id),
+        content: insert_comment.content,
+        numberLikes: 0,
+        isLiked: false,
+        creator: insert_comment.creator,
+        creatorName: comment.creatorName,
+        creatorAvatar: comment.creatorAvatar,
+        created: String(now),
+        commentReplied: comment.commentReplied,
+    };
+    return socketNotification;
 };
 
 export const joinCommunity = async (params: TypeParamsJoinCommunity) => {

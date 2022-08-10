@@ -1,7 +1,10 @@
 import axios from "axios";
 import { TYPE_NOTIFICATION } from "./enum";
 import env from "./env";
-import { TypeMessageParams } from "./interface/notification";
+import {
+    TypeMessageParams,
+    TypeNotificationComment,
+} from "./interface/notification";
 
 const requestOneSignal = axios.create({
     baseURL: "https://onesignal.com",
@@ -47,12 +50,18 @@ export default class Notification {
         }
     };
 
-    static startNewChatTag = async (params: TypeMessageParams) => {
-        const { message, receiver, conversationId, creatorName } = params;
+    static comment = async (params: TypeNotificationComment) => {
+        const { title, content, receiver, postId } = params;
         try {
             await sendNotification({
-                contents: { en: message },
-                headings: { en: creatorName },
+                content: {
+                    vi: content.vi,
+                    en: content.en,
+                },
+                headings: {
+                    vi: title.vi,
+                    en: title.en,
+                },
                 filters: [
                     {
                         field: "tag",
@@ -62,12 +71,12 @@ export default class Notification {
                     },
                 ],
                 data: {
-                    type: TYPE_NOTIFICATION.newChatTag,
-                    conversationId,
+                    type: TYPE_NOTIFICATION.comment,
+                    bubbleId: postId,
                 },
             });
         } catch (err) {
-            console.log("err when notification start chat tag: ", err);
+            console.log("Err while notification comment: ", err);
         }
     };
 }

@@ -28,37 +28,25 @@ class CreatePost(GenericAPIView):
 
     def post(self, request):
         my_id = services.get_user_id_from_request(request)
+        request_data = request.data
+        now = services.get_datetime_now()
 
         insert_post = {
-            'content': request.data['content'],
-            'images': request.data['images'],
-            'totalLikes': 0,
-            'totalComments': 0,
-            'peopleLike': [],
-            'listComments': [],
-            'listUsersComment': [],
-            'creatorId': my_id,
-            'createdTime': services.get_datetime_now(),
-            'priority': 1,
-            'color': request.data['color'],
-            'name': request.data['name']
+            'topic': services.get_object(request_data, 'topic'),
+            'feeling': services.get_object(request_data, 'feeling'),
+            'location': services.get_object(request_data, 'location'),
+            'content': request_data['content'],
+            'images': request_data['images'],
+            'stars': request_data['stars'],
+            'link': services.get_object(request_data, 'link'),
+            'total_reacts': 0,
+            'total_comments': 0,
+            'creator': my_id,
+            'created': now,
+            'modified': now,
+            'status': enums.status_active,
         }
-        mongoDb.profilePost.insert_one(insert_post)
-
-        mongoDb.analysis.find_one_and_update(
-            {
-                'type': 'priority'
-            },
-            {
-                '$inc': {
-                    'totalPosts': 1,
-                    'oneLength': 1
-                },
-                '$push': {
-                    'one': str(insert_post['_id'])
-                }
-            }
-        )
+        mongoDb.discovery_post.insert_one(insert_post)
 
         res_images = []
         for img in insert_post['images']:
@@ -68,17 +56,18 @@ class CreatePost(GenericAPIView):
 
         res = {
             'id': str(insert_post['_id']),
+            'topic': insert_post['topic'],
+            'feeling': insert_post['feeling'],
+            'location': insert_post['location'],
             'content': insert_post['content'],
             'images': res_images,
+            'stars': insert_post['stars'],
             'totalLikes': 0,
             'totalComments': 0,
-            'creatorId': my_id,
+            'creator': my_id,
             'creatorName': info['name'],
             'creatorAvatar': info['avatar'],
-            'createdTime': str(insert_post['createdTime']),
-            'color': insert_post['color'],
-            'name': insert_post['name'],
-            'isLiked': False,
+            'created': str(insert_post['createdTime']),
             'relationship': enums.relationship_self
         }
 
@@ -89,12 +78,12 @@ class EditPost(GenericAPIView):
     permission_classed = [IsAuthenticated, ]
 
     def put(self, request, post_id):
-        id = services.get_user_id_from_request(request)
+        my_id = services.get_user_id_from_request(request)
 
-        post = mongoDb.profilePost.find_one_and_update(
+        post = mongoDb.discovery_post.find_one_and_update(
             {
                 '_id': ObjectId(post_id),
-                'creatorId': id,
+                'creator': my_id,
             },
             {
                 '$set': request.data
@@ -112,18 +101,23 @@ class DeletePost(GenericAPIView):
     permission_classed = [IsAuthenticated, ]
 
     def put(self, request, post_id):
-        id = services.get_user_id_from_request(request)
+        my_id = services.get_user_id_from_request(request)
 
-        post = mongoDb.profilePost.find_one_and_delete({
-            '_id': ObjectId(post_id),
-            'creatorId': id,
-        })
+        post = mongoDb.discovery_post.find_one_and_update(
+            {
+                '_id': ObjectId(post_id),
+                'creator': my_id,
+            },
+            {
+                '$set': {
+                    'status': enums.status_not_active,
+                }
+            }
+        )
 
         if not post:
             raise CustomError(error_message.post_not_existed,
                               error_key.post_not_existed)
-
-        # Update status here
 
         return Response(None, status=status.HTTP_200_OK)
 
@@ -132,56 +126,57 @@ class GetListPost(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_creator_name_avatar(self, user_id):
-        query = models.Profile.objects.get(user=user_id)
-        data_profile = serializers.ProfileSerializer(query).data
-        return {
-            'name': data_profile['name'],
-            'avatar': data_profile['avatar']
-        }
+        try:
+            profile = models.Profile.objects.get(user=user_id)
+            return {
+                'name': profile.name,
+                'avatar': services.create_link_image(profile.avatar)
+            }
+        except models.Profile.DoesNotExist:
+            raise CustomError()
 
     def get(self, request, user_id):
-        id = services.get_user_id_from_request(request)
+        my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
 
-        list_posts = mongoDb.profilePost.find({
-            'creatorId': user_id,
-        }).sort([('createdTime', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
+        info_creator = self.get_creator_name_avatar(user_id)
+
+        list_posts = mongoDb.discovery_post.find({
+            'creator': user_id,
+        }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
 
         res = []
         for post in list_posts:
             link_images = []
             for image in post['images']:
-                link_images.append(
-                    services.create_link_image(image) if image else '')
+                link_images.append(services.create_link_image(image))
+
+            check_liked = mongoDb.reaction.find_one({
+                'type': enums.react_post,
+                'reacted_id': str(post['_id']),
+                'creator': my_id,
+                'status': enums.status_active
+            })
+            is_liked = bool(check_liked)
+
             relationship = enums.relationship_self if post[
-                'creatorId'] == id else enums.relationship_not_know
-
-            # people_like = []
-            is_liked = False
-            for people in post['peopleLike']:
-                # people_like.append({
-                #     'id': people['id'],
-                #     'createdTime': str(people['createdTime'])
-                # })
-                if not is_liked and people['id'] == id:
-                    is_liked = True
-                    break
-
-            info_creator = self.get_creator_name_avatar(user_id)
+                'creator'] == my_id else enums.relationship_not_know
 
             temp = {
                 'id': str(post['_id']),
+                'topic': post['topic'],
+                'feeling': post['feeling'],
+                'location': post['location'],
                 'content': post['content'],
                 'images': link_images,
-                'totalLikes': post['totalLikes'],
-                'totalComments': post['totalComments'],
-                'creatorId': post['creatorId'],
+                'stars': post['stars'],
+                'totalLikes': post['total_reacts'],
+                'totalComments': post['total_comments'],
+                'creator': post['creator'],
                 'creatorName': info_creator['name'],
                 'creatorAvatar': info_creator['avatar'],
-                'createdTime': str(post['createdTime']),
-                'color': post['color'],
-                'name': post['name'],
+                'created': str(post['created']),
                 'isLiked': is_liked,
                 'relationship': relationship
             }
@@ -194,34 +189,39 @@ class GetListPost(GenericAPIView):
 class LikePost(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
 
-    def get_object(self, post_id, user_id):
-        check = mongoDb.profilePost.find_one_and_update(
+    def check_and_like(self, post_id, user_id):
+        check_liked = mongoDb.reaction.find_one({
+            'type': enums.react_post,
+            'reacted_id': post_id,
+            'creator': user_id,
+            'status': enums.status_active,
+        })
+        if check_liked:
+            raise CustomError(error_message.you_have_liked_this_post,
+                              error_key.you_have_liked_this_post)
+
+        check_post = mongoDb.discovery_post.find_one_and_update(
             {
                 '_id': ObjectId(post_id),
-                'peopleLike.id': {
-                    '$ne': user_id
-                }
             },
             {
-                '$push': {
-                    'peopleLike': {
-                        '$each': [{
-                            'id': user_id,
-                            'createdTime': services.get_datetime_now()
-                        }],
-                        '$position': 0
-                    }
-                },
                 '$inc': {
-                    'totalLikes': 1
+                    'total_reacts': 1
                 }
             }
         )
+        if not check_post:
+            raise CustomError()
 
-        if not check:
-            raise CustomError(error_message.you_have_liked_this_post,
-                              error_key.you_have_liked_this_post)
-        return check
+        mongoDb.reaction.insert_one({
+            'type': enums.react_post,
+            'reacted_id': post_id,
+            'creator': user_id,
+            'created': services.get_datetime_now(),
+            'status': enums.status_active,
+        })
+
+        return check_post
 
     def get_images(self, list_images: list):
         try:
@@ -232,15 +232,10 @@ class LikePost(GenericAPIView):
 
     def put(self, request, post_id):
         my_id = services.get_user_id_from_request(request)
-        post = self.get_object(post_id, my_id)
-
-        list_user_i_know = services.get_list_user_id_i_know(my_id)
-        hadFollow = services.check_had_i_know(
-            list_user_id=list_user_i_know, partner_id=post['creatorId'])
+        post = self.check_and_like(post_id=post_id, user_id=my_id)
 
         profile = Profile.objects.get(user=my_id)
-
-        target_name = profile.name if hadFollow else profile.anonymous_name
+        target_name = profile.name
 
         # Push notification one signal
         services.send_notification({
@@ -253,7 +248,7 @@ class LikePost(GenericAPIView):
                     'field': 'tag',
                     'key': 'userId',
                     'relation': '=',
-                    'value': post['creatorId']
+                    'value': post['creator']
                 }
             ],
             'data': {
@@ -272,10 +267,9 @@ class LikePost(GenericAPIView):
             'bubbleId': post_id,
             'hadRead': False,
         }
-
         mongoDb.notification.find_one_and_update(
             {
-                'userId': post['creatorId']
+                'userId': post['creator']
             },
             {
                 '$push': {
@@ -289,7 +283,7 @@ class LikePost(GenericAPIView):
 
         requests.post('http://chat:1412/notification/like-post',
                       data=json.dumps({
-                          'receiver': post['creatorId'],
+                          'receiver': post['creator'],
                           'data': data_notification
                       }))
 
@@ -299,29 +293,37 @@ class LikePost(GenericAPIView):
 class UnLikePost(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
 
-    def get_object(self, post_id, user_id):
-        check = mongoDb.profilePost.find_one_and_update(
+    def put(self, request, post_id):
+        my_id = services.get_user_id_from_request(request)
+
+        check_liked = mongoDb.reaction.find_one_and_update(
             {
-                '_id': ObjectId(post_id),
-                'peopleLike.id': user_id
+                'type': enums.react_post,
+                'reacted_id': post_id,
+                'creator': my_id,
+                'status': enums.status_active
             },
             {
-                '$pull': {
-                    'peopleLike': {
-                        'id': user_id
-                    }
-                },
-                '$inc': {
-                    'totalLikes': -1
+                '$set': {
+                    'status': enums.status_not_active
                 }
             }
         )
-
-        if not check:
+        if not check_liked:
             raise CustomError(error_message.you_not_liked_this_post,
                               error_key.you_not_liked_this_post)
 
-    def put(self, request, post_id):
-        my_id = services.get_user_id_from_request(request)
-        self.get_object(post_id, my_id)
+        check_post = mongoDb.discovery_post.find_one_and_update(
+            {
+                '_id': ObjectId(post_id),
+            },
+            {
+                '$inc': {
+                    'total_reacts': -1
+                }
+            }
+        )
+        if not check_post:
+            raise CustomError()
+
         return Response(None, status=status.HTTP_200_OK)
