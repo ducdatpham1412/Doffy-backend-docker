@@ -90,24 +90,26 @@ class GetListComment(GenericAPIView):
                     list_replies.append({
                         'id': str(comment_reply['_id']),
                         'content': comment_reply['content'],
+                        'images': comment_reply['images'],
                         'numberLikes': number_likes_reply,
                         'isLiked': is_liked_reply,
                         'creator': id_name_avatar_reply['id'],
                         'creatorName': id_name_avatar_reply['name'],
                         'creatorAvatar': id_name_avatar_reply['avatar'],
-                        'created': services.get_local_string_date_time(comment_reply['created']),
+                        'created': str(comment_reply['created']),
                     })
 
                 # Result
                 res.append({
                     'id': str(comment['_id']),
                     'content': comment['content'],
+                    'images': comment['images'],
                     'numberLikes': number_likes,
                     'isLiked': is_liked,
                     'creator': id_name_avatar['id'],
                     'creatorName': id_name_avatar['name'],
                     'creatorAvatar': id_name_avatar['avatar'],
-                    'created': services.get_local_string_date_time(comment['created']),
+                    'created': str(comment['created']),
                     'listCommentsReply': list_replies,
                 })
 

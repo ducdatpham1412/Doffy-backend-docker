@@ -61,15 +61,17 @@ export const addComment = async (params: TypeAddComment) => {
 
     // Socket send back front-end
     const socketNotification = {
-        id: String(insert_comment._id),
-        content: insert_comment.content,
-        numberLikes: 0,
-        isLiked: false,
-        creator: insert_comment.creator,
-        creatorName: comment.creatorName,
-        creatorAvatar: comment.creatorAvatar,
-        created: String(now),
         commentReplied: comment.commentReplied,
+        data: {
+            id: String(insert_comment._id),
+            content: insert_comment.content,
+            numberLikes: 0,
+            isLiked: false,
+            creator: insert_comment.creator,
+            creatorName: comment.creatorName,
+            creatorAvatar: comment.creatorAvatar,
+            created: String(now),
+        },
     };
     return socketNotification;
 };

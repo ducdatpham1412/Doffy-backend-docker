@@ -31,7 +31,8 @@ class GetListBubbleProfile(GenericAPIView):
         list_posts = mongoDb.discovery_post.find({
             'creator': {
                 '$ne': my_id
-            }
+            },
+            'status': enums.status_active
         }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
         list_posts = list(list_posts)
 
@@ -71,6 +72,7 @@ class GetListBubbleProfile(GenericAPIView):
                 'stars': post['stars'],
                 'totalLikes': post['total_reacts'],
                 'totalComments': post['total_comments'],
+                'totalSaved': post['total_saved'],
                 'creator': post['creator'],
                 'creatorName': info_creator['name'],
                 'creatorAvatar': info_creator['avatar'],
@@ -96,7 +98,7 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
 
-        list_posts = mongoDb.discovery_post.find().sort(
+        list_posts = mongoDb.discovery_post.find({'status': enums.status_active}).sort(
             [('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
         list_posts = list(list_posts)
 
@@ -130,6 +132,7 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
                 'stars': post['stars'],
                 'totalLikes': post['total_reacts'],
                 'totalComments': post['total_comments'],
+                'totalSaved': post['total_saved'],
                 'creator': post['creator'],
                 'creatorName': info_creator['name'],
                 'creatorAvatar': info_creator['avatar'],
@@ -148,7 +151,8 @@ class GetDetailBubbleProfile(GenericAPIView):
         my_id = services.get_user_id_from_request(request)
 
         post = mongoDb.discovery_post.find_one({
-            '_id': ObjectId(post_id)
+            '_id': ObjectId(post_id),
+            'status': enums.status_active
         })
         if not post:
             raise CustomError(error_message.post_not_existed,
@@ -181,6 +185,7 @@ class GetDetailBubbleProfile(GenericAPIView):
             'stars': post['stars'],
             'totalLikes': post['total_reacts'],
             'totalComments': post['total_comments'],
+            'totalSaved': post['total_saved'],
             'creator': post['creator'],
             'creatorName': profile.name,
             'creatorAvatar': services.create_link_image(profile.avatar),
@@ -195,7 +200,8 @@ class GetDetailBubbleProfile(GenericAPIView):
 class GetDetailBubbleProfileEnjoy(GenericAPIView):
     def get(self, request, post_id):
         post = mongoDb.discovery_post.find_one({
-            '_id': ObjectId(post_id)
+            '_id': ObjectId(post_id),
+            'status': enums.status_active
         })
         if not post:
             raise CustomError(error_message.post_not_existed,
@@ -219,6 +225,7 @@ class GetDetailBubbleProfileEnjoy(GenericAPIView):
             'stars': post['stars'],
             'totalLikes': post['total_reacts'],
             'totalComments': post['total_comments'],
+            'totalSaved': post['total_saved'],
             'creator': post['creator'],
             'creatorName': profile.name,
             'creatorAvatar': services.create_link_image(profile.avatar),

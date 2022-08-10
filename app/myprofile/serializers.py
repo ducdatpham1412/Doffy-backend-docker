@@ -38,12 +38,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']
 
 
-class EditProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Profile
-        fields = ['name', 'anonymous_name', 'description', 'avatar', 'cover']
-
-
 class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Follow

@@ -28,6 +28,7 @@ your_have_follow_this_person = 'your_have_follow_this_person'
 you_have_liked_this_post = 'you_have_liked_this_post'
 you_not_liked_this_post = 'you_not_liked_this_post'
 post_not_existed = 'post_not_existed'
+had_saved_this_post = 'had_saved_this_post'
 
 # chat
 not_have_permission_delete_message = 'not_have_permission_delete_message'

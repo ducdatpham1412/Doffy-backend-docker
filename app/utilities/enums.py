@@ -135,9 +135,10 @@ os_iOS = 1
 # status
 status_not_active = 0
 status_active = 1
+status_draft = 2
 
-status_conversation_active = 1
 status_conversation_stop = 0
+status_conversation_active = 1
 
 # request_user
 request_user_lock_account = 0
@@ -145,9 +146,13 @@ request_user_delete_account = 1
 
 # topic discovery post
 topic_travel = 0
-topic_culinary = 1
+topic_cuisine = 1
+topic_shopping = 2
 
 # reaction
 react_post = 0
 react_comment = 1
 react_message = 2
+
+# save
+save_post = 0
