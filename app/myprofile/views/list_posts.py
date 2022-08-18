@@ -7,10 +7,12 @@ from rest_framework.response import Response
 from utilities import enums, services
 from utilities.exception.exception_handler import CustomError
 import pymongo
+from utilities.renderers import PagingRenderer
 
 
 class GetListPost(GenericAPIView):
     permission_classes = [IsAuthenticated]
+    renderer_classes = [PagingRenderer]
 
     def get_creator_name_avatar(self, user_id):
         try:
@@ -33,14 +35,23 @@ class GetListPost(GenericAPIView):
         if my_id == user_id:
             status_scope.append(enums.status_draft)
 
+        sort_condition = [('status', pymongo.DESCENDING), ('created', pymongo.DESCENDING)
+                          ] if my_id == user_id else [('created', pymongo.DESCENDING)]
+
         list_posts = mongoDb.discovery_post.find({
             'creator': user_id,
             'status': {
                 '$in': status_scope
             }
-        }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
+        }).sort(sort_condition).limit(take).skip((page_index-1)*take)
+        total_posts = mongoDb.discovery_post.count({
+            'creator': user_id,
+            'status': {
+                '$in': status_scope
+            }
+        })
 
-        res = []
+        res_posts = []
         for post in list_posts:
             link_images = []
             for image in post['images']:
@@ -53,6 +64,14 @@ class GetListPost(GenericAPIView):
                 'status': enums.status_active
             })
             is_liked = bool(check_liked)
+
+            check_saved = mongoDb.save.find_one({
+                'type': enums.save_post,
+                'saved_id': str(post['_id']),
+                'creator': my_id,
+                'status': enums.status_active,
+            })
+            is_saved = bool(check_saved)
 
             relationship = enums.relationship_self if post[
                 'creator'] == my_id else enums.relationship_not_know
@@ -73,10 +92,18 @@ class GetListPost(GenericAPIView):
                 'creatorAvatar': info_creator['avatar'],
                 'created': str(post['created']),
                 'isLiked': is_liked,
+                'isSaved': is_saved,
                 'isDraft': post['status'] == enums.status_draft,
                 'relationship': relationship,
             }
 
-            res.append(temp)
+            res_posts.append(temp)
+
+        res = {
+            'take': take,
+            'pageIndex': page_index,
+            'totalItems': total_posts,
+            'data': res_posts
+        }
 
         return Response(res, status=status.HTTP_200_OK)

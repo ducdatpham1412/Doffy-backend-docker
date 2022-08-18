@@ -60,6 +60,14 @@ class GetListBubbleProfile(GenericAPIView):
             })
             is_liked = bool(check_liked)
 
+            check_saved = mongoDb.save.find_one({
+                'type': enums.save_post,
+                'saved_id': str(post['_id']),
+                'creator': my_id,
+                'status': enums.status_active,
+            })
+            is_saved = bool(check_saved)
+
             info_creator = id_name_avatar_object['{}'.format(post['creator'])]
 
             res.append({
@@ -78,6 +86,7 @@ class GetListBubbleProfile(GenericAPIView):
                 'creatorAvatar': info_creator['avatar'],
                 'created': str(post['created']),
                 'isLiked': is_liked,
+                'isSaved': is_saved,
                 'relationship': enums.relationship_not_know
             })
 
@@ -118,8 +127,6 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
                 temp = services.create_link_image(image)
                 link_images.append(temp)
 
-            is_liked = True
-
             info_creator = id_name_avatar_object['{}'.format(post['creator'])]
 
             res.append({
@@ -137,7 +144,8 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
                 'creatorName': info_creator['name'],
                 'creatorAvatar': info_creator['avatar'],
                 'created': str(post['created']),
-                'isLiked': is_liked,
+                'isLiked': True,
+                'isSaved': True,
                 'relationship': enums.relationship_not_know
             })
 
@@ -170,6 +178,14 @@ class GetDetailBubbleProfile(GenericAPIView):
         })
         is_liked = bool(check_liked)
 
+        check_saved = mongoDb.save.find_one({
+            'type': enums.save_post,
+            'saved_id': str(post['_id']),
+            'creator': my_id,
+            'status': enums.status_active,
+        })
+        is_saved = bool(check_saved)
+
         is_my_post = post['creator'] == my_id
         relationship = enums.relationship_self if is_my_post else enums.relationship_not_know
 
@@ -191,6 +207,7 @@ class GetDetailBubbleProfile(GenericAPIView):
             'creatorAvatar': services.create_link_image(profile.avatar),
             'created': str(post['created']),
             'isLiked': is_liked,
+            'isSaved': is_saved,
             'relationship': relationship
         }
 
@@ -231,6 +248,7 @@ class GetDetailBubbleProfileEnjoy(GenericAPIView):
             'creatorAvatar': services.create_link_image(profile.avatar),
             'created': str(post['created']),
             'isLiked': is_liked,
+            'isSaved': True,
             'relationship': enums.relationship_not_know,
         }
 
