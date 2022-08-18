@@ -96,14 +96,22 @@ class EditProfile(GenericAPIView):
             raise CustomError()
 
     def put(self, request):
-        id = services.get_user_id_from_request(request)
-        newProfile = request.data
+        my_id = services.get_user_id_from_request(request)
+        request_data = request.data
 
-        myProfile = self.get_object(id)
+        my_profile = self.get_object(my_id)
 
-        serializer = serializers.EditProfileSerializer(
-            myProfile, data=newProfile)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        new_avatar = services.get_object(request_data, 'avatar')
+        new_name = services.get_object(request_data, 'name')
+        new_description = services.get_object(request_data, 'description')
+
+        if new_avatar != None:
+            my_profile.avatar = new_avatar
+        if new_name != None:
+            my_profile.name = new_name
+        if new_description != None:
+            my_profile.description = new_description
+
+        my_profile.save()
 
         return Response(None, status=status.HTTP_200_OK)

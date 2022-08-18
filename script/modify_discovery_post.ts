@@ -23,6 +23,7 @@ const query = async () => {
             link: null,
             total_reacts: post.peopleLike.length,
             total_comments: post.listComments.length,
+            total_saved: 0,
             creator: post.creatorId,
             created: post.createdTime,
             modified: post.createdTime,

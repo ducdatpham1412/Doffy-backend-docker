@@ -184,16 +184,18 @@ class BlockUser(GenericAPIView):
         except models.Block.DoesNotExist:
             return
 
-    def un_follow_if_following(self, my_id, your_id):
+    def un_follow_each_other(self, my_id, your_id):
         try:
             follow = Follow.objects.get(follower=my_id, followed=your_id)
             follow.delete()
         except Follow.DoesNotExist:
-            try:
-                follow = Follow.objects.get(follower=your_id, followed=my_id)
-                follow.delete()
-            except Follow.DoesNotExist:
-                return
+            pass
+
+        try:
+            follow = Follow.objects.get(follower=your_id, followed=my_id)
+            follow.delete()
+        except Follow.DoesNotExist:
+            pass
 
     def send_socket_block(self, my_id, your_id):
         list_user_id_sort = [my_id, your_id]
@@ -214,7 +216,7 @@ class BlockUser(GenericAPIView):
             raise CustomError()
 
         self.check_not_blocked(my_id, id)
-        self.un_follow_if_following(my_id, id)
+        self.un_follow_each_other(my_id, id)
 
         my_profile = self.get_object(my_id)
         your_profile = self.get_object(id)

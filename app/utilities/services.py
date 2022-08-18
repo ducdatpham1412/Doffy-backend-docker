@@ -13,7 +13,6 @@ from django.conf import settings
 import requests
 import json
 from django.conf import settings
-from findme.mongo import mongoDb
 from utilities.exception.exception_handler import CustomError
 import pyheif
 from dateutil import parser
@@ -252,5 +251,5 @@ def get_index(list: list, index: int, default=None):
 def get_object(object: dict, key: str, default=None):
     try:
         return object[key]
-    except KeyError and TypeError:
+    except KeyError or TypeError:
         return default

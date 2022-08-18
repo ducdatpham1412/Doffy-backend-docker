@@ -28,6 +28,7 @@ your_have_follow_this_person = 16
 you_have_liked_this_post = 18
 you_not_liked_this_post = 19
 post_not_existed = 20
+had_saved_this_post = 21
 
 # chat
 not_have_permission_delete_message = 17
