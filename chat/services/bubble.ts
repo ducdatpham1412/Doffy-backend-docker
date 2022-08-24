@@ -40,10 +40,17 @@ export const addComment = async (params: TypeAddComment) => {
     const insert_notification = {};
 
     // Notification OneSignal
-    const post = await mongoDb.collection("discovery_post").findOne({
-        _id: new ObjectId(comment.postId),
-    });
-    if (post) {
+    const post = await mongoDb.collection("discovery_post").findOneAndUpdate(
+        {
+            _id: new ObjectId(comment.postId),
+        },
+        {
+            $inc: {
+                total_comments: 1,
+            },
+        }
+    );
+    if (post.value) {
         const dataNotification: TypeNotificationComment = {
             title: {
                 vi: `${comment.creatorName} đã bình luận`,
@@ -53,7 +60,7 @@ export const addComment = async (params: TypeAddComment) => {
                 vi: comment.content,
                 en: comment.content,
             },
-            receiver: post.creator,
+            receiver: post.value.creator,
             postId: comment.postId,
         };
         Notification.comment(dataNotification);

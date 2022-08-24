@@ -9,10 +9,12 @@ from utilities.exception.exception_handler import CustomError
 import pymongo
 from bson.objectid import ObjectId
 from myprofile.models import Profile
+from utilities.renderers import PagingRenderer
 
 
 class GetListPostsSaved(GenericAPIView):
     permission_classes = [IsAuthenticated]
+    renderer_classes = [PagingRenderer]
 
     def get_creator_name_avatar(self, user_id):
         try:
@@ -43,6 +45,11 @@ class GetListPostsSaved(GenericAPIView):
             'creator': my_id,
             'status': enums.status_active
         }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1) * take)
+        total_posts_saved = mongoDb.save.count({
+            'type': enums.react_post,
+            'creator': my_id,
+            'status': enums.status_active,
+        })
 
         list_posts = []
         for save in list_saves:
@@ -62,7 +69,7 @@ class GetListPostsSaved(GenericAPIView):
                 'avatar': services.create_link_image(profile.avatar),
             }
 
-        res = []
+        res_posts = []
         for post in list_posts:
             link_images = []
             for image in post['images']:
@@ -89,9 +96,17 @@ class GetListPostsSaved(GenericAPIView):
                 'creatorAvatar': info_creator['avatar'],
                 'created': str(post['created']),
                 'isLiked': True,
+                'isSaved': True,
                 'relationship': relationship,
             }
 
-            res.append(temp)
+            res_posts.append(temp)
+
+        res = {
+            'take': take,
+            'pageIndex': page_index,
+            'totalItems': total_posts_saved,
+            'data': res_posts
+        }
 
         return Response(res, status=status.HTTP_200_OK)
