@@ -9,6 +9,7 @@ from utilities.exception.exception_handler import CustomError
 from utilities.exception import error_message, error_key
 import pymongo
 from bson.objectid import ObjectId
+import json
 
 
 class GetListBubbleProfile(GenericAPIView):
@@ -27,13 +28,21 @@ class GetListBubbleProfile(GenericAPIView):
         my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
+        listTopics = services.get_object(request.query_params, 'listTopics')
 
-        list_posts = mongoDb.discovery_post.find({
+        condition = {
             'creator': {
                 '$ne': my_id
             },
             'status': enums.status_active
-        }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
+        }
+        if listTopics != None:
+            condition['topic'] = {
+                '$in': json.loads(listTopics)
+            }
+
+        list_posts = mongoDb.discovery_post.find(condition).sort(
+            [('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
         list_posts = list(list_posts)
 
         id_name_avatar_object = {}
@@ -106,8 +115,17 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
     def get(self, request):
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
+        listTopics = services.get_object(request.query_params, 'listTopics')
 
-        list_posts = mongoDb.discovery_post.find({'status': enums.status_active}).sort(
+        condition = {
+            'status': enums.status_active
+        }
+        if listTopics != None:
+            condition['topic'] = {
+                '$in': json.loads(listTopics)
+            }
+
+        list_posts = mongoDb.discovery_post.find(condition).sort(
             [('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
         list_posts = list(list_posts)
 
