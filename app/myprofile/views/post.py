@@ -45,6 +45,7 @@ class CreatePost(GenericAPIView):
             'link': services.get_object(request_data, 'link'),
             'total_reacts': 0,
             'total_comments': 0,
+            'total_saved': 0,
             'creator': my_id,
             'created': now,
             'modified': now,
@@ -94,6 +95,7 @@ class EditPost(GenericAPIView):
         feeling = services.get_object(request_data, 'feeling')
         location = services.get_object(request_data, 'location')
         link = services.get_object(request_data, 'link')
+        is_draft = services.get_object(request_data, 'isDraft')
 
         if content != None:
             update_post['content'] = content
@@ -107,13 +109,21 @@ class EditPost(GenericAPIView):
             update_post['topic'] = location
         if link != None:
             update_post['link'] = link
+        if is_draft == False:
+            update_post['status'] = enums.status_active
+            update_post['created'] = services.get_datetime_now()
+        update_post['modified'] = services.get_datetime_now()
+
+        status_scope = [enums.status_draft]
+        if is_draft != False:
+            status_scope.append(enums.status_active)
 
         post = mongoDb.discovery_post.find_one_and_update(
             {
                 '_id': ObjectId(post_id),
                 'creator': my_id,
                 'status': {
-                    '$in': [enums.status_active, enums.status_draft]
+                    '$in': status_scope,
                 }
             },
             {
