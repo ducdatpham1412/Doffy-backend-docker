@@ -15,7 +15,28 @@ const requestOneSignal = axios.create({
     },
 });
 
-const sendNotification = async (body: any) => {
+interface ParamsSendNotification {
+    contents: {
+        en?: string;
+        vi?: string;
+    };
+    headings: {
+        en?: string;
+        vi?: string;
+    };
+    filters: Array<{
+        field: string;
+        key: string;
+        relation: "=" | ">" | "<" | ">=" | "<=";
+        value: string;
+    }>;
+    data: {
+        type: number;
+        [key: string]: any;
+    };
+}
+
+const sendNotification = async (body: ParamsSendNotification) => {
     return requestOneSignal.post("/api/v1/notifications", {
         app_id: env.ONESIGNAL_APP_ID,
         ...body,
@@ -25,9 +46,19 @@ const sendNotification = async (body: any) => {
 export default class Notification {
     static message = async (params: TypeMessageParams) => {
         const { creatorName, message, receiver, conversationId } = params;
+        const notificationContents =
+            typeof message === "object"
+                ? {
+                      en: "Send image",
+                      vi: "Gửi hình ảnh",
+                  }
+                : {
+                      en: message,
+                      vi: message,
+                  };
         try {
             await sendNotification({
-                contents: { en: message },
+                contents: notificationContents,
                 headings: { en: creatorName },
                 filters: [
                     {
@@ -54,7 +85,7 @@ export default class Notification {
         const { title, content, receiver, postId } = params;
         try {
             await sendNotification({
-                content: {
+                contents: {
                     vi: content.vi,
                     en: content.en,
                 },

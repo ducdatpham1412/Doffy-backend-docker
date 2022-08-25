@@ -6,18 +6,6 @@ import mongoDb from "../mongoDb";
 import Notification from "../notification";
 import { getDateTimeNow, getUserIdFromToken } from "./assistant";
 
-export const getListSocketIdOfUserEnjoy = async () => {
-    const res = await mongoDb
-        .collection("userActive")
-        .find({
-            userId: {
-                $regex: "__",
-            },
-        })
-        .toArray();
-    return res.map((item) => item.socketId);
-};
-
 export const addComment = async (params: TypeAddComment) => {
     const { token, comment } = params;
     const myId = await getUserIdFromToken(token);

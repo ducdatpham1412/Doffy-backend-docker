@@ -5,17 +5,19 @@ import { TypeAuthenticate } from "./interface";
 import { TypeAddComment } from "./interface/bubble";
 import { TypeCreateChatTag, TypeHandleSeenMessage } from "./interface/chatTag";
 import { TypeSendMessageRequest, TypeTyping } from "./interface/message";
-import mongoDb from "./mongoDb";
 import {
+    addUserActive,
     getSocketIdOfListUserActive,
     getSocketIdOfUserId,
+    putBackUserActive,
+    putUserInBackground,
+    removerUserActive,
 } from "./services/assistant";
 import { getMyListChatTagsAndMyId } from "./services/authentication";
 import { addComment } from "./services/bubble";
 import { handleSeenMessage, handleStartConversation } from "./services/chatTag";
 import { startBotDiscord } from "./services/discord";
 import { handleSendMessage } from "./services/message";
-import Static from "./static";
 
 const httpServer = http.createServer();
 const io = new Server(httpServer, {
@@ -36,12 +38,7 @@ io.on("connection", (socket) => {
             const { listMyConversations, myId } =
                 await getMyListChatTagsAndMyId(params.token);
             // save to user active
-            await mongoDb.collection("userActive").deleteMany({ userId: myId });
-            await mongoDb.collection("userActive").insertOne({
-                userId: myId,
-                socketId: socket.id,
-            });
-            Static.addUserActive({
+            await addUserActive({
                 userId: myId,
                 socketId: socket.id,
             });
@@ -56,10 +53,10 @@ io.on("connection", (socket) => {
     });
 
     socket.on(SOCKET_EVENT.appActive, () => {
-        Static.putBackActive(socket.id);
+        putBackUserActive(socket.id);
     });
     socket.on(SOCKET_EVENT.appBackground, () => {
-        Static.putInBackground(socket.id);
+        putUserInBackground(socket.id);
     });
 
     /**
@@ -146,14 +143,10 @@ io.on("connection", (socket) => {
     socket.on("disconnect", async (reason) => {
         try {
             console.log(`Disconnected: ${socket.id}\nReason: `, reason);
-
-            await mongoDb
-                .collection("userActive")
-                .findOneAndDelete({ socketId: socket.id });
+            await removerUserActive(socket.id);
             /**
              * Leave room - you don't need because socketIO will do this for you
              */
-            Static.removeUserActive(socket.id);
         } catch (err) {
             console.log("Error disconnect: ", socket.id);
         }

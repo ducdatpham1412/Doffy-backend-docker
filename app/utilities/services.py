@@ -201,10 +201,13 @@ headers = {
 
 
 def send_notification(body: object):
-    requests.post("https://onesignal.com/api/v1/notifications", headers=headers, data=json.dumps({
-        "app_id": settings.ONESIGNAL_APP_ID,
-        **body
-    }))
+    try:
+        requests.post("https://onesignal.com/api/v1/notifications", headers=headers, data=json.dumps({
+            "app_id": settings.ONESIGNAL_APP_ID,
+            **body
+        }))
+    except Exception as e:
+        print('Err send notification: ', e)
 
 
 data_anonymous_name = ['Rồng', 'Sói', 'Ngựa', 'Cáchép', 'Hổ', 'SưTử',
