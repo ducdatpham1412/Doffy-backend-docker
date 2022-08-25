@@ -6,8 +6,7 @@ import {
 } from "../interface/message";
 import mongoDb from "../mongoDb";
 import Notification from "../notification";
-import Static from "../static";
-import { createLinkImage, getDateTimeNow } from "./assistant";
+import { checkUserActive, createLinkImage, getDateTimeNow } from "./assistant";
 
 export const handleSendMessage = async (newMessage: TypeSendMessageRequest) => {
     const newMessageId = new ObjectId();
@@ -71,7 +70,7 @@ export const handleSendMessage = async (newMessage: TypeSendMessageRequest) => {
             (userId: number) => userId !== insertMessage.creator
         );
         if (partnerId) {
-            const isPartnerNotActive = !Static.checkIncludeUserId(partnerId);
+            const isPartnerNotActive = await checkUserActive(partnerId);
             if (isPartnerNotActive) {
                 Notification.message({
                     creatorName: newMessage.creatorName,
