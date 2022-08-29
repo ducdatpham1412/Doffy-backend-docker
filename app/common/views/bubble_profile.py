@@ -10,10 +10,12 @@ from utilities.exception import error_message, error_key
 import pymongo
 from bson.objectid import ObjectId
 import json
+from utilities.renderers import PagingRenderer
 
 
 class GetListBubbleProfile(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
+    renderer_classes = [PagingRenderer, ]
 
     def filter_list_user_id(self, list_posts: list):
         result = []
@@ -28,7 +30,7 @@ class GetListBubbleProfile(GenericAPIView):
         my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
-        listTopics = services.get_object(request.query_params, 'listTopics')
+        list_topics = services.get_object(request.query_params, 'listTopics')
 
         condition = {
             'creator': {
@@ -36,10 +38,12 @@ class GetListBubbleProfile(GenericAPIView):
             },
             'status': enums.status_active
         }
-        if listTopics != None:
+        if list_topics != None:
             condition['topic'] = {
-                '$in': json.loads(listTopics)
+                '$in': json.loads(list_topics)
             }
+
+        total_posts = mongoDb.discovery_post.count(condition)
 
         list_posts = mongoDb.discovery_post.find(condition).sort(
             [('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
@@ -54,7 +58,7 @@ class GetListBubbleProfile(GenericAPIView):
                 'avatar': services.create_link_image(profile.avatar),
             }
 
-        res = []
+        res_posts = []
         for post in list_posts:
             link_images = []
             for image in post['images']:
@@ -79,7 +83,7 @@ class GetListBubbleProfile(GenericAPIView):
 
             info_creator = id_name_avatar_object['{}'.format(post['creator'])]
 
-            res.append({
+            res_posts.append({
                 'id': str(post['_id']),
                 'topic': post['topic'],
                 'feeling': post['feeling'],
@@ -99,10 +103,19 @@ class GetListBubbleProfile(GenericAPIView):
                 'relationship': enums.relationship_not_know
             })
 
+        res = {
+            'take': take,
+            'pageIndex': page_index,
+            'totalItems': total_posts,
+            'data': res_posts,
+        }
+
         return Response(res, status=status.HTTP_200_OK)
 
 
 class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
+    renderer_classes = [PagingRenderer, ]
+
     def filter_list_user_id(self, list_posts: list):
         result = []
         for post in list_posts:
@@ -125,6 +138,8 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
                 '$in': json.loads(listTopics)
             }
 
+        total_posts = mongoDb.discovery_post.count(condition)
+
         list_posts = mongoDb.discovery_post.find(condition).sort(
             [('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
         list_posts = list(list_posts)
@@ -138,7 +153,7 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
                 'avatar': services.create_link_image(profile.avatar),
             }
 
-        res = []
+        res_posts = []
         for post in list_posts:
             link_images = []
             for image in post['images']:
@@ -147,7 +162,7 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
 
             info_creator = id_name_avatar_object['{}'.format(post['creator'])]
 
-            res.append({
+            res_posts.append({
                 'id': str(post['_id']),
                 'topic': post['topic'],
                 'feeling': post['feeling'],
@@ -166,6 +181,13 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
                 'isSaved': True,
                 'relationship': enums.relationship_not_know
             })
+
+        res = {
+            'take': take,
+            'pageIndex': page_index,
+            'totalItems': total_posts,
+            'data': res_posts,
+        }
 
         return Response(res, status=status.HTTP_200_OK)
 
