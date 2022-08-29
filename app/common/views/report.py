@@ -18,11 +18,11 @@ class ReportUser(GenericAPIView):
         insert_report_user = {
             'reason': reason,
             'description': description,
-            'listImages': list_images,
-            'reportedUserId': user_id,
-            'creatorId': my_id,
-            'createdTime': services.get_datetime_now()
+            'list_images': list_images,
+            'reported_user': user_id,
+            'creator': my_id,
+            'created': services.get_datetime_now()
         }
-        mongoDb.reportUser.insert_one(insert_report_user)
+        mongoDb.report_user.insert_one(insert_report_user)
 
         return Response(None, status=status.HTTP_200_OK)
