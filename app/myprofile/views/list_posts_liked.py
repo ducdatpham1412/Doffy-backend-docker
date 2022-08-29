@@ -96,6 +96,7 @@ class GetListPostLiked(GenericAPIView):
                 'content': post['content'],
                 'images': link_images,
                 'stars': post['stars'],
+                'link': post['link'],
                 'totalLikes': post['total_reacts'],
                 'totalComments': post['total_comments'],
                 'totalSaved': post['total_saved'],

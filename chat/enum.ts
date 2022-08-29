@@ -47,14 +47,19 @@ export const MESSAGE_TYPE = {
     changeName: 5,
 };
 
-export const TYPE_NOTIFICATION = {
-    newChatTag: 0,
-    follow: 1,
-    likePost: 2,
-    friendPostNew: 3,
-    comment: 4,
-    message: 5,
-};
+export enum TYPE_NOTIFICATION {
+    message = 0,
+    comment = 1,
+    follow = 2,
+    likePost = 3,
+    friendPostNew = 4,
+}
+
+export enum NOTIFICATION_STATUS {
+    delete = 0,
+    notRead = 1,
+    read = 2,
+}
 
 export const GENDER = {
     male: 0,

@@ -6,6 +6,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from utilities import services
+from utilities.enums import status_notification_not_read
 
 
 class GetPassport(GenericAPIView):
@@ -16,13 +17,11 @@ class GetPassport(GenericAPIView):
         user = User.objects.get(id=id)
         passport = serializers.GetPassportSerializer(user).data
 
-        data_notification = mongoDb.notification.find_one({
-            'userId': id,
+        number_new_notifications = mongoDb.notification.count({
+            'user_id': id,
+            'status': status_notification_not_read
         })
-        number_new_notifications = 0
-        for notification in data_notification['list'][0:29]:
-            if not notification['hadRead']:
-                number_new_notifications += 1
+
         res = {
             **passport,
             'numberNewNotifications': number_new_notifications,

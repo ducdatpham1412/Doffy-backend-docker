@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from myprofile.views import profile, follow, post, notification, check_block_lock, list_posts, list_posts_liked, list_posts_saved
+from myprofile.views import profile, follow, post, check_block_lock, list_posts, list_posts_liked, list_posts_saved
 
 
 urlpatterns = [
@@ -16,7 +16,6 @@ urlpatterns = [
     path('list-posts-saved', list_posts_saved.GetListPostsSaved.as_view()),
     path('like-post/<str:post_id>', post.LikePost.as_view()),
     path('unlike-post/<str:post_id>', post.UnLikePost.as_view()),
-    path('get-list-notifications', notification.GetListNotification.as_view()),
     path('check-block-lock-account/<int:id>',
          check_block_lock.CheckIsBlockOrLockAccount.as_view()),
     path('save-post/<str:post_id>', post.SavePost.as_view()),
