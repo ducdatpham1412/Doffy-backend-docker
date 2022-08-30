@@ -116,11 +116,11 @@ color_other = 8
 disable_profile_post = 'profilePost'
 
 # notification
-notification_new_chat_tag = 0
-notification_follow = 1
-notification_like_post = 2
-notification_friend_post_new = 3
-notification_comment = 4
+notification_message = 0
+notification_comment = 1
+notification_follow = 2
+notification_like_post = 3
+notification_friend_post_new = 4
 
 
 # social sign in
@@ -139,6 +139,10 @@ status_draft = 2
 
 status_conversation_stop = 0
 status_conversation_active = 1
+
+status_notification_delete = 0
+status_notification_not_read = 1
+status_notification_read = 2
 
 # request_user
 request_user_lock_account = 0

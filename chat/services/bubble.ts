@@ -1,10 +1,26 @@
 import { Document, ObjectId, PullOperator } from "mongodb";
-import { CHAT_TAG, MESSAGE_TYPE, STATUS } from "../enum";
-import { TypeAddComment, TypeParamsJoinCommunity } from "../interface/bubble";
+import {
+    CHAT_TAG,
+    MESSAGE_TYPE,
+    NOTIFICATION_STATUS,
+    STATUS,
+    TYPE_NOTIFICATION,
+} from "../enum";
+import {
+    TypeAddComment,
+    TypeInsertNotification,
+    TypeNotificationResponse,
+    TypeParamsJoinCommunity,
+} from "../interface/bubble";
 import { TypeNotificationComment } from "../interface/notification";
 import mongoDb from "../mongoDb";
 import Notification from "../notification";
-import { getDateTimeNow, getUserIdFromToken } from "./assistant";
+import {
+    createLinkImage,
+    getDateTimeNow,
+    getSocketIdOfUserId,
+    getUserIdFromToken,
+} from "./assistant";
 
 export const addComment = async (params: TypeAddComment) => {
     const { token, comment } = params;
@@ -24,10 +40,6 @@ export const addComment = async (params: TypeAddComment) => {
     };
     await mongoDb.collection("discovery_comment").insertOne(insert_comment);
 
-    // Do insert collection "notification" later
-    const insert_notification = {};
-
-    // Notification OneSignal
     const post = await mongoDb.collection("discovery_post").findOneAndUpdate(
         {
             _id: new ObjectId(comment.postId),
@@ -38,6 +50,44 @@ export const addComment = async (params: TypeAddComment) => {
             },
         }
     );
+
+    // Do insert collection "notification" later
+    let socketNotification;
+    if (post.value?.creator) {
+        const insertNotification: TypeInsertNotification = {
+            _id: new ObjectId(),
+            type: TYPE_NOTIFICATION.comment,
+            user_id: post.value.creator,
+            post_id: String(post.value?._id),
+            creator: myId,
+            created: getDateTimeNow(),
+            status: NOTIFICATION_STATUS.notRead,
+        };
+        await mongoDb.collection("notification").insertOne(insertNotification);
+
+        const receiverSocketId = await getSocketIdOfUserId(post.value.creator);
+        if (receiverSocketId) {
+            const temp: TypeNotificationResponse = {
+                id: String(insertNotification._id),
+                type: insertNotification.type,
+                image: post.value?.images[0]
+                    ? createLinkImage(post.value?.images[0])
+                    : "",
+                postId: String(post.value._id),
+                creator: myId,
+                creatorName: comment.creatorName,
+                creatorAvatar: comment.creatorAvatar,
+                created: String(insertNotification.created),
+                isRead: false,
+            };
+            socketNotification = {
+                receiverSocketId: receiverSocketId,
+                data: temp,
+            };
+        }
+    }
+
+    // One signal
     if (post.value) {
         const dataNotification: TypeNotificationComment = {
             title: {
@@ -55,7 +105,7 @@ export const addComment = async (params: TypeAddComment) => {
     }
 
     // Socket send back front-end
-    const socketNotification = {
+    const socketComment = {
         commentReplied: comment.commentReplied,
         data: {
             id: String(insert_comment._id),
@@ -68,7 +118,10 @@ export const addComment = async (params: TypeAddComment) => {
             created: String(now),
         },
     };
-    return socketNotification;
+    return {
+        socketComment,
+        socketNotification,
+    };
 };
 
 export const joinCommunity = async (params: TypeParamsJoinCommunity) => {

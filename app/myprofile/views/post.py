@@ -237,33 +237,32 @@ class LikePost(GenericAPIView):
         })
 
         # Send notification
-        data_notification = {
-            'id': str(ObjectId()),
+        insert_notification = {
             'type': enums.notification_like_post,
-            'content': '{} thích bài đăng của bạn 😎'.format(target_name),
-            'image': self.get_images(post['images']),
-            'creatorId': my_id,
-            'bubbleId': post_id,
-            'hadRead': False,
+            'user_id': post['creator'],
+            'post_id': post_id,
+            'creator': my_id,
+            'created': services.get_datetime_now(),
+            'status': enums.status_notification_not_read,
         }
-        mongoDb.notification.find_one_and_update(
-            {
-                'userId': post['creator']
-            },
-            {
-                '$push': {
-                    'list': {
-                        '$each': [data_notification],
-                        '$position': 0
-                    }
-                }
-            }
-        )
+        mongoDb.notification.insert_one(insert_notification)
+
+        data_socket = {
+            'id': str(insert_notification['_id']),
+            'type': insert_notification['type'],
+            'image': self.get_images(post['images']),
+            'postId': post_id,
+            'creator': my_id,
+            'creatorName': profile.name,
+            'creatorAvatar': services.create_link_image(profile.avatar),
+            'created': str(insert_notification['created']),
+            'status': insert_notification['status']
+        }
 
         requests.post('http://chat:1412/notification/like-post',
                       data=json.dumps({
                           'receiver': post['creator'],
-                          'data': data_notification
+                          'data': data_socket,
                       }))
 
         return Response(None, status=status.HTTP_200_OK)

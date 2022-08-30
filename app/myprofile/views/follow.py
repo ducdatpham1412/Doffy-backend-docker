@@ -1,6 +1,5 @@
 import json
 from authentication.models import User
-from bson.objectid import ObjectId
 from findme.mongo import mongoDb
 from myprofile import models
 from myprofile import serializers
@@ -79,32 +78,28 @@ class FollowUser(GenericAPIView):
             })
 
             # Send socket notification
-            data_notification = {
-                'id': str(ObjectId()),
+            insert_notification = {
                 'type': enums.notification_follow,
-                'content': '{} đã bắt đầu theo dõi bạn'.format(profile.name),
-                'image': services.create_link_image(profile.avatar),
-                'creatorId': my_id,
-                'hadRead': False,
+                'user_id': id,
+                'creator': my_id,
+                'created': services.get_datetime_now(),
+                'status': enums.status_notification_not_read,
             }
+            mongoDb.notification.insert_one(insert_notification)
 
-            mongoDb.notification.find_one_and_update(
-                {
-                    'userId': id
-                },
-                {
-                    '$push': {
-                        'list': {
-                            '$each': [data_notification],
-                            '$position': 0
-                        }
-                    }
-                }
-            )
+            data_socket = {
+                'id': str(insert_notification['_id']),
+                'type': insert_notification['type'],
+                'creator': my_id,
+                'creatorName': profile.name,
+                'creatorAvatar': services.create_link_image(profile.avatar),
+                'created': str(insert_notification['created']),
+                'status': insert_notification['status']
+            }
 
             requests.post('http://chat:1412/notification/follow', data=json.dumps({
                 'receiver': id,
-                'data': data_notification,
+                'data': data_socket,
             }))
 
             return Response(None, status=status.HTTP_200_OK)

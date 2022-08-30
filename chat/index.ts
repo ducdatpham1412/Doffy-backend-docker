@@ -65,7 +65,16 @@ io.on("connection", (socket) => {
     socket.on(SOCKET_EVENT.addComment, async (params: TypeAddComment) => {
         try {
             const res = await addComment(params);
-            io.to(params.comment.postId).emit(SOCKET_EVENT.addComment, res);
+            io.to(params.comment.postId).emit(
+                SOCKET_EVENT.addComment,
+                res.socketComment
+            );
+            if (res.socketNotification) {
+                io.to(res.socketNotification.receiverSocketId).emit(
+                    SOCKET_EVENT.notification,
+                    res.socketNotification.data
+                );
+            }
         } catch (err) {
             console.log("Err adding comment: ", err);
         }
