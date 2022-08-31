@@ -106,7 +106,7 @@ class EditPost(GenericAPIView):
         if topic != None:
             update_post['topic'] = topic
         if location != None:
-            update_post['topic'] = location
+            update_post['location'] = location
         if link != None:
             update_post['link'] = link
         if is_draft == False:

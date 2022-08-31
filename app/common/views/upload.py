@@ -1,5 +1,3 @@
-from authentication.models import User
-from common import models
 from common.forms import ImageForm
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
@@ -7,6 +5,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from utilities import services
+from common.models import Images
 
 
 class UploadImage(GenericAPIView):
@@ -27,15 +26,21 @@ class UploadImage(GenericAPIView):
         res = []
         form = ImageForm(files=request.data)
         if True:
-            list_image = form.files.getlist('image')
+            list_files = form.files.getlist('file')
 
-            for image in list_image:
+            for file in list_files:
                 time_stamp = services.get_datetime_now().timestamp()
                 name = int(float(time_stamp) * 1000)
-                image.name = '{0}{1}.jpeg'.format(id, name)
+                type_file, format_file = file.content_type.split('/')
 
-                resize_image = services.handle_resize_image(image, quality)
-                models.Images.objects.create(image=resize_image)
-                res.append(resize_image.name)
+                if type_file == 'image':
+                    file.name = '{0}{1}.jpeg'.format(id, name)
+                    resize_image = services.handle_resize_image(file, quality)
+                    Images.objects.create(image=file)
+                    res.append(resize_image.name)
+                elif type_file == 'video':
+                    file.name = '{0}{1}.{2}'.format(id, name, format_file)
+                    Images.objects.create(image=file)
+                    res.append(file.name)
 
         return Response(res, status=status.HTTP_200_OK)
