@@ -4,7 +4,7 @@ from common.views import bubble_profile, passport, resource, upload, report, com
 
 urlpatterns = [
     path('get-passport', passport.GetPassport.as_view()),
-    path('upload-image', upload.UploadImage.as_view()),
+    path('upload-file', upload.UploadImage.as_view()),
     path('get-resource', resource.GetResource.as_view()),
     path('report-user/<int:user_id>', report.ReportUser.as_view()),
     path('get-list-bubble-profile',
