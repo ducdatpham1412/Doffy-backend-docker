@@ -12,6 +12,7 @@ from utilities import enums, services
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
 import requests
+from django.db.models import Q
 
 
 class FollowUser(GenericAPIView):
@@ -34,14 +35,11 @@ class FollowUser(GenericAPIView):
 
     def check_had_blocked(self, my_id, your_id):
         try:
-            Block.objects.get(block=my_id, blocked=your_id)
+            Block.objects.get(Q(block=my_id, blocked=your_id)
+                              | Q(block=your_id, blocked=my_id))
             return True
         except Block.DoesNotExist:
-            try:
-                Block.objects.get(block=your_id, blocked=my_id)
-                return True
-            except Block.DoesNotExist:
-                return False
+            return False
 
     def put(self, request, id):
         my_id = services.get_user_id_from_request(request)

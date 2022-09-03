@@ -32,9 +32,13 @@ class GetListBubbleProfile(GenericAPIView):
         page_index = int(request.query_params['pageIndex'])
         list_topics = services.get_object(request.query_params, 'listTopics')
 
+        services.get_list_user_block(user_id=my_id)
+
+        list_user_not_in = [my_id]
+        list_user_not_in.extend(services.get_list_user_block(my_id))
         condition = {
             'creator': {
-                '$ne': my_id
+                '$nin': list_user_not_in,
             },
             'status': enums.status_active
         }

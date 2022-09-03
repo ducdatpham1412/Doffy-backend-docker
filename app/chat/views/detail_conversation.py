@@ -7,7 +7,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from setting.models import Block
-from utilities import enums, services
+from utilities import services
 from django.db.models import Q
 
 
