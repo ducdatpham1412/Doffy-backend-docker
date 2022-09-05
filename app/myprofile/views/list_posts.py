@@ -19,7 +19,7 @@ class GetListPost(GenericAPIView):
             profile = models.Profile.objects.get(user=user_id)
             return {
                 'name': profile.name,
-                'avatar': services.create_link_image(profile.avatar)
+                'avatar': services.create_link_image(profile.avatar) if profile.avatar else ''
             }
         except models.Profile.DoesNotExist:
             raise CustomError()

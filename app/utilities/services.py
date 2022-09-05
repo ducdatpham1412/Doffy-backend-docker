@@ -17,6 +17,9 @@ from utilities.exception.exception_handler import CustomError
 import pyheif
 from dateutil import parser
 import pytz
+from django.db.models import Q
+from setting.models import Block
+from setting.serializers import BlockSerializer
 
 
 def send_to_mail(mail, verify_code):
@@ -256,3 +259,19 @@ def get_object(object: dict, key: str, default=None):
         return object[key]
     except KeyError or TypeError:
         return default
+
+
+def get_list_user_block(user_id: int) -> list:
+    try:
+        query = Block.objects.filter(
+            Q(block=user_id) | Q(blocked=user_id))
+        list_blocks = BlockSerializer(query, many=True).data
+        temp = []
+        for block in list_blocks:
+            if (block['block'] != user_id):
+                temp.append(block['block'])
+            else:
+                temp.append(block['blocked'])
+        return temp
+    except Block.DoesNotExist:
+        return []
