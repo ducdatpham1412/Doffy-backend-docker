@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
 import isEqual from "react-fast-compare";
 
-const uri = `mongodb://ducdatpham:ducdat123@127.0.0.1:27017/?authSource=admin&readPreference=primary&serverSelectionTimeoutMS=2000&appname=MongoDB%20Compass&directConnection=true&ssl=false`;
+const uri = `mongodb://username:password@www.doffy.xyz:27017/?authSource=admin&readPreference=primary&serverSelectionTimeoutMS=5000&directConnection=true&ssl=false`;
 
 const client = new MongoClient(uri);
 client.connect();
@@ -9,25 +9,34 @@ const mongoDb = client.db("doffy");
 
 const query = async () => {
     const listOldConversation = await (
-        await mongoDb.collection("__old_chat_conversation").find()
+        await mongoDb
+            .collection("__old_chat_conversation")
+            .find({}, { session: client.startSession() })
     ).toArray();
 
-    const newListConversations: Array<any> = [];
+    const checkListConversations: Array<any> = [];
 
-    listOldConversation.forEach((conversation) => {
+    listOldConversation.forEach(async (conversation) => {
         if (conversation.type !== 2) {
-            const checkHadBefore = newListConversations.find((item) =>
-                isEqual(item.list_users, conversation.listUser.sort())
+            const checkHadBefore = checkListConversations.find((item) =>
+                isEqual(item.list_users, conversation.list_user.sort())
             );
 
             if (checkHadBefore) {
-                newListConversations.every((item) => {
+                checkListConversations.every(async (item) => {
                     if (
-                        isEqual(item.list_users, conversation.listUser.sort())
+                        isEqual(item.list_users, conversation.list_user.sort())
                     ) {
-                        item.total_messages += conversation.listMessages.length;
-                        item.list_messages = item.list_messages.concat(
-                            conversation.listMessages
+                        item.total_messages += conversation.total_messages;
+                        await mongoDb.collection("chat_message").updateMany(
+                            {
+                                conversation_id: String(conversation._id),
+                            },
+                            {
+                                $set: {
+                                    conversation_id: String(item._id),
+                                },
+                            }
                         );
                         return false;
                     }
@@ -35,69 +44,45 @@ const query = async () => {
                 });
             } else {
                 const userData: any = {};
-                for (const [key] of Object.entries(
-                    conversation.userSeenMessage
-                )) {
-                    userData[key] = {
+                const listUniqueUser: Array<number> = [];
+                conversation.list_user.forEach((user_id: number) => {
+                    if (!listUniqueUser.includes(user_id)) {
+                        listUniqueUser.push(user_id);
+                    }
+                });
+                listUniqueUser.sort();
+                listUniqueUser.forEach((user_id) => {
+                    userData[String(user_id)] = {
                         created: "start",
-                        modified: conversation.updateTime,
+                        modified: conversation.created,
                     };
-                }
+                });
+
                 const newConversation = {
                     _id: conversation._id,
-                    list_users: conversation.listUser.sort(),
+                    list_users: conversation.list_user.sort(),
                     conversation_name: "",
                     conversation_image: conversation?.image,
                     color: conversation.color,
                     created:
-                        conversation?.createdTime ||
-                        conversation?.updateTime ||
+                        conversation?.created ||
+                        conversation?.modified ||
                         new Date(),
-                    modified: conversation?.updateTime || new Date(),
+                    modified: conversation?.modified || new Date(),
                     user_data: userData,
-                    total_messages: conversation.listMessages.length,
+                    total_messages: conversation.total_messages,
                     latest_message: "",
                     status: {
                         value: 1,
                     },
-                    list_messages: conversation.listMessages || [],
                 };
 
-                newListConversations.push(newConversation);
+                checkListConversations.push(newConversation);
+                await mongoDb
+                    .collection("chat_conversation")
+                    .insertOne(newConversation);
             }
         }
-    });
-
-    newListConversations.forEach(async (conversation) => {
-        const insertConversation = {
-            _id: conversation._id,
-            list_users: conversation.list_users,
-            conversation_name: conversation.conversation_name,
-            conversation_image: conversation.conversation_image,
-            color: conversation.color,
-            created: conversation.created,
-            modified: conversation.modified,
-            user_data: conversation.user_data,
-            total_messages: conversation.total_messages,
-            latest_message: conversation.latest_message,
-            status: conversation.status,
-        };
-        await mongoDb
-            .collection("chat_conversation")
-            .insertOne(insertConversation);
-
-        conversation.list_messages.forEach(async (message: any) => {
-            const newMessage = {
-                _id: message._id,
-                type: message.type,
-                content: message.content,
-                creator: message.senderId,
-                created: message.createdTime,
-                conversation_id: String(conversation._id),
-                status: 1,
-            };
-            await mongoDb.collection("chat_message").insertOne(newMessage);
-        });
     });
 };
 
