@@ -11,6 +11,7 @@ from utilities.exception.exception_handler import CustomError
 from authentication.query.user_request import CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT
 from findme.mysql import mysql_select
 from django.db.models import Q
+from findme.mongo import mongoDb
 
 
 class GetProfile(GenericAPIView):
@@ -69,6 +70,10 @@ class GetProfile(GenericAPIView):
         # if not, go to get profile
         query = self.get_object(id)
         data_profile = serializers.ProfileSerializer(query).data
+        total = mongoDb.total_items.find_one({
+            'type': enums.total_reputation,
+            'user_id': id,
+        })
 
         relationship = self.get_relationship(my_id, id)
         res = {
@@ -79,6 +84,7 @@ class GetProfile(GenericAPIView):
             'description': data_profile['description'],
             'followers': data_profile['followers'],
             'followings': data_profile['followings'],
+            'reputations': total['value'],
             'relationship': relationship,
         }
 

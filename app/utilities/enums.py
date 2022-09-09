@@ -164,3 +164,4 @@ save_post = 0
 # total_items
 total_discovery_post = 0
 total_message = 1
+total_reputation = 2
