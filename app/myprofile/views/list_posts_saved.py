@@ -77,6 +77,14 @@ class GetListPostsSaved(GenericAPIView):
 
             info_creator = id_name_avatar_object['{}'.format(post['creator'])]
 
+            check_liked = mongoDb.reaction.find_one({
+                'type': enums.react_post,
+                'reacted_id': str(post['_id']),
+                'creator': my_id,
+                'status': enums.status_active
+            })
+            is_liked = bool(check_liked)
+
             relationship = enums.relationship_self if post[
                 'creator'] == my_id else enums.relationship_not_know
 
@@ -96,7 +104,7 @@ class GetListPostsSaved(GenericAPIView):
                 'creatorName': info_creator['name'],
                 'creatorAvatar': info_creator['avatar'],
                 'created': str(post['created']),
-                'isLiked': True,
+                'isLiked': is_liked,
                 'isSaved': True,
                 'relationship': relationship,
             }
