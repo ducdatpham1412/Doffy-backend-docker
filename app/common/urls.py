@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from common.views import bubble_profile, passport, resource, upload, report, comment, notification, people_like
+from common.views import bubble_profile, passport, resource, upload, report, comment, notification, people_like, top_reputations
 
 
 urlpatterns = [
@@ -22,5 +22,6 @@ urlpatterns = [
     path('list-notifications', notification.GestListNotification.as_view()),
     path('read-notification/<str:notification_id>',
          notification.ReadNotification.as_view()),
+    path('get-top-reputations', top_reputations.GetListTopReputation.as_view())
     # like and un-like comment here
 ]
