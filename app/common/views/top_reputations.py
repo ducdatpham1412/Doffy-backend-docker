@@ -1,7 +1,6 @@
 from findme.mongo import mongoDb
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from utilities import services
 import pymongo
@@ -10,10 +9,11 @@ from myprofile.models import Profile
 
 
 class GetListTopReputation(GenericAPIView):
-    permission_classes = [IsAuthenticated, ]
-
     def get(self, request):
-        my_id = services.get_user_id_from_request(request)
+        check_is_authenticated = services.get_object(
+            request.headers, 'authorization')
+        my_id = services.get_user_id_from_request(
+            request) if check_is_authenticated else None
 
         list_reputations = mongoDb.total_items.find({
             'type': enums.total_reputation,
@@ -37,9 +37,10 @@ class GetListTopReputation(GenericAPIView):
             list_top.append(temp)
 
         my_index = 0
-        for index, reputation in enumerate(list_reputations):
-            if reputation['user_id'] == my_id:
-                my_index = index + 1
+        if my_id:
+            for index, reputation in enumerate(list_reputations):
+                if reputation['user_id'] == my_id:
+                    my_index = index + 1
 
         res = {
             'list': list_top,
