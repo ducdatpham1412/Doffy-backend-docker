@@ -17,12 +17,15 @@ class GestListNotification(GenericAPIView):
     renderer_classes = [PagingRenderer, ]
 
     def get_creator_info(self, user_id):
-        profile = Profile.objects.get(user=user_id)
-        return {
-            'creator': user_id,
-            'creatorName': profile.name,
-            'creatorAvatar': services.create_link_image(profile.avatar)
-        }
+        try:
+            profile = Profile.objects.get(user=user_id)
+            return {
+                'creator': user_id,
+                'creatorName': profile.name,
+                'creatorAvatar': services.create_link_image(profile.avatar)
+            }
+        except Profile.DoesNotExist:
+            return None
 
     def get_image_of_post(self, post_id):
         post = mongoDb.discovery_post.find_one({
@@ -55,6 +58,8 @@ class GestListNotification(GenericAPIView):
         for notification in list_notifications:
             creator_info = self.get_creator_info(
                 user_id=notification['creator'])
+            if not creator_info:
+                continue
             post_info = {}
             if services.get_object(notification, 'post_id'):
                 post_info['image'] = self.get_image_of_post(
