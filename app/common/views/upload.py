@@ -25,6 +25,7 @@ class UploadImage(GenericAPIView):
 
         res = []
         form = ImageForm(files=request.data)
+
         if True:
             list_files = form.files.getlist('file')
 
@@ -36,11 +37,11 @@ class UploadImage(GenericAPIView):
                 if type_file == 'image':
                     file.name = '{0}{1}.jpeg'.format(id, name)
                     resize_image = services.handle_resize_image(file, quality)
-                    Images.objects.create(image=file)
+                    Images.objects.create(image=resize_image)
                     res.append(resize_image.name)
                 elif type_file == 'video':
                     file.name = '{0}{1}.{2}'.format(id, name, format_file)
-                    Images.objects.create(image=file)
+                    Images.objects.create(image=resize_image)
                     res.append(file.name)
 
         return Response(res, status=status.HTTP_200_OK)
