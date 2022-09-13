@@ -192,6 +192,24 @@ class LikePost(GenericAPIView):
         if not check_post:
             raise CustomError()
 
+        check_reputation = mongoDb.total_items.find_one_and_update(
+            {
+                'type': enums.total_reputation,
+                'user_id': check_post['creator']
+            },
+            {
+                '$inc': {
+                    'value': 1,
+                }
+            }
+        )
+        if not check_reputation:
+            mongoDb.total_items.insert_one({
+                'type': enums.total_reputation,
+                'user_id': check_post['creator'],
+                'value': 1,
+            })
+
         mongoDb.reaction.insert_one({
             'type': enums.react_post,
             'reacted_id': post_id,
@@ -305,6 +323,20 @@ class UnLikePost(GenericAPIView):
         if not check_post:
             raise CustomError()
 
+        check_reputation = mongoDb.total_items.find_one_and_update(
+            {
+                'type': enums.total_reputation,
+                'user_id': check_post['creator']
+            },
+            {
+                '$inc': {
+                    'value': -1
+                }
+            }
+        )
+        if not check_reputation:
+            raise CustomError()
+
         return Response(None, status=status.HTTP_200_OK)
 
 
@@ -388,4 +420,54 @@ class UnSavePost(GenericAPIView):
     def put(self, request, post_id):
         my_id = services.get_user_id_from_request(request)
         self.check_and_un_save(post_id=post_id, user_id=my_id)
+        return Response(None, status=status.HTTP_200_OK)
+
+
+class ArchivePost(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def put(self, request, post_id):
+        my_id = services.get_user_id_from_request(request)
+
+        check_post = mongoDb.discovery_post.find_one_and_update(
+            {
+                '_id': ObjectId(post_id),
+                'creator': my_id,
+                'status': enums.status_active,
+            },
+            {
+                '$set': {
+                    'status': enums.status_archive,
+                }
+            }
+        )
+
+        if not check_post:
+            raise CustomError()
+
+        return Response(None, status=status.HTTP_200_OK)
+
+
+class UnArchivePost(GenericAPIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def put(self, request, post_id):
+        my_id = services.get_user_id_from_request(request)
+
+        check_post = mongoDb.discovery_post.find_one_and_update(
+            {
+                '_id': ObjectId(post_id),
+                'creator': my_id,
+                'status': enums.status_archive,
+            },
+            {
+                '$set': {
+                    'status': enums.status_active,
+                }
+            }
+        )
+
+        if not check_post:
+            raise CustomError()
+
         return Response(None, status=status.HTTP_200_OK)

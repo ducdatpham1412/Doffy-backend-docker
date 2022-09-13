@@ -136,6 +136,7 @@ os_iOS = 1
 status_not_active = 0
 status_active = 1
 status_draft = 2
+status_archive = 3
 
 status_conversation_stop = 0
 status_conversation_active = 1

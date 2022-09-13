@@ -106,6 +106,7 @@ class GetListPostsSaved(GenericAPIView):
                 'created': str(post['created']),
                 'isLiked': is_liked,
                 'isSaved': True,
+                'isArchived': False,
                 'relationship': relationship,
             }
 
