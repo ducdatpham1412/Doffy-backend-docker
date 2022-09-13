@@ -7,12 +7,10 @@ from rest_framework.response import Response
 from utilities import enums, services
 from utilities.exception.exception_handler import CustomError
 import pymongo
-from bson.objectid import ObjectId
-from myprofile.models import Profile
 from utilities.renderers import PagingRenderer
 
 
-class GetListPostLiked(GenericAPIView):
+class GetListPostArchived(GenericAPIView):
     permission_classes = [IsAuthenticated]
     renderer_classes = [PagingRenderer]
 
@@ -26,56 +24,37 @@ class GetListPostLiked(GenericAPIView):
         except models.Profile.DoesNotExist:
             raise CustomError()
 
-    def filter_list_user_id(self, list_posts: list):
-        result = []
-        for post in list_posts:
-            try:
-                result.index(post['creator'])
-            except ValueError:
-                result.append(post['creator'])
-        return result
-
     def get(self, request):
         my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
 
-        list_reactions = mongoDb.reaction.find({
-            'type': enums.react_post,
+        list_posts_archived = mongoDb.discovery_post.find({
             'creator': my_id,
-            'status': enums.status_active
+            'status': enums.status_archive
         }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1) * take)
-        total_posts_liked = mongoDb.reaction.count({
-            'type': enums.react_post,
+        list_posts_archived = list(list_posts_archived)
+
+        total_post_archived = mongoDb.discovery_post.count({
             'creator': my_id,
-            'status': enums.status_active
+            'status': enums.status_archive
         })
 
-        list_posts = []
-        for reaction in list_reactions:
-            post = mongoDb.discovery_post.find_one({
-                '_id': ObjectId(reaction['reacted_id']),
-                'status': enums.status_active,
-            })
-            if post:
-                list_posts.append(post)
+        info_creator = self.get_creator_name_avatar(user_id=my_id)
 
-        id_name_avatar_object = {}
-        for user_id in self.filter_list_user_id(list_posts):
-            profile = Profile.objects.get(user=user_id)
-            id_name_avatar_object['{}'.format(user_id)] = {
-                'id': user_id,
-                'name': profile.name,
-                'avatar': services.create_link_image(profile.avatar),
-            }
-
-        res_posts_liked = []
-        for post in list_posts:
+        res_posts_archived = []
+        for post in list_posts_archived:
             link_images = []
             for image in post['images']:
                 link_images.append(services.create_link_image(image))
 
-            info_creator = id_name_avatar_object['{}'.format(post['creator'])]
+            check_liked = mongoDb.reaction.find_one({
+                'type': enums.react_post,
+                'reacted_id': str(post['_id']),
+                'creator': my_id,
+                'status': enums.status_active
+            })
+            is_liked = bool(check_liked)
 
             check_saved = mongoDb.save.find_one({
                 'type': enums.save_post,
@@ -104,19 +83,19 @@ class GetListPostLiked(GenericAPIView):
                 'creatorName': info_creator['name'],
                 'creatorAvatar': info_creator['avatar'],
                 'created': str(post['created']),
-                'isLiked': True,
+                'isLiked': is_liked,
                 'isSaved': is_saved,
-                'isArchived': False,
+                'isArchived': True,
                 'relationship': relationship,
             }
 
-            res_posts_liked.append(temp)
+            res_posts_archived.append(temp)
 
         res = {
             'take': take,
             'pageIndex': page_index,
-            'totalItems': total_posts_liked,
-            'data': res_posts_liked
+            'totalItems': total_post_archived,
+            'data': res_posts_archived
         }
 
         return Response(res, status=status.HTTP_200_OK)

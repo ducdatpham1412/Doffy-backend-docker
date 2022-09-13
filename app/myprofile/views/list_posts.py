@@ -95,6 +95,7 @@ class GetListPost(GenericAPIView):
                 'isLiked': is_liked,
                 'isSaved': is_saved,
                 'isDraft': post['status'] == enums.status_draft,
+                'isArchived': False,
                 'relationship': relationship,
             }
 
