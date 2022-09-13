@@ -41,7 +41,7 @@ class UploadImage(GenericAPIView):
                     res.append(resize_image.name)
                 elif type_file == 'video':
                     file.name = '{0}{1}.{2}'.format(id, name, format_file)
-                    Images.objects.create(image=resize_image)
+                    Images.objects.create(image=file)
                     res.append(file.name)
 
         return Response(res, status=status.HTTP_200_OK)
