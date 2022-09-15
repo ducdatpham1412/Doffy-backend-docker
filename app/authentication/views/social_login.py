@@ -15,7 +15,6 @@ import time
 
 
 def check_and_sign_in(email: str):
-    print('start check and sign in')
     try:
         user = User.objects.get(email=email)
         return {
@@ -24,7 +23,9 @@ def check_and_sign_in(email: str):
         }
     except User.DoesNotExist:
         register_data = {
-            email,
+            'email': email,
+            'phone': '',
+            'password': '',
         }
         serializer = serializers.RegisterSerializer(data=register_data)
         serializer.is_valid(raise_exception=True)
@@ -128,7 +129,6 @@ class SocialLogin(GenericAPIView):
     def post(self, request):
         id_token = request.headers.get('Authorization')
         provider = request.data['provider']
-        os = request.data['os']
 
         if provider == enums.sign_in_google:
             res = GoogleTokenAuthentication().do_auth(id_token=id_token)
@@ -136,7 +136,7 @@ class SocialLogin(GenericAPIView):
         elif provider == enums.sign_in_apple:
             res = AppleIdAuthentication().do_auth(authorization_code=id_token)
 
-        else:
+        elif provider != enums.sign_in_google or provider != enums.sign_in_apple:
             raise CustomError(error_message.login_fail, error_key.login_fail)
 
         return Response(res, status=status.HTTP_200_OK)

@@ -48,8 +48,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['email', 'phone', 'password']
 
     def create(self, validated_data):
-        encrypt_password = make_password(validated_data.pop(
-            'password')) if validated_data.get('password', None) else ""
+        if validated_data.get('password'):
+            encrypt_password = make_password(validated_data.get('password'))
+        else:
+            encrypt_password = ''
         user = models.User.objects.create(
             **validated_data, password=encrypt_password)
         Information.objects.create(user=user)
