@@ -48,8 +48,6 @@ class GoogleTokenAuthentication():
             raise CustomError()
         res = res.json()
 
-        print('hihi: ', str(res['aud']) == settings.GOOGLE_OAUTH2_CLIENT_ID)
-
         if str(res['aud']) != settings.GOOGLE_OAUTH2_CLIENT_ID:
             raise CustomError(error_message.login_fail, error_key.login_fail)
 
