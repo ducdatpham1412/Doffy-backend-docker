@@ -15,6 +15,7 @@ import time
 
 
 def check_and_sign_in(email: str):
+    print('start check and sign in')
     try:
         user = User.objects.get(email=email)
         return {
@@ -37,7 +38,7 @@ def check_and_sign_in(email: str):
 class GoogleTokenAuthentication():
     GOOGLE_ID_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
 
-    def do_auth(self, id_token: str, os: int):
+    def do_auth(self, id_token: str):
         res = requests.get(self.GOOGLE_ID_TOKEN_INFO_URL, params={
             'id_token': id_token
         })
@@ -46,13 +47,9 @@ class GoogleTokenAuthentication():
             raise CustomError()
         res = res.json()
 
-        check_audience = ''
-        if os == enums.os_iOS:
-            check_audience = settings.IOS_GOOGLE_OAUTH2_CLIENT_ID
-        elif os == enums.os_android:
-            check_audience = settings.ANDROID_GOOGLE_OAUTH2_CLIENT_ID
+        print('hihi: ', str(res['aud']) == settings.GOOGLE_OAUTH2_CLIENT_ID)
 
-        if res['aud'] != check_audience:
+        if str(res['aud']) != settings.GOOGLE_OAUTH2_CLIENT_ID:
             raise CustomError(error_message.login_fail, error_key.login_fail)
 
         return check_and_sign_in(email=res['email'])
@@ -134,9 +131,9 @@ class SocialLogin(GenericAPIView):
         os = request.data['os']
 
         if provider == enums.sign_in_google:
-            res = GoogleTokenAuthentication().do_auth(id_token=id_token, os=os)
+            res = GoogleTokenAuthentication().do_auth(id_token=id_token)
 
-        if provider == enums.sign_in_apple:
+        elif provider == enums.sign_in_apple:
             res = AppleIdAuthentication().do_auth(authorization_code=id_token)
 
         else:
