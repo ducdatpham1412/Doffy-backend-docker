@@ -17,6 +17,7 @@ class Profile(models.Model):
     cover = models.TextField(default='')
     followers = models.IntegerField(default=0)
     followings = models.IntegerField(default=0)
+    location = models.TextField(default='')
 
 
 class Follow(models.Model):

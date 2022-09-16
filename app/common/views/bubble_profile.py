@@ -60,6 +60,7 @@ class GetListBubbleProfile(GenericAPIView):
                 'id': user_id,
                 'name': profile.name,
                 'avatar': services.create_link_image(profile.avatar),
+                'location': profile.location,
             }
 
         res_posts = []
@@ -77,36 +78,78 @@ class GetListBubbleProfile(GenericAPIView):
             })
             is_liked = bool(check_liked)
 
-            check_saved = mongoDb.save.find_one({
-                'type': enums.save_post,
-                'saved_id': str(post['_id']),
-                'creator': my_id,
-                'status': enums.status_active,
-            })
-            is_saved = bool(check_saved)
-
             info_creator = id_name_avatar_object['{}'.format(post['creator'])]
 
-            res_posts.append({
-                'id': str(post['_id']),
-                'topic': post['topic'],
-                'feeling': post['feeling'],
-                'location': post['location'],
-                'content': post['content'],
-                'images': link_images,
-                'stars': post['stars'],
-                'link': post['link'],
-                'totalLikes': post['total_reacts'],
-                'totalComments': post['total_comments'],
-                'totalSaved': post['total_saved'],
-                'creator': post['creator'],
-                'creatorName': info_creator['name'],
-                'creatorAvatar': info_creator['avatar'],
-                'created': str(post['created']),
-                'isLiked': is_liked,
-                'isSaved': is_saved,
-                'relationship': enums.relationship_not_know
-            })
+            # post review
+            if post['post_type'] == enums.post_review:
+                check_saved = mongoDb.save.find_one({
+                    'type': enums.save_post,
+                    'saved_id': str(post['_id']),
+                    'creator': my_id,
+                    'status': enums.status_active,
+                })
+                is_saved = bool(check_saved)
+
+                res_posts.append({
+                    'id': str(post['_id']),
+                    'postType': enums.post_review,
+                    'topic': post['topic'],
+                    'feeling': post['feeling'],
+                    'location': post['location'],
+                    'content': post['content'],
+                    'images': link_images,
+                    'stars': post['stars'],
+                    'link': post['link'],
+                    'totalLikes': post['total_reacts'],
+                    'totalComments': post['total_comments'],
+                    'totalSaved': post['total_saved'],
+                    'creator': post['creator'],
+                    'creatorName': info_creator['name'],
+                    'creatorAvatar': info_creator['avatar'],
+                    'created': str(post['created']),
+                    'isLiked': is_liked,
+                    'isSaved': is_saved,
+                    'relationship': enums.relationship_not_know
+                })
+
+            # post group buying
+            elif post['post_type'] == enums.post_group_buying:
+                if post['end_date'] < services.get_datetime_now():
+                    continue
+
+                check_joined = mongoDb.join_group_buying.find_one({
+                    'post_id': str(post['_id']),
+                    'creator': my_id,
+                    'status': {
+                        '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
+                    },
+                })
+                status_joined = enums.status_not_joined
+                if check_joined:
+                    status_joined = check_joined['status']
+
+                temp = {
+                    'id': str(post['_id']),
+                    'postType': enums.post_group_buying,
+                    'topic': post['topic'],
+                    'content': post['content'],
+                    'images': link_images,
+                    'prices': post['prices'],
+                    'totalLikes': post['total_reacts'],
+                    'totalComments': post['total_comments'],
+                    'totalJoins': post['total_joins'],
+                    'startDate': str(post['start_date']),
+                    'endDate': str(post['end_date']),
+                    'creator': post['creator'],
+                    'creatorName': info_creator['name'],
+                    'creatorAvatar': info_creator['avatar'],
+                    'creatorLocation': info_creator['location'],
+                    'created': str(post['created']),
+                    'isLiked': is_liked,
+                    'status': status_joined,
+                    'relationship': enums.relationship_not_know,
+                }
+                res_posts.append(temp)
 
         res = {
             'take': take,
@@ -167,26 +210,55 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
 
             info_creator = id_name_avatar_object['{}'.format(post['creator'])]
 
-            res_posts.append({
-                'id': str(post['_id']),
-                'topic': post['topic'],
-                'feeling': post['feeling'],
-                'location': post['location'],
-                'content': post['content'],
-                'images': link_images,
-                'stars': post['stars'],
-                'link': post['link'],
-                'totalLikes': post['total_reacts'],
-                'totalComments': post['total_comments'],
-                'totalSaved': post['total_saved'],
-                'creator': post['creator'],
-                'creatorName': info_creator['name'],
-                'creatorAvatar': info_creator['avatar'],
-                'created': str(post['created']),
-                'isLiked': True,
-                'isSaved': True,
-                'relationship': enums.relationship_not_know
-            })
+            if post['post_type'] == enums.post_review:
+                res_posts.append({
+                    'id': str(post['_id']),
+                    'postType': enums.post_review,
+                    'topic': post['topic'],
+                    'feeling': post['feeling'],
+                    'location': post['location'],
+                    'content': post['content'],
+                    'images': link_images,
+                    'stars': post['stars'],
+                    'link': post['link'],
+                    'totalLikes': post['total_reacts'],
+                    'totalComments': post['total_comments'],
+                    'totalSaved': post['total_saved'],
+                    'creator': post['creator'],
+                    'creatorName': info_creator['name'],
+                    'creatorAvatar': info_creator['avatar'],
+                    'created': str(post['created']),
+                    'isLiked': True,
+                    'isSaved': True,
+                    'relationship': enums.relationship_not_know
+                })
+
+            elif post['post_type'] == enums.post_group_buying:
+                if post['end_date'] < services.get_datetime_now():
+                    continue
+
+                temp = {
+                    'id': str(post['_id']),
+                    'postType': enums.post_group_buying,
+                    'topic': post['topic'],
+                    'content': post['content'],
+                    'images': link_images,
+                    'prices': post['prices'],
+                    'totalLikes': post['total_reacts'],
+                    'totalComments': post['total_comments'],
+                    'totalJoins': post['total_joins'],
+                    'startDate': str(post['start_date']),
+                    'endDate': str(post['end_date']),
+                    'creator': post['creator'],
+                    'creatorName': info_creator['name'],
+                    'creatorAvatar': info_creator['avatar'],
+                    'creatorLocation': info_creator['location'],
+                    'created': str(post['created']),
+                    'isLiked': True,
+                    'status': enums.status_not_joined,
+                    'relationship': enums.relationship_not_know,
+                }
+                res_posts.append(temp)
 
         res = {
             'take': take,

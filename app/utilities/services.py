@@ -196,6 +196,10 @@ def format_datetime(time: datetime):
     return datetime.strptime(temp, '%Y-%m-%d %H:%M:%S')
 
 
+def format_utc_time(time: str):  # time have to be UTC format
+    return parser.parse(time)
+
+
 # Notification follow user
 headers = {
     "Content-Type": "application/json; charset=utf-8",

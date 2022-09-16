@@ -2,7 +2,7 @@ from utilities.services import create_link_image
 from rest_framework import serializers
 from myprofile import models
 from findme.mongo import mongoDb
-from utilities.enums import total_reputation
+from utilities.enums import total_reputation, account_shop
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -12,9 +12,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     followers = serializers.SerializerMethodField()
     followings = serializers.SerializerMethodField()
     reputations = serializers.SerializerMethodField()
+    account_type = serializers.SerializerMethodField()
 
     def get_id(self, obj):
         return obj.user.id
+
+    def get_account_type(self, obj):
+        return obj.user.account_type
 
     def get_avatar(self, obj):
         return create_link_image(obj.avatar)
@@ -39,10 +43,13 @@ class ProfileSerializer(serializers.ModelSerializer):
             return 0
         return total['value']
 
+    def get_location(self, obj):
+        return obj.location if obj.user.account_type == account_shop else ''
+
     class Meta:
         model = models.Profile
-        fields = ['id', 'name', 'avatar', 'cover',
-                  'description', 'followers', 'followings', 'reputations']
+        fields = ['id', 'account_type', 'name', 'avatar', 'cover',
+                  'description', 'followers', 'followings', 'reputations', 'location']
         read_only_fields = ['user']
 
 

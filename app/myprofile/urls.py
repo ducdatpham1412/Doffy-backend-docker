@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from myprofile.views import profile, follow, post, check_block_lock, list_posts, list_posts_liked, list_posts_saved, list_posts_archived
+from myprofile.views import profile, follow, post, check_block_lock, list_posts, list_posts_liked, list_posts_saved, list_posts_archived, group_buying, list_group_buying, list_gb_joined, list_post_review
 
 
 urlpatterns = [
@@ -11,10 +11,22 @@ urlpatterns = [
     path('create-post', post.CreatePost.as_view()),
     path('edit-post/<str:post_id>', post.EditPost.as_view()),
     path('delete-post/<str:post_id>', post.DeletePost.as_view()),
+    path('create-group-buying', group_buying.CreateGroupBuying.as_view()),
+    path('edit-group-buying/<str:post_id>',
+         group_buying.EditGroupBuying.as_view()),
+    path('delete-group-buying/<str:post_id>',
+         group_buying.DeleteGroupBuying.as_view()),
     path('list-posts/<int:user_id>', list_posts.GetListPost.as_view()),
+    path('list-group-buying/<int:user_id>',
+         list_group_buying.GetListGroupBuying.as_view()),
+    path('list-posts-review-user/<int:user_id>',
+         list_post_review.GetListPostReviewUser.as_view()),
     path('list-posts-liked', list_posts_liked.GetListPostLiked.as_view()),
     path('list-posts-saved', list_posts_saved.GetListPostsSaved.as_view()),
     path('list-posts-archived', list_posts_archived.GetListPostArchived.as_view()),
+    path('list-gb-joined', list_gb_joined.GetListGBJoined.as_view()),
+    path('list-people-joined/<str:post_id>',
+         list_group_buying.GetListPeopleJoined.as_view()),
     path('like-post/<str:post_id>', post.LikePost.as_view()),
     path('unlike-post/<str:post_id>', post.UnLikePost.as_view()),
     path('check-block-lock-account/<int:id>',
@@ -22,9 +34,10 @@ urlpatterns = [
     path('save-post/<str:post_id>', post.SavePost.as_view()),
     path('un-save-post/<str:post_id>', post.UnSavePost.as_view()),
     path('archive-post/<str:post_id>', post.ArchivePost.as_view()),
-    path('un-archive-post/<str:post_id>', post.UnArchivePost.as_view())
-    # path('edit-group/<str:group_id>', views.EditGroup.as_view()),
-    # path('create-group', views.CreateGroup.as_view()),
-    # path('list-my-groups', views.GetMyListGroups.as_view()),
-    # path('delete-group/<str:group_id>', views.DeleteGroup.as_view()),
+    path('un-archive-post/<str:post_id>', post.UnArchivePost.as_view()),
+    path('join-group-buying/<str:post_id>',
+         group_buying.JoinGroupBuying.as_view()),
+    path('leave-group-buying/<str:post_id>',
+         group_buying.LeaveGroupBuying.as_view()),
+    path('confirm-user-bought', group_buying.ConfirmUserBoughtGroupBuying.as_view()),
 ]

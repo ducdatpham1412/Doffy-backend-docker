@@ -73,6 +73,7 @@ class GetProfile(GenericAPIView):
         relationship = self.get_relationship(my_id, id)
         res = {
             'id': data_profile['id'],
+            'account_type': data_profile['account_type'],
             'name': data_profile['name'],
             'avatar': data_profile['avatar'],
             'cover': data_profile['cover'],
@@ -80,6 +81,7 @@ class GetProfile(GenericAPIView):
             'followers': data_profile['followers'],
             'followings': data_profile['followings'],
             'reputations': data_profile['reputations'],
+            'location': data_profile['location'],
             'relationship': relationship,
         }
 
@@ -105,6 +107,7 @@ class EditProfile(GenericAPIView):
         new_avatar = services.get_object(request_data, 'avatar')
         new_name = services.get_object(request_data, 'name')
         new_description = services.get_object(request_data, 'description')
+        new_location = services.get_object(request_data, 'location')
 
         if new_avatar != None:
             my_profile.avatar = new_avatar
@@ -112,6 +115,8 @@ class EditProfile(GenericAPIView):
             my_profile.name = new_name
         if new_description != None:
             my_profile.description = new_description
+        if new_location != None:
+            my_profile.location = new_location
 
         my_profile.save()
 
