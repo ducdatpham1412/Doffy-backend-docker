@@ -26,6 +26,19 @@ class GetListBubbleProfile(GenericAPIView):
                 result.append(post['creator'])
         return result
 
+    def get_profile(self, user_id: int):
+        try:
+            profile = Profile.objects.get(user=user_id)
+            return {
+                'id': user_id,
+                'name': profile.name,
+                'avatar': services.create_link_image(profile.avatar) if profile.avatar else '',
+                'location': profile.location,
+                'description': profile.description,
+            }
+        except Profile.DoesNotExist:
+            return services.fake_user_profile
+
     def get(self, request):
         my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
@@ -55,12 +68,12 @@ class GetListBubbleProfile(GenericAPIView):
 
         id_name_avatar_object = {}
         for user_id in self.filter_list_user_id(list_posts):
-            profile = Profile.objects.get(user=user_id)
+            profile = self.get_profile(user_id)
             id_name_avatar_object['{}'.format(user_id)] = {
                 'id': user_id,
-                'name': profile.name,
-                'avatar': services.create_link_image(profile.avatar),
-                'location': profile.location,
+                'name': profile['name'],
+                'avatar': profile['avatar'],
+                'location': profile['location'],
             }
 
         res_posts = []
@@ -90,6 +103,18 @@ class GetListBubbleProfile(GenericAPIView):
                 })
                 is_saved = bool(check_saved)
 
+                user_reviewed = None
+                user_id = services.get_object(post, 'user_id')
+                if user_id:
+                    profile = self.get_profile(user_id)
+                    user_reviewed = {
+                        'id': user_id,
+                        'name': profile['name'],
+                        'avatar': profile['avatar'],
+                        'description': profile['description'],
+                        'location': profile['location']
+                    }
+
                 res_posts.append({
                     'id': str(post['_id']),
                     'postType': enums.post_review,
@@ -100,6 +125,7 @@ class GetListBubbleProfile(GenericAPIView):
                     'images': link_images,
                     'stars': post['stars'],
                     'link': post['link'],
+                    'userReviewed': user_reviewed,
                     'totalLikes': post['total_reacts'],
                     'totalComments': post['total_comments'],
                     'totalSaved': post['total_saved'],

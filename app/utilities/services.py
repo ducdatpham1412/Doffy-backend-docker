@@ -279,3 +279,12 @@ def get_list_user_block(user_id: int) -> list:
         return temp
     except Block.DoesNotExist:
         return []
+
+
+fake_user_profile = {
+    'id': None,
+    'name': '',
+    'avatar': '',
+    'location': '',
+    'description': ''
+}

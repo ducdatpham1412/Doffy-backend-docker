@@ -56,6 +56,7 @@ class CreateGroupBuying(GenericAPIView):
             raise CustomError()
         start_date = services.format_utc_time(request_data['startDate'])
         end_date = services.format_utc_time(request_data['endDate'])
+        deadline_date = services.format_utc_time(request_data['deadlineDate'])
 
         insert_post = {
             'post_type': enums.post_group_buying,
@@ -65,6 +66,7 @@ class CreateGroupBuying(GenericAPIView):
             'prices': prices,
             'start_date': start_date,
             'end_date': end_date,
+            'deadline_date': deadline_date,
             'total_reacts': 0,
             'total_comments': 0,
             'total_joins': 0,
