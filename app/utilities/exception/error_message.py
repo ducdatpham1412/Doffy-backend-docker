@@ -29,6 +29,10 @@ you_have_liked_this_post = 'you_have_liked_this_post'
 you_not_liked_this_post = 'you_not_liked_this_post'
 post_not_existed = 'post_not_existed'
 had_saved_this_post = 'had_saved_this_post'
+have_joined_group_buying = 'have_joined_group_buying'
+not_joined_group_buying = 'not_joined_group_buying'
+bought_group_buying = 'bought_group_buying'
+group_buying_out_of_date = 'group_buying_out_of_date'
 
 # chat
 not_have_permission_delete_message = 'not_have_permission_delete_message'

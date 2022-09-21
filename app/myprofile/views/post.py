@@ -36,6 +36,7 @@ class CreatePost(GenericAPIView):
 
         status_post = enums.status_draft if is_draft else enums.status_active
         insert_post = {
+            'post_type': enums.post_review,
             'content': request_data['content'],
             'images': request_data['images'],
             'stars': request_data['stars'],

@@ -29,6 +29,10 @@ you_have_liked_this_post = 18
 you_not_liked_this_post = 19
 post_not_existed = 20
 had_saved_this_post = 21
+have_joined_group_buying = 22
+not_joined_group_buying = 23
+bought_group_buying = 24
+group_buying_out_of_date = 25
 
 # chat
 not_have_permission_delete_message = 17

@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from utilities import enums
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.conf import settings
 
 
 class User(AbstractUser):
@@ -13,6 +12,7 @@ class User(AbstractUser):
     last_name = None
     groups = None
     user_permissions = None
+    account_type = models.SmallIntegerField(default=enums.account_user)
 
     email = models.EmailField(default='',)
     phone = models.CharField(default='', max_length=enums.PHONE_MAX_LENGTH)

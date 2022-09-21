@@ -63,7 +63,6 @@ relationship_self = 0
 relationship_not_following = 1
 relationship_following = 2
 relationship_block = 3
-relationship_friend = 4
 relationship_not_know = 10
 
 
@@ -79,21 +78,6 @@ message_sticker = 2
 message_join_community = 3
 message_change_color = 4
 message_change_name = 5
-
-
-# socket
-socket_bubble = '3'
-socket_delete_bubble = '3.5'
-socket_chat_tag = '4'
-socket_message = '5'
-socket_seen_message = '6'
-socket_request_public = '7'
-socket_all_agree_public = '8'
-socket_is_blocked = '9'
-socket_un_blocked = '10'
-socket_change_group_name = '11'
-socket_stop_coversation = '12'
-socket_open_conversation = '13'
 
 
 # type follow
@@ -145,6 +129,11 @@ status_notification_delete = 0
 status_notification_not_read = 1
 status_notification_read = 2
 
+status_joined_deleted = 0
+status_not_joined = 1
+status_joined_not_bought = 2
+status_joined_bought = 3
+
 # request_user
 request_user_lock_account = 0
 request_user_delete_account = 1
@@ -166,3 +155,11 @@ save_post = 0
 total_discovery_post = 0
 total_message = 1
 total_reputation = 2
+
+# type account
+account_user = 0
+account_shop = 1
+
+# discovery post type
+post_review = 0
+post_group_buying = 1

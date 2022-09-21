@@ -10,7 +10,7 @@ import pymongo
 from utilities.renderers import PagingRenderer
 
 
-class GetListPost(GenericAPIView):
+class GetListPostReviewUser(GenericAPIView):
     permission_classes = [IsAuthenticated]
     renderer_classes = [PagingRenderer]
 
@@ -31,27 +31,22 @@ class GetListPost(GenericAPIView):
 
         info_creator = self.get_creator_name_avatar(user_id)
 
-        status_scope = [enums.status_active]
-        if my_id == user_id:
-            status_scope.append(enums.status_draft)
-
-        sort_condition = [('status', pymongo.DESCENDING), ('created', pymongo.DESCENDING)
-                          ] if my_id == user_id else [('created', pymongo.DESCENDING)]
-
         list_posts = mongoDb.discovery_post.find({
-            'creator': user_id,
             'post_type': enums.post_review,
-            'status': {
-                '$in': status_scope
-            }
-        }).sort(sort_condition).limit(take).skip((page_index-1)*take)
+            'user_id': user_id,
+            'creator': {
+                '$ne': user_id,
+            },
+            'status': enums.status_active,
+        }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
 
         total_posts = mongoDb.discovery_post.count({
-            'creator': user_id,
             'post_type': enums.post_review,
-            'status': {
-                '$in': status_scope
-            }
+            'user_id': user_id,
+            'creator': {
+                '$ne': user_id,
+            },
+            'status': enums.status_active,
         })
 
         list_posts_review = []
