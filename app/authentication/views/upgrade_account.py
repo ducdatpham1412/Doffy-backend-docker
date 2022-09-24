@@ -18,7 +18,7 @@ class UpgradeAccount(GenericAPIView):
             raise CustomError()
 
         user = models.User.objects.get(id=my_id, is_active=status_active)
-        if user.account_type == account_user:
+        if user.account_type != account_user:
             raise CustomError()
         user.account_type = account_shop
         user.save()

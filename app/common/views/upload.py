@@ -17,7 +17,7 @@ class UploadImage(GenericAPIView):
             temp = int(request.query_params['quality'])
             return temp
         except KeyError:
-            return 150
+            return 300
 
     def post(self, request):
         id = services.get_user_id_from_request(request)

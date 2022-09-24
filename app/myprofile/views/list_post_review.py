@@ -24,12 +24,23 @@ class GetListPostReviewUser(GenericAPIView):
         except models.Profile.DoesNotExist:
             raise CustomError()
 
+    def get_profile(self, user_id: int):
+        try:
+            profile = models.Profile.objects.get(user=user_id)
+            return {
+                'id': user_id,
+                'name': profile.name,
+                'avatar': services.create_link_image(profile.avatar) if profile.avatar else '',
+                'location': profile.location,
+                'description': profile.description,
+            }
+        except models.Profile.DoesNotExist:
+            return services.fake_user_profile
+
     def get(self, request, user_id):
         my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
-
-        info_creator = self.get_creator_name_avatar(user_id)
 
         list_posts = mongoDb.discovery_post.find({
             'post_type': enums.post_review,
@@ -55,6 +66,9 @@ class GetListPostReviewUser(GenericAPIView):
             for image in post['images']:
                 link_images.append(services.create_link_image(image))
 
+            info_creator = self.get_creator_name_avatar(
+                user_id=post['creator'])
+
             check_liked = mongoDb.reaction.find_one({
                 'type': enums.react_post,
                 'reacted_id': str(post['_id']),
@@ -74,6 +88,18 @@ class GetListPostReviewUser(GenericAPIView):
             })
             is_saved = bool(check_saved)
 
+            user_reviewed = None
+            user_id = services.get_object(post, 'user_id')
+            if user_id:
+                profile = self.get_profile(user_id)
+                user_reviewed = {
+                    'id': user_id,
+                    'name': profile['name'],
+                    'avatar': profile['avatar'],
+                    'description': profile['description'],
+                    'location': profile['location']
+                }
+
             temp = {
                 'id': str(post['_id']),
                 'postType': enums.post_review,
@@ -84,6 +110,7 @@ class GetListPostReviewUser(GenericAPIView):
                 'images': link_images,
                 'stars': post['stars'],
                 'link': post['link'],
+                'userReviewed': user_reviewed,
                 'totalLikes': post['total_reacts'],
                 'totalComments': post['total_comments'],
                 'totalSaved': post['total_saved'],
