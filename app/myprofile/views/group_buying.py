@@ -54,9 +54,12 @@ class CreateGroupBuying(GenericAPIView):
                 })
         except KeyError:
             raise CustomError()
+
         start_date = services.format_utc_time(request_data['startDate'])
         end_date = services.format_utc_time(request_data['endDate'])
         deadline_date = services.format_utc_time(request_data['deadlineDate'])
+        if not start_date or not end_date or not deadline_date:
+            raise CustomError()
 
         insert_post = {
             'post_type': enums.post_group_buying,
