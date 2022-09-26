@@ -43,7 +43,7 @@ class GetListBubbleProfile(GenericAPIView):
         my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
-        list_topics = services.get_object(request.query_params, 'listTopics')
+        list_topics = services.get_object(request.query_params, 'topics')
 
         services.get_list_user_block(user_id=my_id)
 
@@ -55,9 +55,9 @@ class GetListBubbleProfile(GenericAPIView):
             },
             'status': enums.status_active
         }
-        if list_topics != None:
+        if list_topics != None or services.get_len(list_topics) > 0:
             condition['topic'] = {
-                '$in': json.loads(list_topics)
+                '$all': json.loads(list_topics)
             }
 
         total_posts = mongoDb.discovery_post.count(condition)
@@ -202,14 +202,14 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
     def get(self, request):
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
-        listTopics = services.get_object(request.query_params, 'listTopics')
+        list_topics = services.get_object(request.query_params, 'topics')
 
         condition = {
             'status': enums.status_active
         }
-        if listTopics != None:
+        if list_topics != None or services.get_len(list_topics) > 0:
             condition['topic'] = {
-                '$in': json.loads(listTopics)
+                '$all': json.loads(list_topics)
             }
 
         total_posts = mongoDb.discovery_post.count(condition)
@@ -225,6 +225,7 @@ class GetListBubbleProfileOfUserEnjoy(GenericAPIView):
                 'id': user_id,
                 'name': profile.name,
                 'avatar': services.create_link_image(profile.avatar),
+                'location': profile.location,
             }
 
         res_posts = []

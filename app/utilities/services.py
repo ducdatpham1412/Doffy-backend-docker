@@ -265,6 +265,13 @@ def get_object(object: dict, key: str, default=None):
         return default
 
 
+def get_len(object: any):
+    try:
+        return len(object)
+    except TypeError:
+        return 0
+
+
 def get_list_user_block(user_id: int) -> list:
     try:
         query = Block.objects.filter(
