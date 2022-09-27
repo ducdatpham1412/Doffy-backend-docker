@@ -95,6 +95,7 @@ class GetListGroupBuying(GenericAPIView):
                 'totalLikes': post['total_reacts'],
                 'totalComments': post['total_comments'],
                 'totalJoins': post['total_joins'],
+                'deadlineDate': str(post['deadline_date']),
                 'startDate': str(post['start_date']),
                 'endDate': str(post['end_date']),
                 'creator': post['creator'],

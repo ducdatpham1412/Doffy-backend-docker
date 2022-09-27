@@ -164,6 +164,7 @@ class GetListBubbleProfile(GenericAPIView):
                     'totalLikes': post['total_reacts'],
                     'totalComments': post['total_comments'],
                     'totalJoins': post['total_joins'],
+                    'deadlineDate': str(post['deadline_date']),
                     'startDate': str(post['start_date']),
                     'endDate': str(post['end_date']),
                     'creator': post['creator'],
@@ -323,39 +324,77 @@ class GetDetailBubbleProfile(GenericAPIView):
         })
         is_liked = bool(check_liked)
 
-        check_saved = mongoDb.save.find_one({
-            'type': enums.save_post,
-            'saved_id': str(post['_id']),
-            'creator': my_id,
-            'status': enums.status_active,
-        })
-        is_saved = bool(check_saved)
-
-        is_my_post = post['creator'] == my_id
-        relationship = enums.relationship_self if is_my_post else enums.relationship_not_know
+        relationship = enums.relationship_self if post['creator'] == my_id else enums.relationship_not_know
 
         profile = Profile.objects.get(user=post['creator'])
 
-        res = {
-            'id': str(post['_id']),
-            'topic': post['topic'],
-            'feeling': post['feeling'],
-            'location': post['location'],
-            'content': post['content'],
-            'images': link_images,
-            'stars': post['stars'],
-            'link': post['link'],
-            'totalLikes': post['total_reacts'],
-            'totalComments': post['total_comments'],
-            'totalSaved': post['total_saved'],
-            'creator': post['creator'],
-            'creatorName': profile.name,
-            'creatorAvatar': services.create_link_image(profile.avatar),
-            'created': str(post['created']),
-            'isLiked': is_liked,
-            'isSaved': is_saved,
-            'relationship': relationship
-        }
+        res = None
+
+        if post['post_type'] == enums.post_review:
+            check_saved = mongoDb.save.find_one({
+                'type': enums.save_post,
+                'saved_id': str(post['_id']),
+                'creator': my_id,
+                'status': enums.status_active,
+            })
+            is_saved = bool(check_saved)
+
+            res = {
+                'id': str(post['_id']),
+                'postType': post['post_type'],
+                'topic': post['topic'],
+                'feeling': post['feeling'],
+                'location': post['location'],
+                'content': post['content'],
+                'images': link_images,
+                'stars': post['stars'],
+                'link': post['link'],
+                'totalLikes': post['total_reacts'],
+                'totalComments': post['total_comments'],
+                'totalSaved': post['total_saved'],
+                'creator': post['creator'],
+                'creatorName': profile.name,
+                'creatorAvatar': services.create_link_image(profile.avatar) if profile.avatar else '',
+                'created': str(post['created']),
+                'isLiked': is_liked,
+                'isSaved': is_saved,
+                'relationship': relationship
+            }
+
+        elif post['post_type'] == enums.post_group_buying:
+            check_joined = mongoDb.join_group_buying.find_one({
+                'post_id': str(post['_id']),
+                'creator': my_id,
+                'status': {
+                    '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
+                },
+            })
+            status_joined = enums.status_not_joined
+            if check_joined:
+                status_joined = check_joined['status']
+
+            res = {
+                'id': str(post['_id']),
+                'postType': post['post_type'],
+                'topic': post['topic'],
+                'content': post['content'],
+                'images': link_images,
+                'prices': post['prices'],
+                'totalLikes': post['total_reacts'],
+                'totalComments': post['total_comments'],
+                'totalJoins': post['total_joins'],
+                'deadlineDate': str(post['deadline_date']),
+                'startDate': str(post['start_date']),
+                'endDate': str(post['end_date']),
+                'creator': post['creator'],
+                'creatorName': profile.name,
+                'creatorAvatar': services.create_link_image(profile.avatar) if profile.avatar else '',
+                'creatorLocation': profile.location,
+                'created': str(post['created']),
+                'isLiked': is_liked,
+                'status': status_joined,
+                'relationship': relationship,
+            }
 
         return Response(res, status=status.HTTP_200_OK)
 

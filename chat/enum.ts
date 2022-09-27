@@ -53,6 +53,8 @@ export enum TYPE_NOTIFICATION {
     follow = 2,
     likePost = 3,
     friendPostNew = 4,
+    likeGroupBuying = 5,
+    commentGroupBuying = 6,
 }
 
 export enum NOTIFICATION_STATUS {

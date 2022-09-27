@@ -263,6 +263,12 @@ class LikePost(GenericAPIView):
         profile = Profile.objects.get(user=my_id)
         target_name = profile.name
 
+        type_notification = None
+        if post['post_type'] == enums.post_review:
+            type_notification = enums.notification_like_post
+        elif post['post_type'] == enums.post_group_buying:
+            type_notification = enums.notification_like_gb
+
         # Push notification one signal
         services.send_notification({
             'contents': {
@@ -278,14 +284,14 @@ class LikePost(GenericAPIView):
                 }
             ],
             'data': {
-                'type': enums.notification_like_post,
+                'type': type_notification,
                 'bubbleId': post_id,
             }
         })
 
         # Send notification
         insert_notification = {
-            'type': enums.notification_like_post,
+            'type': type_notification,
             'user_id': post['creator'],
             'post_id': post_id,
             'creator': my_id,
