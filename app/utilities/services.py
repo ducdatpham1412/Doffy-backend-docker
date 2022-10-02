@@ -20,6 +20,9 @@ import pytz
 from django.db.models import Q
 from setting.models import Block
 from setting.serializers import BlockSerializer
+from authentication.models import User_Request
+from authentication.serializers import RequestUserSerializer
+import datetime as boss_datetime
 
 
 def send_to_mail(mail, verify_code):
@@ -184,6 +187,10 @@ def get_datetime_now():
     return datetime.now()
 
 
+def get_utc_now():
+    return boss_datetime.datetime.now(boss_datetime.timezone.utc)
+
+
 def get_local_string_date_time(utc_time: any):
     # print('time zone info: ', datetime.now().astimezone().tzinfo)
     parsed_date = parser.parse(str(utc_time))
@@ -295,3 +302,12 @@ fake_user_profile = {
     'location': '',
     'description': ''
 }
+
+
+def get_list_requests_delete_or_block_account(user_id: int):
+    list_requests = User_Request.objects.filter(Q(type=enums.request_user_delete_account) | Q(
+        type=enums.request_user_lock_account), creator=user_id, status=enums.status_active)
+    serializer = RequestUserSerializer(list_requests, many=True)
+    if len(serializer.data) == 0:
+        return None
+    return serializer.data

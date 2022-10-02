@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from utilities import enums
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import datetime
 
 
 class User(AbstractUser):
@@ -13,6 +14,8 @@ class User(AbstractUser):
     groups = None
     user_permissions = None
     account_type = models.SmallIntegerField(default=enums.account_user)
+    bank_code = models.CharField(default='', max_length=10)
+    bank_account = models.CharField(default='', max_length=20)
 
     email = models.EmailField(default='',)
     phone = models.CharField(default='', max_length=enums.PHONE_MAX_LENGTH)
@@ -39,3 +42,14 @@ class VerifyCode(models.Model):
 
     def __str__(self):
         return str(self.code)
+
+
+class User_Request(models.Model):
+    creator = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='user_request', editable=False
+    )
+    type = models.IntegerField(editable=False)
+    created = models.DateTimeField(default=datetime.now, )
+    expired = models.DateTimeField()
+    data = models.TextField(default='')
+    status = models.IntegerField(default=enums.status_active)

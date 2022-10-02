@@ -18,6 +18,8 @@ token_expired = 'token_expired'
 token_blacklisted = 'token_blacklisted'
 username_not_exist = 'username_not_exist'
 login_facebook_failed = 'login_facebook_failed'
+had_requested_upgrade = 'had_requested_upgrade'
+you_have_lock_your_account = 'you_have_lock_your_account'
 
 # setting
 you_have_blocked_this_person = 'you_have_blocked_this_person'
@@ -37,6 +39,3 @@ group_buying_out_of_date = 'group_buying_out_of_date'
 # chat
 not_have_permission_delete_message = 'not_have_permission_delete_message'
 conversation_not_existed = 'conversation_not_existed'
-
-# lock account
-you_have_lock_your_account = 'you_have_lock_your_account'

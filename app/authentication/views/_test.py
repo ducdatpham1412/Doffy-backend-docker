@@ -1,6 +1,8 @@
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from authentication.serializers import RegisterSerializer
+from authentication.models import User_Request
+from authentication.serializers import RequestUserSerializer
+from django.db.models import Q
 
 
 class Check(GenericAPIView):
@@ -8,16 +10,7 @@ class Check(GenericAPIView):
         return Response(None, status=200)
 
     def post(self, request):
-        register_data = {
-            'email': 'how@doffy.vn',
-            'phone': '',
-            'password': ''
-        }
+        list_requests = User_Request.objects.filter(~Q(creator=2))
+        serializer = RequestUserSerializer(list_requests, many=True)
 
-        serializer = RegisterSerializer(data=register_data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-
-        print('user is: ', user)
-
-        return Response(None, status=200)
+        return Response(serializer.data, status=200)
