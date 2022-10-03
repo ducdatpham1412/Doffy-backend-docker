@@ -1,4 +1,3 @@
-from authentication.serializers import UserSerializer
 from authentication.models import User
 from django.shortcuts import render
 from findme.mongo import mongoDb
@@ -9,8 +8,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from setting import models
-from setting.api.serializers import (ChangeInformationSerializer,
-                                     ExtendSerializer, ListBlockSerializer)
+from setting.api.serializers import (ExtendSerializer, ListBlockSerializer)
 from utilities import services, enums
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
@@ -139,28 +137,49 @@ class ChangeDisplayAvatar(GenericAPIView):
 class ChangeInformation(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
+    def check_email_existed(self, email):
+        try:
+            User.objects.get(email=email, is_active=enums.status_active)
+            raise CustomError(error_message.username_existed,
+                              error_key.username_existed)
+        except User.DoesNotExist:
+            pass
+
+    def check_phone_existed(self, phone):
+        try:
+            User.objects.get(phone=phone, is_active=enums.status_active)
+            raise CustomError(error_message.username_existed,
+                              error_key.username_existed)
+        except User.DoesNotExist:
+            pass
+
     def put(self, request):
         id = services.get_user_id_from_request(request)
-        new_information = request.data
+        request_data = request.data
 
-        # update in information
-        information = models.Information.objects.get(user=id)
-        serializer = ChangeInformationSerializer(
-            information, data=new_information)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        email = services.get_object(request_data, 'email')
+        phone = services.get_object(request_data, 'phone')
+        gender = services.get_object(request_data, 'gender')
+        birthday = services.get_object(request_data, 'birthday')
 
-        # update in authentication user
-        user = User.objects.get(id=id)
-        user_serializer = UserSerializer(user, data=new_information)
-        user_serializer.is_valid(raise_exception=True)
-        user_serializer.save()
-
-        # update name in profile
-        profile = Profile.objects.get(user=id)
-        profile_serializer = ProfileSerializer(profile, data=new_information)
-        profile_serializer.is_valid(raise_exception=True)
-        profile_serializer.save()
+        if email != None:
+            self.check_email_existed(email=email)
+            user = User.objects.get(id=id)
+            user.email = email
+            user.save()
+        if phone != None:
+            self.check_phone_existed(phone=phone)
+            user = User.objects.get(id=id)
+            user.phone = phone
+            user.save()
+        if gender != None:
+            information = models.Information.objects.get(user=id)
+            information.gender = gender
+            information.save()
+        if birthday != None:
+            information = models.Information.objects.get(user=id)
+            information.birthday = services.format_utc_time(birthday)
+            information.save()
 
         return Response(None, status=status.HTTP_200_OK)
 
