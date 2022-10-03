@@ -7,8 +7,7 @@ from utilities.exception import error_message, error_key
 from utilities import enums, services
 from django.db.models import Q
 from django.contrib.auth.hashers import check_password
-from findme.mysql import mysql_select, mysql_update
-from authentication.query.user_request import CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT
+from findme.mysql import mysql_update
 from authentication.query.user import UN_ACTIVE_ACCOUNT
 
 
@@ -29,8 +28,8 @@ class Login(GenericAPIView):
             raise CustomError(error_message.login_fail, error_key.login_fail)
 
         # Check is user requesting delete or block account
-        user_request = mysql_select(
-            CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT(user_id=user.id))
+        user_request = services.get_list_requests_delete_or_block_account(
+            user_id=user.id)
         if user_request:
             for request in user_request:
                 if request['type'] == enums.request_user_lock_account:
@@ -40,13 +39,13 @@ class Login(GenericAPIView):
                     }
                     return Response(res, status=status.HTTP_200_OK)
                 elif request['type'] == enums.request_user_delete_account:
-                    if request['expired'] > services.get_datetime_now():
+                    if services.format_utc_time(request['expired']) > services.get_utc_now():
                         res = {
                             'username': username,
                             'isLocking': True
                         }
                         return Response(res, status=status.HTTP_200_OK)
-                    elif request['expired'] < services.get_datetime_now():
+                    elif services.format_utc_time(request['expired']) < services.get_utc_now():
                         mysql_update(UN_ACTIVE_ACCOUNT(user_id=user.id))
                         raise CustomError(error_message.login_fail,
                                           error_key.login_fail)

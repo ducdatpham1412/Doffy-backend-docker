@@ -8,8 +8,6 @@ from setting.models import Block
 from utilities import enums, services
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
-from authentication.query.user_request import CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT
-from findme.mysql import mysql_select
 from django.db.models import Q
 
 
@@ -32,8 +30,8 @@ class GetProfile(GenericAPIView):
             return False
 
     def check_is_locking_account(self, your_id):
-        user_requests = mysql_select(
-            CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT(user_id=your_id))
+        user_requests = services.get_list_requests_delete_or_block_account(
+            user_id=your_id)
 
         if not user_requests:
             return False

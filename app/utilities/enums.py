@@ -139,6 +139,7 @@ status_joined_bought = 3
 # request_user
 request_user_lock_account = 0
 request_user_delete_account = 1
+request_user_upgrade_to_shop = 2
 
 # topic discovery post
 topic_travel = 0

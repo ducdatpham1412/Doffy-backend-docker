@@ -1,11 +1,10 @@
 from authentication import models
-from myprofile.models import Profile
+import myprofile.models
 from rest_framework import serializers
 from setting.models import Extend, Information
 from django.contrib.auth.hashers import make_password
 from findme.mysql import mysql_select, mysql_insert, mysql_update
 from authentication.query import verify_code
-from utilities.exception import error_message, error_key
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,7 +53,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = models.User.objects.create(
             **validated_data, password=encrypt_password)
         Information.objects.create(user=user)
-        Profile.objects.create(user=user)
+        myprofile.models.objects.create(user=user)
         Extend.objects.create(user=user)
 
         return user
+
+
+class RequestUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.User_Request
+        fields = '__all__'

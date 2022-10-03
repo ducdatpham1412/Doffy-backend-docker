@@ -8,7 +8,6 @@ from utilities import enums, services
 from rest_framework import status
 from findme.mysql import mysql_select, mysql_update
 from authentication.query.verify_code import SEARCH_OTP, UPDATE_OTP
-from authentication.query.user_request import UN_ACTIVE_REQUEST_USER, CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT
 from authentication.query.user import UN_ACTIVE_ACCOUNT
 
 
@@ -27,12 +26,12 @@ class OpenAccount(GenericAPIView):
 
         # Check user is requesting delete / lock account
         # If request-delete expired, un active user
-        user_requests = mysql_select(
-            CHECK_USER_IS_REQUEST_OR_LOCK_ACCOUNT(user_id=user.id))
+        user_requests = services.get_list_requests_delete_or_block_account(
+            user_id=user.id)
         if not user_requests:
             raise CustomError()
         for request in user_requests:
-            if request['type'] == enums.request_user_delete_account and request['expired'] < services.get_datetime_now():
+            if request['type'] == enums.request_user_delete_account and services.format_utc_time(request['expired']) < services.get_utc_now():
                 mysql_update(UN_ACTIVE_ACCOUNT(user_id=user.id))
                 raise CustomError()
 
@@ -44,6 +43,8 @@ class OpenAccount(GenericAPIView):
         mysql_update(UPDATE_OTP(username=username, code=0))
 
         # If verify code's valid, un active request
-        mysql_update(UN_ACTIVE_REQUEST_USER(user_id=user.id))
+        models.User_Request.objects.filter(Q(type=enums.request_user_delete_account) | Q(type=enums.request_user_lock_account),
+                                           creator=user.id, status=enums.status_active,
+                                           ).update(status=enums.status_not_active)
 
         return Response(None, status=status.HTTP_200_OK)
