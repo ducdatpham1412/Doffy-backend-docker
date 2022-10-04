@@ -59,7 +59,7 @@ class ApproveRequest(GenericAPIView):
         user.bank_account = data['bank_account']
         user.save()
 
-        profile = Profile.objects.get(id=user.id)
+        profile = Profile.objects.get(user=user.id)
         profile.location = data['location']
         profile.save()
 
