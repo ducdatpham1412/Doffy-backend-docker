@@ -44,6 +44,8 @@ class GetListBubbleProfile(GenericAPIView):
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
         list_topics = services.get_object(request.query_params, 'topics')
+        list_post_types = services.get_object(
+            request.query_params, 'postTypes')
 
         services.get_list_user_block(user_id=my_id)
 
@@ -58,6 +60,10 @@ class GetListBubbleProfile(GenericAPIView):
         if list_topics != None or services.get_len(list_topics) > 0:
             condition['topic'] = {
                 '$all': json.loads(list_topics)
+            }
+        if list_post_types != None or services.get_len(list_post_types) > 0:
+            condition['post_type'] = {
+                '$in': json.loads(list_post_types)
             }
 
         total_posts = mongoDb.discovery_post.count(condition)

@@ -16,7 +16,6 @@ import {
 import { getMyListChatTagsAndMyId } from "./services/authentication";
 import { addComment } from "./services/bubble";
 import { handleSeenMessage, handleStartConversation } from "./services/chatTag";
-import { startBotDiscord } from "./services/discord";
 import { handleSendMessage } from "./services/message";
 
 const httpServer = http.createServer();
@@ -298,20 +297,6 @@ listenAppServer.listen(1412);
 /**
  * This is for discord bot
  */
-startBotDiscord();
+// startBotDiscord();
 
-console.log("Start node success");
-
-// socket.on(SOCKET_EVENT.joinCommunity, async (params) => {
-//     try {
-//         const chatTagId = await joinCommunity(params);
-//         io.to(socket.id).emit(SOCKET_EVENT.joinCommunity, chatTagId);
-//         io.to(chatTagId).emit(
-//             SOCKET_EVENT.hadNewUserJoinCommunity,
-//             chatTagId
-//         );
-//         socket.join(chatTagId);
-//     } catch (err) {
-//         console.log("Err join community: ", err);
-//     }
-// });
+// console.log("Start node success");
