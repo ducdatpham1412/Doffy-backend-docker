@@ -162,6 +162,7 @@ total_reputation = 2
 # type account
 account_user = 0
 account_shop = 1
+account_admin = 2
 
 # discovery post type
 post_review = 0

@@ -20,6 +20,7 @@ username_not_exist = 1.8
 login_facebook_failed = 1.9
 had_requested_upgrade = 1.10
 you_have_lock_your_account = 1.11
+you_are_not_admin = 1.12
 
 
 # setting

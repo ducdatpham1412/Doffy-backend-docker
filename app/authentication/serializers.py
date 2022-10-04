@@ -35,13 +35,13 @@ class RequestOTPSerializer(serializers.ModelSerializer):
 
 # REGISTER
 class RegisterSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=False, allow_blank=True)
-    phone = serializers.CharField(required=False, allow_blank=True)
-    password = serializers.CharField(required=False, allow_blank=True)
+    # email = serializers.EmailField(required=False, allow_blank=True)
+    # phone = serializers.CharField(required=False, allow_blank=True)
+    # password = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = models.User
-        fields = ['email', 'phone', 'password']
+        fields = ['email', 'phone', 'password', 'account_type']
 
     def create(self, validated_data):
         temp_password = validated_data.pop('password')
@@ -53,7 +53,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = models.User.objects.create(
             **validated_data, password=encrypt_password)
         Information.objects.create(user=user)
-        myprofile.models.objects.create(user=user)
+        myprofile.models.Profile.objects.create(user=user)
         Extend.objects.create(user=user)
 
         return user
