@@ -20,6 +20,7 @@ username_not_exist = 'username_not_exist'
 login_facebook_failed = 'login_facebook_failed'
 had_requested_upgrade = 'had_requested_upgrade'
 you_have_lock_your_account = 'you_have_lock_your_account'
+you_are_not_admin = 'you_are_not_admin'
 
 # setting
 you_have_blocked_this_person = 'you_have_blocked_this_person'
