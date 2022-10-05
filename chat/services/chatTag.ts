@@ -133,7 +133,9 @@ export const handleStartConversation = async (params: TypeCreateChatTag) => {
         user_data: userData,
         total_messages: 1,
         latest_message: conversation.content,
-        status: CONVERSATION_STATUS.active,
+        status: {
+            value: CONVERSATION_STATUS.active,
+        },
     };
     await mongoDb.collection("chat_conversation").insertOne(insertConversation);
 
