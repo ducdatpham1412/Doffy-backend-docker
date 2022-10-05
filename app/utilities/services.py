@@ -64,12 +64,11 @@ def obscure_destination(destination, type='email'):
 
 
 def get_user_id_from_request(request):
-    def get_token_from_header():
-        authorization = str(request.headers['authorization'])
-        token = authorization.split(" ")[1]
-        return token
+    authorization_code = get_object(request.headers, 'authorization')
+    if authorization_code == None:
+        return None
 
-    token = get_token_from_header()
+    token = str(authorization_code).split(" ")[1]
     validate_data = TokenBackend(
         algorithm=SIMPLE_JWT['ALGORITHM']).decode(token, verify=False)
     return validate_data['user_id']
