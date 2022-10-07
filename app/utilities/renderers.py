@@ -29,10 +29,8 @@ class PagingRenderer(renderers.JSONRenderer):
         else:
             response = json.dumps({
                 'success': True,
-                'take': data['take'],
-                'pageIndex': data['pageIndex'],
+                **data,
                 'totalPages': math.ceil(data['totalItems'] / data['take']),
-                'totalItems': data['totalItems'],
                 'data': data['data'],
             })
         return response
