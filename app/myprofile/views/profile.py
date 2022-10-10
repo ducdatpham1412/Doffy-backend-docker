@@ -9,6 +9,7 @@ from utilities import enums, services
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
 from django.db.models import Q
+from findme.mongo import mongoDb
 
 
 class GetProfile(GenericAPIView):
@@ -115,6 +116,17 @@ class EditProfile(GenericAPIView):
             my_profile.description = new_description
         if new_location != None:
             my_profile.location = new_location
+            mongoDb.discovery_post.update_many(
+                {
+                    'post_type': enums.post_group_buying,
+                    'creator': my_id,
+                },
+                {
+                    '$set': {
+                        'location': new_location,
+                    }
+                }
+            )
 
         my_profile.save()
 

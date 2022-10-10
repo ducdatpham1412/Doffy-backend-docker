@@ -61,11 +61,14 @@ class CreateGroupBuying(GenericAPIView):
         if not start_date or not end_date or not deadline_date:
             raise CustomError()
 
+        info = self.get_user_name_avatar(my_id)
+
         insert_post = {
             'post_type': enums.post_group_buying,
             'topic': services.get_object(request_data, 'topic'),
             'content': request_data['content'],
             'images': request_data['images'],
+            'location': info['location'],
             'prices': prices,
             'start_date': start_date,
             'end_date': end_date,
@@ -83,8 +86,6 @@ class CreateGroupBuying(GenericAPIView):
         res_images = []
         for img in insert_post['images']:
             res_images.append(services.create_link_image(img))
-
-        info = self.get_user_name_avatar(my_id)
 
         res = {
             'id': str(insert_post['_id']),
