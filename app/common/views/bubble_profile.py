@@ -447,7 +447,7 @@ class GetListTopGroupBuying(GenericAPIView):
             'post_type': enums.post_group_buying,
             'status': enums.status_active,
             'end_date': {
-                '$lt': services.get_datetime_now()
+                '$gt': services.get_datetime_now()
             }
         }).sort([('created', pymongo.DESCENDING)]).limit(10)
 

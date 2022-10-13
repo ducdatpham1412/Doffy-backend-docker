@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from myprofile.views import profile, follow, post, check_block_lock, list_posts, list_posts_liked, list_posts_saved, list_posts_archived, group_buying, list_group_buying, list_gb_joined, list_post_review
+from myprofile.views import profile, follow, post, check_block_lock, list_posts, list_posts_liked, list_posts_saved, list_posts_archived, group_buying, list_group_buying, list_gb_joined, list_post_review, error_log, purchase
 
 
 urlpatterns = [
@@ -37,7 +37,9 @@ urlpatterns = [
     path('un-archive-post/<str:post_id>', post.UnArchivePost.as_view()),
     path('join-group-buying/<str:post_id>',
          group_buying.JoinGroupBuying.as_view()),
-    path('leave-group-buying/<str:post_id>',
-         group_buying.LeaveGroupBuying.as_view()),
+    # path('leave-group-buying/<str:post_id>',
+    #      group_buying.LeaveGroupBuying.as_view()),
     path('confirm-user-bought', group_buying.ConfirmUserBoughtGroupBuying.as_view()),
+    path('create-purchase-history', purchase.CreatePurchaseHistory.as_view()),
+    path('create-error-log', error_log.CreateErrorLog.as_view())
 ]
