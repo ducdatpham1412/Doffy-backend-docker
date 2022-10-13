@@ -463,6 +463,8 @@ class GetListTopGroupBuying(GenericAPIView):
 
             check_liked_joined = self.check_liked_and_status_joined(
                 user_id=my_id, post_id=str(post['_id']))
+            relationship = enums.relationship_self if post[
+                'creator'] == my_id else enums.relationship_not_know
 
             temp = {
                 'id': str(post['_id']),
@@ -484,7 +486,7 @@ class GetListTopGroupBuying(GenericAPIView):
                 'created': str(post['created']),
                 'isLiked': check_liked_joined['is_liked'],
                 'status': check_liked_joined['status_joined'],
-                'relationship': enums.relationship_not_know,
+                'relationship': relationship,
             }
 
             res.append(temp)
