@@ -1,6 +1,7 @@
 from django.db import models
 from authentication.models import User
 from utilities import enums, services
+from datetime import datetime
 
 
 class Profile(models.Model):
@@ -25,3 +26,20 @@ class Follow(models.Model):
         User, on_delete=models.CASCADE, related_name='follower')
     followed = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='followed')
+
+
+class PurchaseHistory(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='purchase_history', editable=False
+    )
+    money = models.CharField(max_length=10, editable=False)
+    created = models.DateTimeField(default=datetime.now, editable=False)
+    status = models.IntegerField(default=enums.status_active)
+
+
+class ErrorLog(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='error_log', editable=False
+    )
+    error = models.TextField(editable=False)
+    created = models.DateTimeField(default=datetime.now, editable=False)
