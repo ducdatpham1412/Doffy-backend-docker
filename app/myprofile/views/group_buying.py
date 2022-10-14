@@ -172,8 +172,16 @@ class DeleteGroupBuying(GenericAPIView):
 class JoinGroupBuying(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
 
+    def check_paid(self, user_id, post_id):
+        try:
+            models.PurchaseHistory.objects.get(user=user_id, post_id=post_id)
+        except models.PurchaseHistory.DoesNotExist:
+            raise CustomError()
+
     def put(self, request, post_id):
         my_id = services.get_user_id_from_request(request)
+
+        # Check joined
         check_joined = mongoDb.join_group_buying.find_one({
             'post_id': post_id,
             'creator': my_id,
@@ -184,6 +192,9 @@ class JoinGroupBuying(GenericAPIView):
         if check_joined:
             raise CustomError(error_message.have_joined_group_buying,
                               error_key.have_joined_group_buying)
+
+        # Check have paid
+        self.check_paid(user_id=my_id, post_id=post_id)
 
         now = services.get_datetime_now()
         post = mongoDb.discovery_post.find_one_and_update(
