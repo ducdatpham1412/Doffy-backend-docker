@@ -33,6 +33,7 @@ class PurchaseHistory(models.Model):
         User, on_delete=models.CASCADE, related_name='purchase_history', editable=False
     )
     money = models.CharField(max_length=10, editable=False)
+    post_id = models.CharField(max_length=30, editable=False, default='')
     created = models.DateTimeField(default=datetime.now, editable=False)
     status = models.IntegerField(default=enums.status_active)
 
