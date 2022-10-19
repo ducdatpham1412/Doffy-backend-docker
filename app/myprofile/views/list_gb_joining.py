@@ -11,7 +11,7 @@ from bson.objectid import ObjectId
 import pymongo
 
 
-class GetListGBJoined(GenericAPIView):
+class GetListGbJoining(GenericAPIView):
     permission_classes = [IsAuthenticated]
     renderer_classes = [PagingRenderer]
 
@@ -31,10 +31,10 @@ class GetListGBJoined(GenericAPIView):
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
 
-        list_joined = mongoDb.join_group_buying.find({
+        list_joining = mongoDb.join_group_buying.find({
             'creator': my_id,
             'status': {
-                '$in': [enums.status_joined_bought]
+                '$in': [enums.status_joined_not_bought]
             }
         }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1) * take)
         total_joined = mongoDb.join_group_buying.count({
@@ -45,7 +45,7 @@ class GetListGBJoined(GenericAPIView):
         })
 
         list_posts = []
-        for joined in list_joined:
+        for joined in list_joining:
             post = mongoDb.discovery_post.find_one({
                 '_id': ObjectId(joined['post_id']),
                 'post_type': enums.post_group_buying,
