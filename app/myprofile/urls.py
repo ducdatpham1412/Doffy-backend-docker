@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from myprofile.views import profile, follow, post, check_block_lock, list_posts, list_posts_liked, list_posts_saved, list_posts_archived, group_buying, list_group_buying, list_gb_joined, list_post_review, error_log, purchase
+from myprofile.views import profile, follow, post, check_block_lock, list_posts_liked, list_posts_saved, list_posts_archived, group_buying, list_group_buying, list_gb_joined, list_post_review, error_log, purchase, list_gb_joining
 
 
 urlpatterns = [
@@ -16,7 +16,7 @@ urlpatterns = [
          group_buying.EditGroupBuying.as_view()),
     path('delete-group-buying/<str:post_id>',
          group_buying.DeleteGroupBuying.as_view()),
-    path('list-posts/<int:user_id>', list_posts.GetListPost.as_view()),
+    # path('list-posts/<int:user_id>', list_posts.GetListPost.as_view()),
     path('list-group-buying/<int:user_id>',
          list_group_buying.GetListGroupBuying.as_view()),
     path('list-posts-review-user/<int:user_id>',
@@ -25,6 +25,7 @@ urlpatterns = [
     path('list-posts-saved', list_posts_saved.GetListPostsSaved.as_view()),
     path('list-posts-archived', list_posts_archived.GetListPostArchived.as_view()),
     path('list-gb-joined', list_gb_joined.GetListGBJoined.as_view()),
+    path('list-gb-joining', list_gb_joining.GetListGbJoining.as_view()),
     path('list-people-joined/<str:post_id>',
          list_group_buying.GetListPeopleJoined.as_view()),
     path('like-post/<str:post_id>', post.LikePost.as_view()),

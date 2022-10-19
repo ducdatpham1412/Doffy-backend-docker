@@ -2,7 +2,7 @@ from utilities.services import create_link_image
 from rest_framework import serializers
 from myprofile import models
 from findme.mongo import mongoDb
-from utilities.enums import total_reputation, account_shop
+from utilities.enums import account_shop
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -35,13 +35,19 @@ class ProfileSerializer(serializers.ModelSerializer):
         return count
 
     def get_reputations(self, obj):
-        total = mongoDb.total_items.find_one({
-            'type': total_reputation,
+        if obj.user.account_type != account_shop:
+            return 0
+
+        list_post_review = mongoDb.discovery_post.find({
             'user_id': obj.user.id,
         })
-        if not total:
-            return 0
-        return total['value']
+        list_post_review = list(list_post_review)
+        total_stars = 0
+        for post in list_post_review:
+            total_stars += post['stars']
+
+        average_stars = total_stars / len(list_post_review)
+        return average_stars
 
     def get_location(self, obj):
         return obj.location if obj.user.account_type == account_shop else ''
