@@ -1,3 +1,4 @@
+import json
 from findme.mongo import mongoDb
 from myprofile import models
 from rest_framework import status
@@ -6,10 +7,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from utilities import enums, services
 from utilities.exception.exception_handler import CustomError
-import pymongo
-from bson.objectid import ObjectId
 from myprofile.models import Profile
 from utilities.renderers import PagingRenderer
+import pymongo
 
 
 class GetListPostLiked(GenericAPIView):
@@ -52,12 +52,63 @@ class GetListPostLiked(GenericAPIView):
         my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
+        post_types = services.get_object(request.query_params, 'post_types')
+        post_types = json.loads(post_types) if post_types else [
+            enums.post_review, enums.post_group_buying]
 
-        list_reactions = mongoDb.reaction.find({
-            'type': enums.react_post,
-            'creator': my_id,
-            'status': enums.status_active
-        }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1) * take)
+        list_reactions = mongoDb.reaction.aggregate([
+            {
+                '$match': {
+                    'type': enums.react_post,
+                    'creator': my_id,
+                    'status': enums.status_active,
+                },
+            },
+            {
+                '$lookup': {
+                    'from': 'discovery_post',
+                    'let': {
+                        'post_id': {
+                            '$toObjectId': '$reacted_id'
+                        }
+                    },
+                    'pipeline': [
+                        {
+                            '$match': {
+                                '$expr': {
+                                    '$and': [
+                                        {'$eq': ['$_id', '$$post_id']},
+                                        {'$eq': ['$status',
+                                                 enums.status_active]},
+                                        {'$in': ['$post_type', post_types]}
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    'as': 'post'
+                }
+            },
+            {
+                '$match': {
+                    'post': {
+                        '$ne': []
+                    }
+                }
+            },
+            {
+                '$sort': {
+                    'created': pymongo.DESCENDING,
+                },
+            },
+            {
+                '$limit': take,
+            },
+            {
+                '$skip': (page_index - 1) * take
+            },
+        ])
+
         total_posts_liked = mongoDb.reaction.count({
             'type': enums.react_post,
             'creator': my_id,
@@ -66,12 +117,7 @@ class GetListPostLiked(GenericAPIView):
 
         list_posts = []
         for reaction in list_reactions:
-            post = mongoDb.discovery_post.find_one({
-                '_id': ObjectId(reaction['reacted_id']),
-                'status': enums.status_active,
-            })
-            if post:
-                list_posts.append(post)
+            list_posts.append(reaction['post'][0])
 
         id_name_avatar_object = {}
         for user_id in self.filter_list_user_id(list_posts):

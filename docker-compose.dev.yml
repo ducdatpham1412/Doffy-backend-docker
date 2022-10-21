@@ -39,7 +39,7 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       PYTHONDONTWRITEBYTECODE: 0
-      ENVIRONMENT_TYPE: production
+      ENVIRONMENT_TYPE: development
     container_name: app
     volumes:
       - ./app:/usr/src/app
@@ -61,7 +61,7 @@ services:
     command: yarn start
     image: chat:latest
     environment:
-      ENVIRONMENT_TYPE: production
+      ENVIRONMENT_TYPE: development
     container_name: chat
     volumes:
       - ./chat:/usr/src/chat
