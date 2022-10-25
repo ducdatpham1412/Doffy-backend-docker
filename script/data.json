@@ -1,0 +1,32 @@
+[
+    {
+        "id": 0,
+        "value": null,
+        "text": null
+    },
+    {
+        "id": 1,
+        "value": [0, 200000],
+        "text": "< 200.000vnd"
+    },
+    {
+        "id": 2,
+        "value": [200000, 500000],
+        "text": "200.000vnd - 500.000vnd"
+    },
+    {
+        "id": 3,
+        "value": [500000, 1000000],
+        "text": "500.000vnd - 1 trieeu"
+    },
+    {
+        "id": 4,
+        "value": [1000000, 2000000],
+        "text": "1tr - 2tr"
+    },
+    {
+        "id": 5,
+        "value": [200000, "Infinity"],
+        "text": "> 2 triệu đồng"
+    }
+]

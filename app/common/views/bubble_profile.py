@@ -82,15 +82,24 @@ class GetListBubbleProfile(GenericAPIView):
         my_id = services.get_user_id_from_request(request)
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
+
         list_topics = services.get_object(request.query_params, 'topics')
+        list_topics = json.loads(list_topics) if list_topics else []
+
         list_post_types = services.get_object(
             request.query_params, 'postTypes')
+        list_post_types = json.loads(
+            list_post_types) if list_post_types else []
+
+        prices = services.get_object(request.query_params, 'prices')
+        include_me = services.get_object(request.query_params, 'include_me')
+
         search = services.get_object(request.query_params, 'search')
         search = " ".join(str(search).split()) if search else None
 
         services.get_list_user_block(user_id=my_id)
 
-        list_user_not_in = [my_id]
+        list_user_not_in = [my_id] if not include_me else []
         list_user_not_in.extend(services.get_list_user_block(my_id))
 
         condition = {
@@ -99,14 +108,53 @@ class GetListBubbleProfile(GenericAPIView):
             },
             'status': enums.status_active
         }
-        if list_topics != None or services.get_len(list_topics) > 0:
+
+        if len(list_topics) > 0:
             condition['topic'] = {
-                '$all': json.loads(list_topics)
+                '$in': list_topics
             }
-        if list_post_types != None or services.get_len(list_post_types) > 0:
+
+        if len(list_post_types) > 0:
             condition['post_type'] = {
-                '$in': json.loads(list_post_types)
+                '$in': list_post_types
             }
+
+        if prices:
+            prices = json.loads(prices)
+            start_price = prices[0]
+            end_price = prices[1]
+            condition['$expr'] = {
+                '$cond': {
+                    'if': {
+                        '$eq': ['$post_type', enums.post_group_buying]
+                    },
+                    'then': {
+                        # All element in array valid -> $allElementTrue
+                        '$anyElementTrue': {
+                            '$map': {
+                                'input': '$prices',
+                                'as': 'price',
+                                'in': {
+                                    '$and': [
+                                        {
+                                            '$gte': [
+                                                {'$toDouble': '$$price.value'}, start_price
+                                            ]
+                                        },
+                                        {
+                                            '$lte': [
+                                                {'$toDouble': '$$price.value'}, end_price
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    'else': {}
+                }
+            }
+
         if search:
             condition['$text'] = {
                 '$search': "\"{}\"".format(search),
@@ -120,8 +168,22 @@ class GetListBubbleProfile(GenericAPIView):
 
         # If check have post, make query, else return result to avoid time query
         if total_posts > 0:
-            list_posts = mongoDb.discovery_post.find(condition).sort(
-                [('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1)*take)
+            list_posts = mongoDb.discovery_post.aggregate([
+                {
+                    '$match': condition
+                },
+                {
+                    '$sort': {
+                        'created': pymongo.DESCENDING,
+                    },
+                },
+                {
+                    '$limit': take,
+                },
+                {
+                    '$skip': (page_index - 1) * take
+                },
+            ])
             list_posts = list(list_posts)
 
             id_name_avatar_object = {}
