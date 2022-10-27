@@ -31,89 +31,93 @@ class GetListGbJoining(GenericAPIView):
         take = int(request.query_params['take'])
         page_index = int(request.query_params['pageIndex'])
 
-        list_joining = mongoDb.join_group_buying.find({
-            'creator': my_id,
-            'status': {
-                '$in': [enums.status_joined_not_bought]
+        list_joining = mongoDb.join_personal.aggregate([
+            {
+                '$match': {
+                    'creator': my_id,
+                    'status': enums.status_joined_not_bought,
+                }
+            },
+            {
+                '$sort': {
+                    'created': pymongo.DESCENDING,
+                }
+            },
+            {
+                '$limit': take,
+            },
+            {
+                '$skip': (page_index - 1) * take,
             }
-        }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1) * take)
-        total_joined = mongoDb.join_group_buying.count({
+        ])
+
+        total_joined = mongoDb.join_personal.count({
             'creator': my_id,
-            'status': {
-                '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
-            }
+            'status': enums.status_joined_not_bought
         })
 
-        list_posts = []
-        for joined in list_joining:
+        list_gb_joining = []
+        for joining in list_joining:
             post = mongoDb.discovery_post.find_one({
-                '_id': ObjectId(joined['post_id']),
+                '_id': ObjectId(joining['post_id']),
                 'post_type': enums.post_group_buying,
-                'status': enums.status_active
-            })
-            if post:
-                list_posts.append(post)
-
-        list_gb_joined = []
-        for post in list_posts:
-            link_images = []
-            for image in post['images']:
-                link_images.append(services.create_link_image(image))
-
-            info_creator = self.get_creator_name_avatar(
-                user_id=post['creator'])
-
-            check_liked = mongoDb.reaction.find_one({
-                'type': enums.react_post,
-                'reacted_id': str(post['_id']),
-                'creator': my_id,
-                'status': enums.status_active
-            })
-            is_liked = bool(check_liked)
-
-            relationship = enums.relationship_self if post[
-                'creator'] == my_id else enums.relationship_not_know
-
-            check_joined = mongoDb.join_group_buying.find_one({
-                'post_id': str(post['_id']),
-                'creator': my_id,
                 'status': {
-                    '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
+                    '$in': [enums.status_active, enums.status_temporarily_closed,  enums.status_requesting_delete]
                 }
             })
-            status_joined = enums.status_not_joined
-            if check_joined:
-                status_joined = check_joined['status']
+            if post:
+                link_images = []
+                for image in post['images']:
+                    link_images.append(services.create_link_image(image))
 
-            temp = {
-                'id': str(post['_id']),
-                'postType': enums.post_group_buying,
-                'topic': post['topic'],
-                'content': post['content'],
-                'images': link_images,
-                'prices': post['prices'],
-                'totalLikes': post['total_reacts'],
-                'totalComments': post['total_comments'],
-                'totalJoins': post['total_joins'],
-                'deadlineDate': str(post['deadline_date']),
-                'startDate': str(post['start_date']),
-                'endDate': str(post['end_date']),
-                'creator': post['creator'],
-                'creatorName': info_creator['name'],
-                'creatorAvatar': info_creator['avatar'],
-                'creatorLocation': info_creator['location'],
-                'created': str(post['created']),
-                'isLiked': is_liked,
-                'status': status_joined,
-                'relationship': relationship,
-            }
-            list_gb_joined.append(temp)
+                info_creator = self.get_creator_name_avatar(
+                    user_id=post['creator'])
+
+                check_liked = mongoDb.reaction.find_one({
+                    'type': enums.react_post,
+                    'reacted_id': str(post['_id']),
+                    'creator': my_id,
+                    'status': enums.status_active
+                })
+                is_liked = bool(check_liked)
+
+                relationship = enums.relationship_self if post[
+                    'creator'] == my_id else enums.relationship_not_know
+
+                temp = {
+                    'id': str(post['_id']),
+                    'joinId': str(joining['_id']),
+                    'postType': enums.post_group_buying,
+                    'topic': post['topic'],
+                    'content': post['content'],
+                    'images': link_images,
+                    'retailPrice': post['retail_price'],
+                    'prices': post['prices'],
+                    'deposit': joining['money'],
+                    'amount': joining['amount'],
+                    'note': joining['note'],
+                    'totalLikes': post['total_reacts'],
+                    'totalComments': post['total_comments'],
+                    'totalGroups': post['total_groups'],
+                    'totalPersonals': post['total_personals'],
+                    'creator': post['creator'],
+                    'creatorName': info_creator['name'],
+                    'creatorAvatar': info_creator['avatar'],
+                    'creatorLocation': info_creator['location'],
+                    'created': str(post['created']),
+                    'isLiked': is_liked,
+                    'status': enums.status_joined_not_bought,
+                    'postStatus': post['status'],
+                    'relationship': relationship,
+                    'requestUpdatePrice': None,
+                }
+                list_gb_joining.append(temp)
 
         res = {
             'take': take,
             'pageIndex': page_index,
             'totalItems': total_joined,
-            'data': list_gb_joined,
+            'data': list_gb_joining,
         }
 
         return Response(res, status=status.HTTP_200_OK)

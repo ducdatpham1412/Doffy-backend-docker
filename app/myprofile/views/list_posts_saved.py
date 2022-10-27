@@ -141,7 +141,7 @@ class GetListPostsSaved(GenericAPIView):
                 res_posts.append(temp)
 
             elif post['post_type'] == enums.post_group_buying:
-                check_joined = mongoDb.join_group_buying.find_one({
+                check_joined = mongoDb.join_personal.find_one({
                     'post_id': str(post['_id']),
                     'creator': my_id,
                     'status': {
@@ -160,7 +160,8 @@ class GetListPostsSaved(GenericAPIView):
                     'prices': post['prices'],
                     'totalLikes': post['total_reacts'],
                     'totalComments': post['total_comments'],
-                    'totalJoins': post['total_joins'],
+                    'totalGroups': post['total_groups'],
+                    'totalPersonals': post['total_personals'],
                     'deadlineDate': str(post['deadline_date']),
                     'startDate': str(post['start_date']),
                     'endDate': str(post['end_date']),

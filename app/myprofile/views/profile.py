@@ -10,6 +10,7 @@ from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
 from django.db.models import Q
 from findme.mongo import mongoDb
+from authentication.models import User
 
 
 class GetProfile(GenericAPIView):
@@ -107,6 +108,8 @@ class EditProfile(GenericAPIView):
         new_name = services.get_object(request_data, 'name')
         new_description = services.get_object(request_data, 'description')
         new_location = services.get_object(request_data, 'location')
+        bank_code = services.get_object(request_data, 'bank_code')
+        bank_account = services.get_object(request_data, 'bank_account')
 
         if new_avatar != None:
             my_profile.avatar = new_avatar
@@ -129,5 +132,14 @@ class EditProfile(GenericAPIView):
             )
 
         my_profile.save()
+
+        # Update bank account
+        if (bank_code and not bank_account) or (not bank_code and bank_account):
+            raise CustomError()
+        if bank_code and bank_account:
+            user = User.objects.get(id=my_id)
+            user.bank_code = bank_code
+            user.bank_account = bank_account
+            user.save()
 
         return Response(None, status=status.HTTP_200_OK)

@@ -23,6 +23,7 @@ from setting.serializers import BlockSerializer
 from authentication.models import User_Request
 from authentication.serializers import RequestUserSerializer
 import datetime as boss_datetime
+from operator import itemgetter
 
 
 def send_to_mail(mail, verify_code):
@@ -310,3 +311,27 @@ def get_list_requests_delete_or_block_account(user_id: int):
     if len(serializer.data) == 0:
         return None
     return serializer.data
+
+
+def str_to_dict(data: str):
+    data = list(data)
+    for index, value in enumerate(data):
+        if value == "'":
+            data[index] = '"'
+
+    data = "".join(data)
+    return json.loads(data)
+
+
+def sort_prices(prices: list):
+    try:
+        sort_prices = sorted(prices, key=itemgetter('number_people'))
+        prices = []
+        for item_price in sort_prices:
+            prices.append({
+                'number_people': int(item_price['number_people']),
+                'value': str(item_price['value'])
+            })
+        return prices
+    except KeyError:
+        raise CustomError()

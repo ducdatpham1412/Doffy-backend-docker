@@ -176,6 +176,7 @@ class DeletePost(GenericAPIView):
         post = mongoDb.discovery_post.find_one_and_update(
             {
                 '_id': ObjectId(post_id),
+                'post_type': enums.post_review,
                 'creator': my_id,
                 'status': enums.status_active
             },
@@ -473,7 +474,7 @@ class ArchivePost(GenericAPIView):
             },
             {
                 '$set': {
-                    'status': enums.status_archive,
+                    'status': enums.status_temporarily_closed,
                 }
             }
         )
@@ -495,7 +496,7 @@ class UnArchivePost(GenericAPIView):
                 '_id': ObjectId(post_id),
                 'post_type': enums.post_review,
                 'creator': my_id,
-                'status': enums.status_archive,
+                'status': enums.status_temporarily_closed,
             },
             {
                 '$set': {

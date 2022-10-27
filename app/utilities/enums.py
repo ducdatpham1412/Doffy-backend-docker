@@ -122,7 +122,8 @@ os_iOS = 1
 status_not_active = 0
 status_active = 1
 status_draft = 2
-status_archive = 3
+status_temporarily_closed = 3
+status_requesting_delete = 4
 
 status_conversation_stop = 0
 status_conversation_active = 1
@@ -133,13 +134,17 @@ status_notification_read = 2
 
 status_joined_deleted = 0
 status_not_joined = 1
+# joined but merchant not confirm went or not to confirm time
 status_joined_not_bought = 2
+# joined and merchant confirmed went or over the confirm time
 status_joined_bought = 3
 
 # request_user
 request_user_lock_account = 0
 request_user_delete_account = 1
 request_user_upgrade_to_shop = 2
+request_update_price = 3
+request_delete_gb = 4
 
 # topic discovery post
 topic_travel = 0

@@ -10,6 +10,7 @@ from utilities.exception.exception_handler import CustomError
 from myprofile.models import Profile
 from utilities.renderers import PagingRenderer
 import pymongo
+from authentication.models import User_Request
 
 
 class GetListPostLiked(GenericAPIView):
@@ -188,29 +189,46 @@ class GetListPostLiked(GenericAPIView):
                 res_posts_liked.append(temp)
 
             elif post['post_type'] == enums.post_group_buying:
-                check_joined = mongoDb.join_group_buying.find_one({
+                status_joined = enums.status_not_joined
+                deposit = None
+                amount = None
+                note = None
+                request_update_price = None
+                if post['creator'] == my_id:
+                    try:
+                        user_request = User_Request.objects.get(type=enums.request_update_price, post_id=str(
+                            post['_id']), creator=my_id, status=enums.status_active)
+                        request_update_price = services.str_to_dict(
+                            user_request.data)
+                    except User_Request.DoesNotExist:
+                        pass
+
+                check_joining = mongoDb.join_personal.find_one({
                     'post_id': str(post['_id']),
                     'creator': my_id,
-                    'status': {
-                        '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
-                    },
+                    'status': enums.status_joined_not_bought,
                 })
-                status_joined = enums.status_not_joined
-                if check_joined:
-                    status_joined = check_joined['status']
+                if check_joining:
+                    status_joined = check_joining['status']
+                    deposit = check_joining['money']
+                    amount = check_joining['amount']
+                    note = check_joining['note']
+
                 temp = {
                     'id': str(post['_id']),
                     'postType': enums.post_group_buying,
                     'topic': post['topic'],
                     'content': post['content'],
                     'images': link_images,
+                    'retailPrice': post['retail_price'],
                     'prices': post['prices'],
+                    'deposit': deposit,
+                    'amount': amount,
+                    'note': note,
                     'totalLikes': post['total_reacts'],
                     'totalComments': post['total_comments'],
-                    'totalJoins': post['total_joins'],
-                    'deadlineDate': str(post['deadline_date']),
-                    'startDate': str(post['start_date']),
-                    'endDate': str(post['end_date']),
+                    'totalGroups': post['total_groups'],
+                    'totalPersonals': post['total_personals'],
                     'creator': post['creator'],
                     'creatorName': info_creator['name'],
                     'creatorAvatar': info_creator['avatar'],
@@ -218,7 +236,9 @@ class GetListPostLiked(GenericAPIView):
                     'created': str(post['created']),
                     'isLiked': True,
                     'status': status_joined,
-                    'relationship': enums.relationship_not_know,
+                    'postStatus': post['status'],
+                    'relationship': relationship,
+                    'requestUpdatePrice': request_update_price,
                 }
                 res_posts_liked.append(temp)
 
