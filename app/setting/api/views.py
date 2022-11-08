@@ -12,7 +12,7 @@ from setting.api.serializers import (ExtendSerializer, ListBlockSerializer)
 from utilities import services, enums
 from utilities.exception import error_key, error_message
 from utilities.exception.exception_handler import CustomError
-from utilities.validate import validate_password
+from utilities.validate import validate_password, is_email_valid, is_phone_valid
 from bson import ObjectId
 from django.contrib.auth.hashers import make_password, check_password
 import requests
@@ -163,11 +163,15 @@ class ChangeInformation(GenericAPIView):
         birthday = services.get_object(request_data, 'birthday')
 
         if email != None:
+            if not is_email_valid(email):
+                raise CustomError()
             self.check_email_existed(email=email)
             user = User.objects.get(id=id)
             user.email = email
             user.save()
         if phone != None:
+            if not is_phone_valid(phone):
+                raise CustomError()
             self.check_phone_existed(phone=phone)
             user = User.objects.get(id=id)
             user.phone = phone

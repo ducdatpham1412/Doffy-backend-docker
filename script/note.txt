@@ -1,0 +1,7 @@
+** API REFERENCE TO GROUP BOOKING **
+1. top-group-buying
+2. get-list-bubble-profile
+3. list-group-buying
+4. list-posts-liked
+5. list-gb-joined
+6. list-gb-joining

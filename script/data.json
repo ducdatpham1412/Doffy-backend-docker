@@ -1,32 +1,33 @@
-[
-    {
-        "id": 0,
-        "value": null,
-        "text": null
-    },
-    {
-        "id": 1,
-        "value": [0, 200000],
-        "text": "< 200.000vnd"
-    },
-    {
-        "id": 2,
-        "value": [200000, 500000],
-        "text": "200.000vnd - 500.000vnd"
-    },
-    {
-        "id": 3,
-        "value": [500000, 1000000],
-        "text": "500.000vnd - 1 trieeu"
-    },
-    {
-        "id": 4,
-        "value": [1000000, 2000000],
-        "text": "1tr - 2tr"
-    },
-    {
-        "id": 5,
-        "value": [200000, "Infinity"],
-        "text": "> 2 triệu đồng"
-    }
-]
+{
+    "post_type": 1,
+    "topic": [0, 5, 2],
+    "content": "Lên Ba Vì ngắm hoa dã quỳ mà quên không ghé qua La Vie En Rose Ba Vì\n- Homestay Ba Vì khu mình thì đáng tiếc nha.\nTiện đường lên Vườn quốc gia, cách Làng Văn Hoá 2km thui, còn cách Bản Xôi chèo thuyền Kayak 3km, khách ở La vie còn được tặng pass miễn phí vé vào cửa chèo thuyền ở Thung Lũng Bản Xôi.",
+    "images": [
+        "https://scontent.fhan15-1.fna.fbcdn.net/v/t1.6435-9/130868503_1915860068551808_5883364581436564679_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=b9115d&_nc_ohc=LlVGnOnKcJEAX8vwAYp&_nc_ht=scontent.fhan15-1.fna&oh=00_AfA_Ue4kL-LtENQ1YB9DRi7E1G0HNwY2Tsm4xoY0262sAw&oe=6382480B"
+    ],
+    "prices": [
+        {
+            "number_people": 1,
+            "value": "700000"
+        },
+        {
+            "number_people": 10,
+            "value": "550000"
+        },
+        {
+            "number_people": 20,
+            "value": "400000"
+        }
+    ],
+    "start_date": "2022-11-02T07:46:03.148+00:00",
+    "end_date": "2022-11-30T07:46:03.148+00:00",
+    "deadline_date": "2022-11-01T07:46:03.148+00:00",
+    "total_reacts": 0,
+    "total_comments": 0,
+    "total_joins": 0,
+    "creator": 5,
+    "created": "2022-09-10T07:46:03.148+00:00",
+    "modified": "2022-09-10T07:46:03.148+00:00",
+    "status": 1,
+    "location": "Thôn Quảng Phúc, Yên Bài, Ba Vì, Hà Nội"
+}
