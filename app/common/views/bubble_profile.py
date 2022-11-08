@@ -11,6 +11,7 @@ import pymongo
 from bson.objectid import ObjectId
 import json
 from utilities.renderers import PagingRenderer
+from authentication.models import User_Request
 
 
 class GetListBubbleProfile(GenericAPIView):
@@ -61,22 +62,6 @@ class GetListBubbleProfile(GenericAPIView):
             'status': enums.status_active,
         })
         return bool(check_saved)
-
-    def check_joined_group_buying(self, user_id: int or None, post_id: str):
-        if user_id == None:
-            return enums.status_not_joined
-
-        check_joined = mongoDb.join_group_buying.find_one({
-            'post_id': post_id,
-            'creator': user_id,
-            'status': {
-                '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
-            },
-        })
-        status_joined = enums.status_not_joined
-        if check_joined:
-            status_joined = check_joined['status']
-        return status_joined
 
     def get(self, request):
         my_id = services.get_user_id_from_request(request)
@@ -164,6 +149,10 @@ class GetListBubbleProfile(GenericAPIView):
         total_posts = mongoDb.discovery_post.count(condition)
         if total_posts == 0:
             condition.pop('creator')
+            condition['$text'] = {
+                '$search': "{}".format(search),
+                '$caseSensitive': False,
+            }
         total_posts = mongoDb.discovery_post.count(condition)
 
         # If check have post, make query, else return result to avoid time query
@@ -251,11 +240,33 @@ class GetListBubbleProfile(GenericAPIView):
 
                 # post group buying
                 elif post['post_type'] == enums.post_group_buying:
-                    # if post['end_date'] < services.get_datetime_now():
-                    #     continue
+                    status_joined = enums.status_not_joined
+                    deposit = None
+                    amount = None
+                    note = None
+                    relationship = enums.relationship_not_know
+                    request_update_price = None
+                    if post['creator'] == my_id:
+                        relationship = enums.relationship_self
+                        try:
+                            user_request = User_Request.objects.get(type=enums.request_update_price, post_id=str(
+                                post['_id']), creator=my_id, status=enums.status_active)
+                            request_update_price = services.str_to_dict(
+                                user_request.data)
+                        except User_Request.DoesNotExist:
+                            pass
 
-                    status_joined = self.check_joined_group_buying(
-                        user_id=my_id, post_id=str(post['_id']))
+                    if user_id != None:
+                        check_joined = mongoDb.join_personal.find_one({
+                            'post_id': str(post['_id']),
+                            'creator': user_id,
+                            'status': enums.status_joined_not_bought
+                        })
+                        if check_joined:
+                            status_joined = enums.status_joined_not_bought
+                            deposit = check_joined['money']
+                            amount = check_joined['amount']
+                            note = check_joined['note']
 
                     temp = {
                         'id': str(post['_id']),
@@ -263,13 +274,15 @@ class GetListBubbleProfile(GenericAPIView):
                         'topic': post['topic'],
                         'content': post['content'],
                         'images': link_images,
+                        'retailPrice': post['retail_price'],
                         'prices': post['prices'],
+                        'deposit': deposit,
+                        'amount': amount,
+                        'note': note,
                         'totalLikes': post['total_reacts'],
                         'totalComments': post['total_comments'],
-                        'totalJoins': post['total_joins'],
-                        'deadlineDate': str(post['deadline_date']),
-                        'startDate': str(post['start_date']),
-                        'endDate': str(post['end_date']),
+                        'totalGroups': post['total_groups'],
+                        'totalPersonals': post['total_personals'],
                         'creator': post['creator'],
                         'creatorName': info_creator['name'],
                         'creatorAvatar': info_creator['avatar'],
@@ -277,7 +290,9 @@ class GetListBubbleProfile(GenericAPIView):
                         'created': str(post['created']),
                         'isLiked': is_liked,
                         'status': status_joined,
-                        'relationship': enums.relationship_not_know,
+                        'postStatus': post['status'],
+                        'relationship': relationship,
+                        'requestUpdatePrice': request_update_price,
                     }
                     res_posts.append(temp)
 
@@ -348,7 +363,9 @@ class GetDetailBubbleProfile(GenericAPIView):
 
         post = mongoDb.discovery_post.find_one({
             '_id': ObjectId(post_id),
-            'status': enums.status_active
+            'status': {
+                '$in': [enums.status_active, enums.status_temporarily_closed, enums.status_requesting_delete]
+            }
         })
         if not post:
             raise CustomError(error_message.post_not_existed,
@@ -417,16 +434,30 @@ class GetDetailBubbleProfile(GenericAPIView):
             }
 
         elif post['post_type'] == enums.post_group_buying:
-            check_joined = mongoDb.join_group_buying.find_one({
+            status_joined = enums.status_not_joined
+            deposit = None
+            amount = None
+            note = None
+            check_joining = mongoDb.join_personal.find_one({
                 'post_id': str(post['_id']),
                 'creator': my_id,
-                'status': {
-                    '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
-                },
+                'status': enums.status_joined_not_bought,
             })
-            status_joined = enums.status_not_joined
-            if check_joined:
-                status_joined = check_joined['status']
+            if check_joining:
+                status_joined = check_joining['status']
+                deposit = check_joining['money']
+                amount = check_joining['amount']
+                note = check_joining['note']
+
+            request_update_price = None
+            if post['creator'] == my_id:
+                try:
+                    user_request = User_Request.objects.get(type=enums.request_update_price, post_id=str(
+                        post['_id']), creator=my_id, status=enums.status_active)
+                    request_update_price = services.str_to_dict(
+                        user_request.data)
+                except User_Request.DoesNotExist:
+                    pass
 
             res = {
                 'id': str(post['_id']),
@@ -434,13 +465,15 @@ class GetDetailBubbleProfile(GenericAPIView):
                 'topic': post['topic'],
                 'content': post['content'],
                 'images': link_images,
+                'retailPrice': post['retail_price'],
                 'prices': post['prices'],
+                'deposit': deposit,
+                'amount': amount,
+                'note': note,
                 'totalLikes': post['total_reacts'],
                 'totalComments': post['total_comments'],
-                'totalJoins': post['total_joins'],
-                'deadlineDate': str(post['deadline_date']),
-                'startDate': str(post['start_date']),
-                'endDate': str(post['end_date']),
+                'totalGroups': post['total_groups'],
+                'totalPersonals': post['total_personals'],
                 'creator': post['creator'],
                 'creatorName': profile.name,
                 'creatorAvatar': services.create_link_image(profile.avatar) if profile.avatar else '',
@@ -448,7 +481,9 @@ class GetDetailBubbleProfile(GenericAPIView):
                 'created': str(post['created']),
                 'isLiked': is_liked,
                 'status': status_joined,
+                'postStatus': post['status'],
                 'relationship': relationship,
+                'requestUpdatePrice': request_update_price,
             }
 
         return Response(res, status=status.HTTP_200_OK)
@@ -476,7 +511,12 @@ class GetListTopGroupBuying(GenericAPIView):
         if (user_id == None):
             return {
                 'is_liked': True,
-                'status_joined': enums.status_not_joined
+                'join': {
+                    'deposit': None,
+                    'amount': None,
+                    'note': None,
+                    'status': enums.status_not_joined,
+                }
             }
 
         check_liked = mongoDb.reaction.find_one({
@@ -487,20 +527,29 @@ class GetListTopGroupBuying(GenericAPIView):
         })
         is_liked = bool(check_liked)
 
-        check_joined = mongoDb.join_group_buying.find_one({
+        status_joined = enums.status_not_joined
+        deposit = None
+        amount = None
+        note = None
+        check_joining = mongoDb.join_personal.find_one({
             'post_id': post_id,
             'creator': user_id,
-            'status': {
-                '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
-            },
+            'status': enums.status_joined_not_bought
         })
-        status_joined = enums.status_not_joined
-        if check_joined:
-            status_joined = check_joined['status']
+        if check_joining:
+            status_joined = check_joining['status']
+            deposit = check_joining['money']
+            amount = check_joining['amount']
+            note = check_joining['note']
 
         return {
             'is_liked': is_liked,
-            'status_joined': status_joined,
+            'join': {
+                'deposit': deposit,
+                'amount': amount,
+                'note': note,
+                'status': status_joined,
+            }
         }
 
     def get(self, request):
@@ -512,6 +561,26 @@ class GetListTopGroupBuying(GenericAPIView):
                 '$gt': services.get_datetime_now()
             }
         }).sort([('created', pymongo.DESCENDING)]).limit(10)
+
+        # This is for update all joining and joined, choose this api because it's called one time in app cycle
+        now = services.get_datetime_now()
+        list_joined_not_bought = mongoDb.join_personal.find({
+            'creator': my_id,
+            'status': enums.status_joined_not_bought
+        })
+        for joined in list_joined_not_bought:
+            if joined['time_will_buy'] < now:
+                mongoDb.join_personal.update_one(
+                    {
+                        "_id": joined['_id'],
+                    },
+                    {
+                        '$set': {
+                            'status': enums.status_joined_bought
+                        }
+                    }
+                )
+        # ------------------------
 
         res = []
 
@@ -525,8 +594,25 @@ class GetListTopGroupBuying(GenericAPIView):
 
             check_liked_joined = self.check_liked_and_status_joined(
                 user_id=my_id, post_id=str(post['_id']))
+
+            is_liked = check_liked_joined['is_liked']
+            join = check_liked_joined['join']
+
             relationship = enums.relationship_self if post[
                 'creator'] == my_id else enums.relationship_not_know
+
+            request_update_price = None
+            if post['creator'] == my_id:
+                try:
+                    user_request = User_Request.objects.get(
+                        creator=my_id, post_id=str(post['_id']), type=enums.request_update_price, status=enums.status_active)
+                    data = services.str_to_dict(user_request.data)
+                    request_update_price = {
+                        'retailPrice': data['retail_price'],
+                        'prices': data['prices']
+                    }
+                except User_Request.DoesNotExist:
+                    pass
 
             temp = {
                 'id': str(post['_id']),
@@ -534,21 +620,25 @@ class GetListTopGroupBuying(GenericAPIView):
                 'topic': post['topic'],
                 'content': post['content'],
                 'images': link_images,
+                'retailPrice': post['retail_price'],
                 'prices': post['prices'],
+                'deposit': join['deposit'],
+                'amount': join['amount'],
+                'note': join['note'],
                 'totalLikes': post['total_reacts'],
                 'totalComments': post['total_comments'],
-                'totalJoins': post['total_joins'],
-                'deadlineDate': str(post['deadline_date']),
-                'startDate': str(post['start_date']),
-                'endDate': str(post['end_date']),
+                'totalGroups': post['total_groups'],
+                'totalPersonals': post['total_personals'],
                 'creator': post['creator'],
                 'creatorName': info_creator['name'],
                 'creatorAvatar': info_creator['avatar'],
                 'creatorLocation': info_creator['location'],
                 'created': str(post['created']),
-                'isLiked': check_liked_joined['is_liked'],
-                'status': check_liked_joined['status_joined'],
+                'isLiked': is_liked,
+                'status': join['status'],
+                'postStatus': post['status'],
                 'relationship': relationship,
+                'requestUpdatePrice': request_update_price,
             }
 
             res.append(temp)

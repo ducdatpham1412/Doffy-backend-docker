@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from common.views import bubble_profile, passport, resource, upload, report, comment, notification, people_like, top_reputations
+from common.views import bubble_profile, passport, resource, upload, report, comment, notification, people_like, top_reputations, edit_history
 
 
 urlpatterns = [
@@ -11,6 +11,8 @@ urlpatterns = [
          bubble_profile.GetListBubbleProfile.as_view()),
     path('detail-bubble-profile/<str:post_id>',
          bubble_profile.GetDetailBubbleProfile.as_view()),
+    path('list-edit-history/<str:post_id>',
+         edit_history.GetListEditHistory.as_view()),
     path('list-people-react/<str:post_id>',
          people_like.GetListPeopleLike.as_view()),
     path('list-comments/<str:post_id>', comment.GetListComment.as_view()),

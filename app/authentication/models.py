@@ -51,5 +51,6 @@ class User_Request(models.Model):
     type = models.IntegerField(editable=False)
     created = models.DateTimeField(default=datetime.now, )
     expired = models.DateTimeField()
+    post_id = models.TextField(default='')
     data = models.TextField(default='')
     status = models.IntegerField(default=enums.status_active)

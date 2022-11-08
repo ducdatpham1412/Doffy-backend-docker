@@ -27,6 +27,16 @@ class ExtendSerializer(serializers.ModelSerializer):
         exclude = ['user']
         read_only_fields = ['user']
 
+    def to_representation(self, instance):
+        res = {
+            'theme': instance.theme,
+            'language': instance.language,
+            'display_avatar': instance.display_avatar,
+            'bank_account': instance.user.bank_account,
+            'bank_code': instance.user.bank_code,
+        }
+        return res
+
 
 class ListBlockSerializer(serializers.ModelSerializer):
     class Meta:

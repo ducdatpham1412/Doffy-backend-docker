@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from findme.mongo import mongoDb
-from utilities.enums import status_active
+from utilities.enums import status_active, status_temporarily_closed, status_requesting_delete
 from pymongo import DESCENDING
 from utilities.services import get_index, create_link_image
 
@@ -19,7 +19,9 @@ class GetResource(GenericAPIView):
                     '$search': "\"{}\"".format(location),
                     '$caseSensitive': False,
                 },
-                'status': status_active,
+                'status': {
+                    '$in': [status_active, status_temporarily_closed, status_requesting_delete]
+                },
             }
 
             total_posts = mongoDb.discovery_post.count(condition)

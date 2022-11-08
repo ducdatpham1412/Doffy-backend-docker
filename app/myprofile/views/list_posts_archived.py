@@ -45,13 +45,13 @@ class GetListPostArchived(GenericAPIView):
         list_posts_archived = mongoDb.discovery_post.find({
             'creator': my_id,
             'post_type': enums.post_review,
-            'status': enums.status_archive
+            'status': enums.status_temporarily_closed
         }).sort([('created', pymongo.DESCENDING)]).limit(take).skip((page_index-1) * take)
         list_posts_archived = list(list_posts_archived)
 
         total_post_archived = mongoDb.discovery_post.count({
             'creator': my_id,
-            'status': enums.status_archive
+            'status': enums.status_temporarily_closed
         })
 
         info_creator = self.get_creator_name_avatar(user_id=my_id)
