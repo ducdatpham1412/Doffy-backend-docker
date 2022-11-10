@@ -148,8 +148,8 @@ class ChangeInformation(GenericAPIView):
     def check_phone_existed(self, phone):
         try:
             User.objects.get(phone=phone, is_active=enums.status_active)
-            raise CustomError(error_message.username_existed,
-                              error_key.username_existed)
+            raise CustomError(error_message.phone_existed,
+                              error_key.phone_existed)
         except User.DoesNotExist:
             pass
 
