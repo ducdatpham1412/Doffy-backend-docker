@@ -31,7 +31,7 @@ class PagingRenderer(renderers.JSONRenderer):
                 'success': True,
                 **data,
                 'totalPages': math.ceil(data['totalItems'] / data['take']),
-                'data': data['data'],
+                # 'data': data['data'],
             })
         return response
 

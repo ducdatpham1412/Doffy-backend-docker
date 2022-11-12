@@ -1,5 +1,6 @@
 from utilities import enums
 import re
+from urllib.parse import urlparse
 
 
 def validate_password(password):
@@ -18,3 +19,11 @@ def is_phone_valid(phone):
     if re.match(r"^[\-]?[0-9][0-9]*\.?[0-9]+$", phone) != None:
         return True
     return False
+
+
+def is_link(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc, result.path])
+    except:
+        return False

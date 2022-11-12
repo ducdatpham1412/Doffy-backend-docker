@@ -24,6 +24,7 @@ from authentication.models import User_Request
 from authentication.serializers import RequestUserSerializer
 import datetime as boss_datetime
 from operator import itemgetter
+from utilities import validate
 
 
 def send_to_mail(mail, verify_code):
@@ -157,6 +158,8 @@ Resize image
 
 
 def create_link_image(image_name):
+    if validate.is_link(image_name):
+        return image_name
     return '{}/{}'.format(settings.AWS_IMAGE_URL, image_name)
 
 
