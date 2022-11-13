@@ -554,13 +554,25 @@ class GetListTopGroupBuying(GenericAPIView):
 
     def get(self, request):
         my_id = services.get_user_id_from_request(request)
-        list_posts = mongoDb.discovery_post.find({
-            'post_type': enums.post_group_buying,
-            'status': enums.status_active,
-            'end_date': {
-                '$gt': services.get_datetime_now()
+
+        list_posts = mongoDb.discovery_post.aggregate([
+            {
+                '$match': {
+                    'post_type': enums.post_group_buying,
+                    'status': enums.status_active,
+                }
+            },
+            {
+                '$sort': {
+                    'created': pymongo.DESCENDING,
+                    'total_reacts': pymongo.DESCENDING,
+                    'total_groups': pymongo.DESCENDING,
+                }
+            },
+            {
+                '$limit': 10
             }
-        }).sort([('created', pymongo.DESCENDING)]).limit(10)
+        ])
 
         # This is for update all joining and joined, choose this api because it's called one time in app cycle
         now = services.get_datetime_now()
