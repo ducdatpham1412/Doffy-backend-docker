@@ -2,7 +2,7 @@ from utilities.services import create_link_image
 from rest_framework import serializers
 from myprofile import models
 from findme.mongo import mongoDb
-from utilities.enums import account_shop
+from utilities.enums import account_shop, post_review
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -40,8 +40,13 @@ class ProfileSerializer(serializers.ModelSerializer):
 
         list_post_review = mongoDb.discovery_post.find({
             'user_id': obj.user.id,
+            'post_type': post_review,
         })
         list_post_review = list(list_post_review)
+
+        if not len(list_post_review):
+            return 0
+
         total_stars = 0
         for post in list_post_review:
             total_stars += post['stars']
