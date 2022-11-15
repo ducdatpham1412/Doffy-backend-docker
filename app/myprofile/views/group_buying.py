@@ -351,7 +351,9 @@ class JoinGroupBuying(GenericAPIView):
 
         now = services.get_datetime_now()
 
-        # Check joined
+        """
+        Check joined
+        """
         check_joined = mongoDb.join_personal.find_one({
             'post_id': post_id,
             'creator': my_id,
@@ -372,6 +374,9 @@ class JoinGroupBuying(GenericAPIView):
                         }
                     }
                 )
+        """
+        -------------
+        """
 
         res = {
             'groupId': None,
@@ -401,6 +406,17 @@ class JoinGroupBuying(GenericAPIView):
             }
             mongoDb.join_personal.insert_one(join_personal)
             res['joinId'] = str(join_personal['_id'])
+
+            mongoDb.discovery_post.update_one(
+                {
+                    '_id': ObjectId(post_id)
+                },
+                {
+                    '$inc': {
+                        'total_personals': amount,
+                    }
+                }
+            )
         else:
             prices = post['prices']
             max_number_people = prices[len(prices) - 1]['number_people']
@@ -413,12 +429,14 @@ class JoinGroupBuying(GenericAPIView):
             })
 
             if not check_join_group:
-                join_group = mongoDb.join_group.insert_one({
+                join_group = {
                     'post_id': post_id,
                     'total_members': amount,
                     'created': now,
-                })
-                join_personal = mongoDb.join_personal.insert_one({
+                }
+                mongoDb.join_group.insert_one(join_group)
+
+                join_personal = {
                     'post_id': post_id,
                     'join_group_id': str(join_group['_id']),
                     'money': money,
@@ -428,11 +446,24 @@ class JoinGroupBuying(GenericAPIView):
                     'creator': my_id,
                     'created': now,
                     'status': enums.status_joined_not_bought,
-                })
+                }
+                mongoDb.join_personal.insert_one(join_personal)
+
                 res['groupId'] = str(join_group['_id'])
                 res['joinId'] = str(join_personal['_id'])
+
+                mongoDb.discovery_post.update_one(
+                    {
+                        '_id': ObjectId(post_id)
+                    },
+                    {
+                        '$inc': {
+                            'total_groups': 1,
+                        }
+                    }
+                )
             else:
-                join_personal = mongoDb.join_personal.insert_one({
+                join_personal = {
                     'post_id': post_id,
                     'join_group_id': str(check_join_group['_id']),
                     'money': money,
@@ -442,7 +473,9 @@ class JoinGroupBuying(GenericAPIView):
                     'creator': my_id,
                     'created': now,
                     'status': enums.status_joined_not_bought,
-                })
+                }
+                join_personal = mongoDb.join_personal.insert_one(join_personal)
+
                 mongoDb.join_group.find_one_and_update(
                     {
                         '_id': check_join_group['_id']
@@ -455,25 +488,6 @@ class JoinGroupBuying(GenericAPIView):
                 )
                 res['groupId'] = str(check_join_group['_id'])
                 res['joinId'] = str(join_personal['_id'])
-
-        update_object = {
-            '$inc': {}
-        }
-        if is_retail:
-            update_object['$inc'] = {
-                'total_personals': amount
-            }
-        else:
-            update_object['$inc'] = {
-                'total_groups': 1
-            }
-        mongoDb.discovery_post.find_one_and_update(
-            {
-                '_id': ObjectId(post_id),
-            },
-            {
-                '$inc': update_object,
-            })
 
         return Response(res, status=status.HTTP_200_OK)
 
