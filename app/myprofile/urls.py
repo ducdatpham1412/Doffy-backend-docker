@@ -1,5 +1,5 @@
 from django.urls.conf import path
-from myprofile.views import profile, follow, post, group_buying, list_group_buying, list_gb_joined, list_post_review, list_gb_joining, list_posts_liked, purchase, error_log
+from myprofile.views import profile, follow, post, group_buying, list_group_buying, list_gb_joined, list_post_review, list_gb_joining, list_posts_liked, purchase, error_log, like
 
 
 urlpatterns = [
@@ -16,34 +16,34 @@ urlpatterns = [
          group_buying.EditGroupBuying.as_view()),
     path('delete-group-buying/<str:post_id>',
          group_buying.DeleteGroupBuying.as_view()),
-    # path('list-posts/<int:user_id>', list_posts.GetListPost.as_view()),
     path('list-group-buying/<int:user_id>',
          list_group_buying.GetListGroupBuying.as_view()),
     path('list-posts-review-user/<int:user_id>',
          list_post_review.GetListPostReviewUser.as_view()),
     path('list-posts-liked', list_posts_liked.GetListPostLiked.as_view()),
-    # path('list-posts-saved', list_posts_saved.GetListPostsSaved.as_view()),
-    # path('list-posts-archived', list_posts_archived.GetListPostArchived.as_view()),
     path('list-gb-joined', list_gb_joined.GetListGBJoined.as_view()),
     path('list-gb-joining', list_gb_joining.GetListGbJoining.as_view()),
     path('list-group-joined/<str:post_id>',
          list_group_buying.GetListGroupPeopleJoined.as_view()),
     path('list-people-retail/<str:post_id>',
          list_group_buying.GetListPeopleRetail.as_view()),
-    path('like-post/<str:post_id>', post.LikePost.as_view()),
-    path('unlike-post/<str:post_id>', post.UnLikePost.as_view()),
-    # path('check-block-lock-account/<int:id>',
-    #      check_block_lock.CheckIsBlockOrLockAccount.as_view()),
-    # path('save-post/<str:post_id>', post.SavePost.as_view()),
-    # path('un-save-post/<str:post_id>', post.UnSavePost.as_view()),
-    # path('archive-post/<str:post_id>', post.ArchivePost.as_view()),
-    # path('un-archive-post/<str:post_id>', post.UnArchivePost.as_view()),
+    path('like-post/<str:reacted_id>', like.LikePost.as_view()),
+    path('unlike-post/<str:reacted_id>', like.UnLikePost.as_view()),
     path('join-group-buying/<str:post_id>',
          group_buying.JoinGroupBuying.as_view()),
-    # path('leave-group-buying/<str:post_id>',
-    #      group_buying.LeaveGroupBuying.as_view()),
-    path('confirm-user-bought/<str:join_id>',
-         group_buying.ConfirmUserBoughtGroupBuying.as_view()),
+    # path('refund/<str:join_id>', refund.Refund.as_view()),
     path('create-purchase-history', purchase.CreatePurchaseHistory.as_view()),
     path('create-error-log', error_log.CreateErrorLog.as_view())
 ]
+
+# path('list-posts-saved', list_posts_saved.GetListPostsSaved.as_view()),
+# path('list-posts-archived', list_posts_archived.GetListPostArchived.as_view()),
+# path('list-posts/<int:user_id>', list_posts.GetListPost.as_view()),
+# path('check-block-lock-account/<int:id>',
+#      check_block_lock.CheckIsBlockOrLockAccount.as_view()),
+# path('save-post/<str:post_id>', post.SavePost.as_view()),
+# path('un-save-post/<str:post_id>', post.UnSavePost.as_view()),
+# path('archive-post/<str:post_id>', post.ArchivePost.as_view()),
+# path('un-archive-post/<str:post_id>', post.UnArchivePost.as_view()),
+# path('leave-group-buying/<str:post_id>',
+#      group_buying.LeaveGroupBuying.as_view()),

@@ -9,10 +9,13 @@ from myprofile.models import Profile
 from bson.objectid import ObjectId
 import requests
 import json
+from pymongo import DESCENDING
+from utilities.renderers import PagingRenderer
 
 
 class GetListComment(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
+    renderer_classes = [PagingRenderer, ]
 
     def filter_list_user_id(self, list_comments: list):
         result = []
@@ -32,28 +35,38 @@ class GetListComment(GenericAPIView):
         })
         return bool(check_reaction)
 
-    def get_number_liked_comment(self, comment_id):
-        return mongoDb.reaction.count({
-            'type': enums.react_comment,
-            'reacted_id': comment_id,
-            'status': enums.status_active,
-        })
-
-    def get_list_comments_reply(self, list_comments: list, str_comment_id):
-        res = []
-        for comment in list_comments:
-            if comment['replied_id'] == str_comment_id:
-                res.append(comment)
-        return res
-
     def get(self, request, post_id):
         my_id = services.get_user_id_from_request(request)
+        page_index = int(request.query_params['pageIndex'])
+        take = int(request.query_params['take'])
+        replied_id = services.get_object(request.query_params, 'replied_id')
+        replied_id = str(replied_id) if replied_id else None
 
-        list_comments = mongoDb.discovery_comment.find({
+        condition = {
             'post_id': post_id,
-            'status': enums.status_active
-        })
+            'replied_id': replied_id,
+            'status': enums.status_active,
+        }
+
+        list_comments = mongoDb.discovery_comment.aggregate([
+            {
+                '$match': condition,
+            },
+            {
+                '$sort': {
+                    'created': DESCENDING
+                }
+            },
+            {
+                '$limit': take,
+            },
+            {
+                '$skip': (page_index - 1) * take,
+            }
+        ])
         list_comments = list(list_comments)
+
+        total_comments = mongoDb.discovery_comment.count(condition)
 
         id_name_avatar_object = {}
         for user_id_comment in self.filter_list_user_id(list_comments):
@@ -65,53 +78,33 @@ class GetListComment(GenericAPIView):
             }
 
         # Result
-        res = []
+        res_comments = []
         for comment in list_comments:
-            if comment['replied_id'] == None:
-                str_comment_id = str(comment['_id'])
-                is_liked = self.check_liked_comment(
-                    comment_id=str_comment_id, user_id=my_id)
-                number_likes = self.get_number_liked_comment(
-                    comment_id=str_comment_id)
+            str_comment_id = str(comment['_id'])
+            is_liked = self.check_liked_comment(
+                comment_id=str_comment_id, user_id=my_id)
+            id_name_avatar = id_name_avatar_object['{}'.format(
+                comment['creator'])]
 
-                id_name_avatar = id_name_avatar_object['{}'.format(
-                    comment['creator'])]
+            res_comments.append({
+                'id': str(comment['_id']),
+                'content': comment['content'],
+                'images': comment['images'],
+                'totalLikes': comment['total_reacts'],
+                'totalReplies': comment['total_replies'],
+                'isLiked': is_liked,
+                'creator': id_name_avatar['id'],
+                'creatorName': id_name_avatar['name'],
+                'creatorAvatar': id_name_avatar['avatar'],
+                'created': str(comment['created']),
+            })
 
-                # Comments reply
-                list_replies = []
-                for comment_reply in self.get_list_comments_reply(list_comments, str_comment_id):
-                    id_name_avatar_reply = id_name_avatar_object['{}'.format(
-                        comment_reply['creator'])]
-                    is_liked_reply = self.check_liked_comment(
-                        comment_id=str(comment_reply['_id']), user_id=my_id)
-                    number_likes_reply = self.get_number_liked_comment(
-                        comment_id=str(comment_reply['_id']))
-
-                    list_replies.append({
-                        'id': str(comment_reply['_id']),
-                        'content': comment_reply['content'],
-                        'images': comment_reply['images'],
-                        'numberLikes': number_likes_reply,
-                        'isLiked': is_liked_reply,
-                        'creator': id_name_avatar_reply['id'],
-                        'creatorName': id_name_avatar_reply['name'],
-                        'creatorAvatar': id_name_avatar_reply['avatar'],
-                        'created': str(comment_reply['created']),
-                    })
-
-                # Result
-                res.append({
-                    'id': str(comment['_id']),
-                    'content': comment['content'],
-                    'images': comment['images'],
-                    'numberLikes': number_likes,
-                    'isLiked': is_liked,
-                    'creator': id_name_avatar['id'],
-                    'creatorName': id_name_avatar['name'],
-                    'creatorAvatar': id_name_avatar['avatar'],
-                    'created': str(comment['created']),
-                    'listCommentsReply': list_replies,
-                })
+        res = {
+            'take': take,
+            'pageIndex': page_index,
+            'totalItems': total_comments,
+            'data': res_comments,
+        }
 
         return Response(res, status=status.HTTP_200_OK)
 

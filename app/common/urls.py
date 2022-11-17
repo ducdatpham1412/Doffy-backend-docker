@@ -21,6 +21,8 @@ urlpatterns = [
     path('read-notification/<str:notification_id>',
          notification.ReadNotification.as_view()),
     path('get-top-reputations', top_reputations.GetListTopReputation.as_view()),
-    path('get-top-group-buying', bubble_profile.GetListTopGroupBuying.as_view())
-    # like and un-like comment here
+    path('get-top-group-buying', bubble_profile.GetListTopGroupBuying.as_view()),
+    # api for purchase
+    # path('create-purchase', purchase.CreatePurchase.as_view()),
+    # path('confirm-purchased', purchase.ConfirmPurchase.as_view())
 ]
