@@ -107,6 +107,7 @@ notification_like_post = 3
 notification_friend_post_new = 4
 notification_like_gb = 5
 notification_comment_gb = 6
+notification_like_comment = 7
 
 
 # social sign in

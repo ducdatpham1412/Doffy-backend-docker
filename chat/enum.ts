@@ -89,3 +89,11 @@ export const COLOR = {
     fashion: 7,
     other: 8,
 };
+
+export enum POST_STATUS {
+    notActive = 0,
+    active = 1,
+    draft = 2,
+    temporarilyClosed = 3,
+    requestingDeleted = 4,
+}

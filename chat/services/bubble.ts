@@ -3,6 +3,7 @@ import {
     CHAT_TAG,
     MESSAGE_TYPE,
     NOTIFICATION_STATUS,
+    POST_STATUS,
     STATUS,
     TYPE_NOTIFICATION,
 } from "../enum";
@@ -27,10 +28,58 @@ export const addComment = async (params: TypeAddComment) => {
     const myId = await getUserIdFromToken(token);
     const now = getDateTimeNow();
 
+    const post = await mongoDb.collection("discovery_post").findOneAndUpdate(
+        {
+            _id: new ObjectId(comment.postId),
+            status: {
+                $in: [
+                    POST_STATUS.active,
+                    POST_STATUS.requestingDeleted,
+                    POST_STATUS.temporarilyClosed,
+                ],
+            },
+        },
+        {
+            $inc: {
+                total_comments: 1,
+            },
+        }
+    );
+    if (!post.value) {
+        return;
+    }
+
+    let repliedId = comment?.commentReplied;
+
+    if (comment?.commentReplied) {
+        const checkComment = await mongoDb
+            .collection("discovery_comment")
+            .findOne({
+                _id: new ObjectId(comment.commentReplied),
+                status: STATUS.active,
+            });
+        if (!checkComment) {
+            await mongoDb.collection("discovery_post").updateOne(
+                {
+                    _id: new ObjectId(comment.postId),
+                },
+                {
+                    $inc: {
+                        total_comments: -1,
+                    },
+                }
+            );
+            return;
+        }
+        if (checkComment.replied_id) {
+            repliedId = checkComment.replied_id;
+        }
+    }
+
     const insert_comment = {
         _id: new ObjectId(),
         post_id: comment.postId,
-        replied_id: comment?.commentReplied || null,
+        replied_id: repliedId,
         content: comment.content,
         images: [],
         creator: myId,
@@ -40,51 +89,38 @@ export const addComment = async (params: TypeAddComment) => {
     };
     await mongoDb.collection("discovery_comment").insertOne(insert_comment);
 
-    const post = await mongoDb.collection("discovery_post").findOneAndUpdate(
-        {
-            _id: new ObjectId(comment.postId),
-        },
-        {
-            $inc: {
-                total_comments: 1,
-            },
-        }
-    );
-
     // Do insert collection "notification" later
     let socketNotification;
-    if (post.value?.creator) {
-        const insertNotification: TypeInsertNotification = {
-            _id: new ObjectId(),
-            type: TYPE_NOTIFICATION.comment,
-            user_id: post.value.creator,
-            post_id: String(post.value?._id),
-            creator: myId,
-            created: getDateTimeNow(),
-            status: NOTIFICATION_STATUS.notRead,
-        };
-        await mongoDb.collection("notification").insertOne(insertNotification);
+    const insertNotification: TypeInsertNotification = {
+        _id: new ObjectId(),
+        type: TYPE_NOTIFICATION.comment,
+        user_id: post.value.creator,
+        post_id: String(post.value?._id),
+        creator: myId,
+        created: getDateTimeNow(),
+        status: NOTIFICATION_STATUS.notRead,
+    };
+    await mongoDb.collection("notification").insertOne(insertNotification);
 
-        const receiverSocketId = await getSocketIdOfUserId(post.value.creator);
-        if (receiverSocketId) {
-            const temp: TypeNotificationResponse = {
-                id: String(insertNotification._id),
-                type: insertNotification.type,
-                image: post.value?.images[0]
-                    ? createLinkImage(post.value?.images[0])
-                    : "",
-                postId: String(post.value._id),
-                creator: myId,
-                creatorName: comment.creatorName,
-                creatorAvatar: comment.creatorAvatar,
-                created: String(insertNotification.created),
-                isRead: false,
-            };
-            socketNotification = {
-                receiverSocketId: receiverSocketId,
-                data: temp,
-            };
-        }
+    const receiverSocketId = await getSocketIdOfUserId(post.value.creator);
+    if (receiverSocketId) {
+        const temp: TypeNotificationResponse = {
+            id: String(insertNotification._id),
+            type: insertNotification.type,
+            image: post.value?.images[0]
+                ? createLinkImage(post.value?.images[0])
+                : "",
+            postId: String(post.value._id),
+            creator: myId,
+            creatorName: comment.creatorName,
+            creatorAvatar: comment.creatorAvatar,
+            created: String(insertNotification.created),
+            isRead: false,
+        };
+        socketNotification = {
+            receiverSocketId: receiverSocketId,
+            data: temp,
+        };
     }
 
     // One signal
@@ -110,7 +146,8 @@ export const addComment = async (params: TypeAddComment) => {
         data: {
             id: String(insert_comment._id),
             content: insert_comment.content,
-            numberLikes: 0,
+            totalLikes: 0,
+            totalReplies: 0,
             isLiked: false,
             creator: insert_comment.creator,
             creatorName: comment.creatorName,

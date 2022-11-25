@@ -204,9 +204,21 @@ class GetListGroupPeopleJoined(GenericAPIView):
 
         res_list_groups = []
         for group in list_group_people:
-            list_joins = mongoDb.join_personal.find({
-                'join_group_id': str(group['_id'])
-            })
+            list_joins = mongoDb.join_personal.aggregate([
+                {
+                    '$match': {
+                        'join_group_id': str(group['_id']),
+                        'status': {
+                            '$in': [enums.status_joined_not_bought, enums.status_joined_bought]
+                        }
+                    }
+                },
+                {
+                    '$sort': {
+                        'created': pymongo.DESCENDING,
+                    }
+                }
+            ])
             res_list_joins = []
             for join in list_joins:
                 info_user = self.get_info_user(user_id=join['creator'])
