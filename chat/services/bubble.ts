@@ -51,11 +51,11 @@ export const addComment = async (params: TypeAddComment) => {
 
     let repliedId = comment?.commentReplied;
 
-    if (comment?.commentReplied) {
+    if (repliedId) {
         const checkComment = await mongoDb
             .collection("discovery_comment")
             .findOne({
-                _id: new ObjectId(comment.commentReplied),
+                _id: new ObjectId(repliedId),
                 status: STATUS.active,
             });
         if (!checkComment) {
@@ -74,6 +74,25 @@ export const addComment = async (params: TypeAddComment) => {
         if (checkComment.replied_id) {
             repliedId = checkComment.replied_id;
         }
+
+        if (repliedId) {
+            const updateComment = await mongoDb
+                .collection("discovery_comment")
+                .findOneAndUpdate(
+                    {
+                        _id: new ObjectId(repliedId),
+                        status: STATUS.active,
+                    },
+                    {
+                        $inc: {
+                            total_replies: 1,
+                        },
+                    }
+                );
+            if (!updateComment.value) {
+                return;
+            }
+        }
     }
 
     const insert_comment = {
@@ -85,6 +104,8 @@ export const addComment = async (params: TypeAddComment) => {
         creator: myId,
         created: now,
         modified: now,
+        total_reacts: 0,
+        total_replies: 0,
         status: STATUS.active,
     };
     await mongoDb.collection("discovery_comment").insertOne(insert_comment);
@@ -142,7 +163,7 @@ export const addComment = async (params: TypeAddComment) => {
 
     // Socket send back front-end
     const socketComment = {
-        commentReplied: comment.commentReplied,
+        commentReplied: repliedId,
         data: {
             id: String(insert_comment._id),
             content: insert_comment.content,
