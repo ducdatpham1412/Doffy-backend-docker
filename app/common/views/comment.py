@@ -9,7 +9,7 @@ from myprofile.models import Profile
 from bson.objectid import ObjectId
 import requests
 import json
-from pymongo import DESCENDING
+from pymongo import ASCENDING
 from utilities.renderers import PagingRenderer
 
 
@@ -54,7 +54,7 @@ class GetListComment(GenericAPIView):
             },
             {
                 '$sort': {
-                    'created': DESCENDING
+                    'created': ASCENDING
                 }
             },
             {
